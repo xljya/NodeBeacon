@@ -19,13 +19,13 @@ body{margin:0;background:#0b0e14;-webkit-font-smoothing:antialiased}
 </style>
 </helmet>
 
-<section id="turn3" style="{{ themeStyle }}; min-height:100vh; background:#0b0e14; padding:44px; display:flex; justify-content:center; align-items:flex-start; color:var(--text,#e7edf6);">
+<section id="turn3" style="{{ themeStyle }}; min-height:100vh; background:var(--page,#0b0e14); padding:0 24px 28px; display:flex; justify-content:center; align-items:flex-start; color:var(--text,#e7edf6);">
 
-  <div id="3a" style="display:flex; flex-direction:column; gap:16px;">
+  <div id="3a" style="width:100%; display:flex; flex-direction:column; gap:16px;">
 
-    <div style="width:1360px; background:var(--bg,#0a0d13); border:1px solid var(--border,#1e2836); border-radius:18px; overflow:hidden; font-family:'Space Grotesk',sans-serif; box-shadow:0 30px 80px var(--shadow,rgba(0,0,0,.4));">
+    <div style="width:100%; background:transparent; border:none; border-radius:0; overflow:visible; font-family:'Space Grotesk',sans-serif; box-shadow:none;">
 
-      <div style="position:relative; z-index:5; display:flex; align-items:center; justify-content:space-between; gap:20px; padding:18px 26px; border-bottom:1px solid var(--border,#1e2836);">
+      <div style="position:relative; z-index:5; display:flex; align-items:center; justify-content:space-between; gap:20px; padding:18px 0;">
         <a href="https://ss.akz.moe/" target="_blank" style="display:flex; align-items:baseline; gap:11px; text-decoration:none;">
           <span style="font-size:22px; font-weight:700; color:var(--text,#e7edf6); letter-spacing:-.01em;">Stargaze</span>
           <span style="font-size:14px; font-weight:600; color:var(--accent2,#6ba8ff);">NodeBeacon</span>
@@ -46,7 +46,7 @@ body{margin:0;background:#0b0e14;-webkit-font-smoothing:antialiased}
         </div>
       </div>
 
-      <div style="position:relative; z-index:1; display:flex; flex-direction:column; gap:18px; padding:24px 26px 30px;">
+      <div style="position:relative; z-index:1; display:flex; flex-direction:column; gap:18px; padding:16px 0 30px;">
 
         <sc-if value="{{ kDashView }}" hint-placeholder-val="{{ true }}">
         <div style="display:flex; flex-direction:column; gap:18px;">
@@ -100,7 +100,7 @@ body{margin:0;background:#0b0e14;-webkit-font-smoothing:antialiased}
         <div style="font-size:13px; color:var(--text-mute,#606e82);">{{ kCountText }}</div>
 
         <sc-if value="{{ kShowGrid }}" hint-placeholder-val="{{ true }}">
-          <div style="display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:16px;">
+          <div style="display:grid; grid-template-columns:repeat(auto-fill,minmax(300px,1fr)); gap:16px;">
             <sc-for list="{{ kVisible }}" as="s" hint-placeholder-count="8">
               <div onClick="{{ s.onOpen }}" style="background:var(--panel,#111722); border:1px solid var(--border,#1e2836); border-radius:14px; padding:18px; display:flex; flex-direction:column; gap:13px; cursor:pointer; transition:transform .2s cubic-bezier(.2,.7,.3,1), box-shadow .2s ease, border-color .2s ease;" style-hover="transform:translateY(-5px); border-color:var(--accent,#3b82f6); box-shadow:0 16px 40px var(--shadow,rgba(0,0,0,.45)), 0 0 0 1px var(--accent,#3b82f6);">
                 <div style="display:flex; align-items:center; justify-content:space-between; gap:10px;">
@@ -331,9 +331,17 @@ body{margin:0;background:#0b0e14;-webkit-font-smoothing:antialiased}
 </x-dc>
 <script type="text/x-dc" data-dc-script>
 class Component extends DCLogic {
-  state = { theme: 'dark', view: 'grid', lang: 'zh', langOpen: false, komariGroup: 'All', komariView: 'table', komariQuery: '', clock: '22:26:20', expandedNode: '阿里武汉', komariSmooth: false, detailNode: null, detailTab: 'load', loadRange: '实时', latRange: '1小时', cfgOpen: false, cfg: { time: true, online: true, region: true, traffic: true, speed: true } };
+  state = { theme: 'dark', view: 'grid', lang: 'zh', langOpen: false, komariGroup: 'All', komariView: 'grid', komariQuery: '', clock: '22:26:20', expandedNode: '阿里武汉', komariSmooth: false, detailNode: null, detailTab: 'load', loadRange: '实时', latRange: '1小时', cfgOpen: false, cfg: { time: true, online: true, region: true, traffic: true, speed: true } };
+
+  syncPageTheme() {
+    if (typeof document === 'undefined') return;
+    const pageBg = this.state.theme === 'dark' ? '#0b0e14' : '#eef3f9';
+    document.documentElement.style.background = pageBg;
+    document.body.style.background = pageBg;
+  }
 
   componentDidMount() {
+    this.syncPageTheme();
     const tick = () => {
       const d = new Date();
       const p = (n) => String(n).padStart(2, '0');
@@ -347,12 +355,16 @@ class Component extends DCLogic {
     if (this._clockTimer) clearInterval(this._clockTimer);
   }
 
+  componentDidUpdate(prevProps, prevState) {
+    if (prevState.theme !== this.state.theme) this.syncPageTheme();
+  }
+
   renderVals() {
     const h = React.createElement;
     const theme = this.state.theme;
 
-    const DARK = "--bg:#0a0d13;--bg2:#0e131b;--panel:#111722;--panel2:#151c28;--border:#1e2836;--text:#e7edf6;--text-dim:#9aa7ba;--text-mute:#606e82;--accent:#3b82f6;--accent2:#6ba8ff;--ok:#35d69a;--ok-weak:rgba(53,214,154,.14);--warn:#f5b23d;--warn-weak:rgba(245,178,61,.15);--crit:#f76257;--crit-weak:rgba(247,98,87,.15);--ring-track:rgba(255,255,255,.07);--shadow:rgba(0,0,0,.45)";
-    const LIGHT = "--bg:#eef1f7;--bg2:#f6f8fc;--panel:#ffffff;--panel2:#f6f8fd;--border:#e3e8f1;--text:#0e1626;--text-dim:#4c5a6e;--text-mute:#8592a4;--accent:#2563eb;--accent2:#2f6ff0;--ok:#12a373;--ok-weak:rgba(18,163,115,.12);--warn:#c9820f;--warn-weak:rgba(201,130,15,.14);--crit:#d94438;--crit-weak:rgba(217,68,56,.12);--ring-track:rgba(0,0,0,.08);--shadow:rgba(20,30,50,.12)";
+    const DARK = "--page:#0b0e14;--bg:#0a0d13;--bg2:#0e131b;--panel:#111722;--panel2:#151c28;--border:#1e2836;--text:#e7edf6;--text-dim:#9aa7ba;--text-mute:#606e82;--accent:#3b82f6;--accent2:#6ba8ff;--ok:#35d69a;--ok-weak:rgba(53,214,154,.14);--warn:#f5b23d;--warn-weak:rgba(245,178,61,.15);--crit:#f76257;--crit-weak:rgba(247,98,87,.15);--ring-track:rgba(255,255,255,.07);--shadow:rgba(0,0,0,.45)";
+    const LIGHT = "--page:#eef3f9;--bg:#eef3f9;--bg2:#f8fafd;--panel:#ffffff;--panel2:#f7f9fd;--border:#dfe7f2;--text:#0e1626;--text-dim:#4c5a6e;--text-mute:#8592a4;--accent:#2563eb;--accent2:#2f6ff0;--ok:#12a373;--ok-weak:rgba(18,163,115,.12);--warn:#c9820f;--warn-weak:rgba(201,130,15,.14);--crit:#d94438;--crit-weak:rgba(217,68,56,.12);--ring-track:rgba(0,0,0,.08);--shadow:rgba(20,30,50,.12)";
 
     // ===== KOMARI LAYOUT (3a) — 沿用现有配色 =====
     const OSINFO = {
