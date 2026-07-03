@@ -30,9 +30,10 @@ NodeBeacon 是给当前五台服务器使用的自托管监控状态页。它不
 
 - 域名：`https://monitor.liucf.com/`
 - 已选部署位置：RS1000 k3s，使用 Kubernetes Pod / Deployment 管理。
-- Namespace：建议新建 `nodebeacon`，和已有 `sre-lab` 学习服务隔离；如果想先替换旧状态页，也可以短期沿用 `sre-lab`。
+- Namespace：`nodebeacon`，和已有 `sre-lab` 学习服务隔离。
 - 入口链路：Cloudflare 橙云代理 -> RS1000 nginx -> RS1000 k3s。
 - 当前源站：Cloudflare `monitor.liucf.com` 的 IPv4 源站指向 RS1000；dmit-uswest 不再承载 monitor 入口。
+- 当前临时状态：`monitor.liucf.com` 保留域名和证书，但 nginx 返回 `204 No Content`，等 NodeBeacon 完成后再接入应用。
 - 第一版目标：替换当前轻量 `monitor-status` 应用，保留现有域名和 Cloudflare 安全边界。
 
 ## 2. 总体架构
@@ -51,7 +52,7 @@ flowchart LR
     cache["短缓存<br/>15-30s"]
     prom["Prometheus<br/>10.77.0.1:31001"]
     am["Alertmanager"]
-    incident["Incident Store<br/>SQLite / Postgres / D1"]
+    incident["Incident Store<br/>SQLite"]
     ne["Node Exporter<br/>五台服务器"]
     bb["Blackbox Exporter<br/>公网探测"]
 
@@ -84,7 +85,7 @@ flowchart LR
 
 - API 轻，Fastify 足够快，结构清楚。
 - 很适合做 Prometheus BFF：批量请求、缓存、格式化、鉴权。
-- 后续可以同时部署到 VPS/k3s、容器平台，或改造成 Cloudflare Worker 版本。
+- 与当前 k3s 部署、单容器交付和 Prometheus BFF 方向一致。
 
 建议模块：
 
@@ -102,13 +103,13 @@ flowchart LR
 
 | API | 用途 | 登录要求 |
 | --- | --- | --- |
-| `GET /api/status` | 五台服务器总览，替换前端卡片假数据 | 可选，公开状态页可不登录 |
-| `GET /api/nodes` | 节点列表和元数据 | 可选 |
-| `GET /api/nodes/:id` | 单台服务器详情 | 可选或登录 |
-| `GET /api/nodes/:id/range?metric=cpu&range=4h` | 单指标趋势图 | 可选或登录 |
-| `GET /api/latency` | blackbox 公网探测结果 | 可选 |
-| `GET /api/incidents` | 故障事件时间线 | 建议登录 |
-| `POST /api/auth/register` | 注册 | 默认关闭或邀请码 |
+| `GET /api/status` | 五台服务器总览，替换前端卡片假数据 | 公开 |
+| `GET /api/nodes` | 节点列表和元数据 | 公开 |
+| `GET /api/nodes/:id` | 单台服务器详情 | 登录 |
+| `GET /api/nodes/:id/range?metric=cpu&range=4h` | 单指标趋势图 | 登录 |
+| `GET /api/latency` | blackbox 公网探测结果 | 公开 |
+| `GET /api/incidents` | 故障事件时间线 | 登录 |
+| `POST /api/auth/register` | 注册 | 关闭 |
 | `POST /api/auth/login` | 登录 | 公开 |
 | `POST /api/auth/logout` | 退出 | 登录 |
 | `GET /api/auth/me` | 当前用户 | 登录 |
@@ -143,10 +144,10 @@ flowchart LR
 
 ## 5. 注册登录策略
 
-这个项目面向个人监控系统，不建议开放自由注册。第一版建议：
+这个项目面向个人监控系统，第一版关闭自由注册：
 
 - 默认 `ALLOW_REGISTER=false`。
-- 管理员通过环境变量创建初始账号，或使用一次性邀请码。
+- 管理员通过环境变量创建初始账号。
 - 密码使用 `argon2id` hash，不保存明文。
 - 会话使用 `httpOnly + Secure + SameSite=Lax` cookie。
 - 角色先做两个：`owner` 和 `viewer`。
@@ -186,36 +187,106 @@ NodeBeacon/
     nodes.example.yaml   # 五台服务器展示配置示例，不放密钥
   docs/
     development-plan.md
+    reference/            # 旧 monitor-status 的参考副本
   infra/
     k8s/                 # RS1000 k3s 部署清单
     nginx/               # RS1000 nginx 入口配置示例
 ```
 
-如果想先快跑，也可以第一版做成一个服务：后端托管静态前端文件，同时提供 `/api/*`。等 UI 稳定后再拆 `apps/web` 和 `apps/api`。
+第一版保持 `apps/web` 和 `apps/api` 的源码边界，但交付为一个服务：后端托管静态前端文件，同时提供 `/api/*`。
 
-## 8. 开发阶段规划
+## 8. 开发阶段规划与优先级清单
+
+第一版开发目标不是一次性做完整监控平台，而是尽快把当前 HTML 原型变成可部署、可访问真实 Prometheus 数据的状态页。优先级按“能否阻塞 MVP 上线”排序：
+
+| 优先级 | 定义 | 处理原则 |
+| --- | --- | --- |
+| P0 | 基础工程和数据合同，缺失会阻塞所有后续开发 | 先做，必须有清晰交付物 |
+| P1 | MVP 上线必需能力，完成后可以替换旧状态页 | 第一轮开发主线 |
+| P2 | 让产品从“能看”变成“好用”的核心增强 | MVP 稳定后连续推进 |
+| P3 | 管理、扩展和长期体验优化 | 不阻塞第一版上线 |
 
 ```mermaid
 flowchart TD
-    p0["阶段 0<br/>整理设计交付与数据合同"]
-    p1["阶段 1<br/>搭建前端工程并复刻页面"]
-    p2["阶段 2<br/>实现 /api/status 真实总览"]
-    p3["阶段 3<br/>趋势图 query_range 和节点详情"]
-    p4["阶段 4<br/>注册登录与权限"]
-    p5["阶段 5<br/>Incident webhook 落库"]
-    p6["阶段 6<br/>k3s 部署、日志、备份、告警"]
+    p0["P0<br/>工程骨架与数据合同"]
+    p1["P1<br/>真实总览与可部署 MVP"]
+    p2["P2<br/>详情、趋势和事件历史"]
+    p3["P3<br/>权限、管理和体验增强"]
 
-    p0 --> p1 --> p2 --> p3 --> p4 --> p5 --> p6
+    p0 --> p1 --> p2 --> p3
 ```
 
-优先级建议：
+### P0：工程骨架与数据合同
 
-1. 先把静态原型变成真实前端工程。
-2. 再只接 `/api/status`，让五台机器总览变成真数据。
-3. 然后补趋势图和详情页。
-4. 最后补登录、事件历史、管理后台。
+| 状态 | 任务 | 交付标准 | 备注 |
+| --- | --- | --- | --- |
+| 待做 | 初始化前端工程 `apps/web` | React + TypeScript 项目可本地启动；能承载当前状态页原型 | 优先复刻真实页面，不做营销首页 |
+| 待做 | 初始化后端工程 `apps/api` | Fastify + TypeScript 项目可本地启动；暴露 `/healthz` | 第一版后端同时托管静态前端 |
+| 待做 | 定义 `/api/status` 数据合同 | 有 TypeScript 类型、示例 JSON、错误格式和字段说明 | 前后端先围绕这一个接口对齐 |
+| 待做 | 建立节点配置 `config/nodes.example.yaml` | 包含五台节点的 `id/name/provider/group/labels` 示例 | 不写入任何真实密钥 |
+| 待做 | 建立环境变量样例 `.env.example` | 覆盖 `PROMETHEUS_URL`、cookie secret、注册开关、缓存 TTL | 真实值只放部署环境 |
+| 待做 | 从 HTML 原型拆出 UI 结构 | 明确布局、主题、节点卡片、表格视图、筛选项和状态色 | 以复用当前视觉为主 |
+| 待做 | 配好基础脚本 | 至少有 `dev`、`build`、`typecheck`、`lint` | 没有测试框架前先保证类型检查 |
 
-这样每一步都有可见结果，不会一开始就在账号系统和部署细节里打转。
+P0 完成判定：前端和后端都能独立启动，`/api/status` 的返回结构冻结到第一版，后续开发不再围绕字段名反复改动。
+
+### P1：MVP 上线必需能力
+
+| 状态 | 任务 | 交付标准 | 备注 |
+| --- | --- | --- | --- |
+| 待做 | 实现 Prometheus client | 只封装白名单查询；支持超时、错误分类和基础日志 | 不开放任意 PromQL |
+| 待做 | 实现 `metricsService` | 聚合在线状态、CPU、内存、磁盘、uptime、load、网络速率 | 第一版只服务 `/api/status` |
+| 待做 | 实现 `/api/status` | 返回五台节点真实数据；单节点失败不拖垮整页 | 失败节点显示 degraded 或 unknown |
+| 待做 | 增加短缓存 | 总览接口缓存 15-30 秒；返回 `generatedAt` | 防止刷新页面打爆 Prometheus |
+| 待做 | 复刻状态页主界面 | 卡片视图、表格视图、分组筛选、明暗主题可用 | 优先保证移动端和桌面端不溢出 |
+| 待做 | 接入真实 API 状态 | 前端有 loading、empty、error、stale 数据状态 | 不能只有理想态 |
+| 待做 | 单容器构建 | API 托管前端静态产物；镜像能本地运行 | 符合 ADR-0005 |
+| 待做 | k3s 基础部署清单 | Deployment、Service、Secret/ConfigMap 示例、PVC 占位 | 第一版可先不启用 SQLite 写入 |
+| 待做 | RS1000 nginx 接入说明 | 明确把 `monitor.liucf.com` upstream 指到 NodePort | 上线时替换当前 `204 No Content` |
+
+P1 完成判定：`monitor.liucf.com` 可以展示真实五台节点总览；Prometheus 不暴露给浏览器；前端刷新、后端重启和单节点异常都有可接受表现。
+
+### P2：核心增强
+
+| 状态 | 任务 | 交付标准 | 备注 |
+| --- | --- | --- | --- |
+| 待做 | 实现 `GET /api/nodes` 和 `GET /api/nodes/:id` | 节点元数据和单节点详情可查询 | 复用 node registry |
+| 待做 | 实现趋势查询接口 | `query_range` 支持 CPU、内存、磁盘、网络、延迟 | 严格限制 `metric` 和 `range` 枚举 |
+| 待做 | 节点详情页 | 展示趋势图、近期状态、基础指标和探测结果 | 可从卡片和表格进入 |
+| 待做 | Blackbox 延迟和 HTTP 状态 | 展示公网探测延迟、成功率和 HTTP 状态码 | 用于判断入口和节点健康 |
+| 待做 | Alertmanager webhook | 接收 firing/resolved 事件并归一化 | 先落 SQLite |
+| 待做 | Incident 时间线 | 展示故障开始、恢复、持续时间和影响节点 | 登录前后展示粒度可不同 |
+| 待做 | NodeBeacon 自身可观测性 | API 请求量、错误率、Prometheus 查询耗时、缓存命中率 | 指标后续进 Grafana/Loki |
+
+P2 完成判定：用户可以从总览定位问题节点，进入详情页查看最近趋势，并通过 incident 时间线理解故障发生和恢复过程。
+
+### P3：权限、管理和长期体验
+
+| 状态 | 任务 | 交付标准 | 备注 |
+| --- | --- | --- | --- |
+| 待做 | 登录和会话 | `owner/viewer` 两个角色；cookie 使用 `httpOnly + Secure + SameSite=Lax` | 注册默认关闭 |
+| 待做 | 初始管理员创建方式 | 支持通过环境变量创建初始 `owner` 账号 | 避免开放自由注册 |
+| 待做 | 管理端最小闭环 | 可查看用户、节点配置摘要、系统状态 | 不做重型后台 |
+| 待做 | SQLite 备份策略 | 有备份路径、恢复步骤、保留周期和恢复演练说明 | 第一版固定使用 SQLite |
+| 待做 | Cloudflare 缓存和 WAF 规则 | `/api/*`、`/auth/*` 不缓存；登录限速 | 和 RS1000 nginx 配置一起记录 |
+| 待做 | UI 细节打磨 | 空状态、骨架屏、键盘可访问性、移动端触控区域 | 保证长期使用舒服 |
+| 待做 | 文档补齐 | README、部署文档、环境变量、故障排查、ADR 更新 | 每个生产决策都能追溯 |
+
+P3 完成判定：NodeBeacon 不只是能上线，还能长期维护、升级、备份，并且登录态和敏感信息展示边界清晰。
+
+### 第一轮开发顺序
+
+建议第一轮只承诺 P0 + P1，顺序如下：
+
+1. 搭好 `apps/web`、`apps/api` 和基础脚本。
+2. 固定 `/api/status` 类型和节点配置格式。
+3. 把 HTML 原型迁移成 React 页面，先用 fixture 数据跑通。
+4. 实现 Prometheus 白名单查询和 `/api/status`。
+5. 前端切到真实 API，并补齐 loading/error/stale 状态。
+6. 构建单容器镜像，准备 k3s Deployment / Service / Secret / ConfigMap。
+7. 在 RS1000 k3s 试运行，通过 nginx 把 `monitor.liucf.com` 接入 NodeBeacon。
+
+暂缓事项：注册登录、管理后台、Incident 历史和复杂通知都放到 P2/P3。这样每一步都能产生可验证结果，也能避免第一版在账号系统和细节优化里失焦。
 
 ## 9. 部署决策：RS1000 k3s
 
@@ -224,9 +295,6 @@ flowchart TD
 | 运行方式 | 结论 | 原因 |
 | --- | --- | --- |
 | RS1000 k3s Pod / Deployment | 采用 | 最适合学习和长期管理；日志、重启、Secret、ConfigMap、PVC、Service 都标准化 |
-| Docker Compose | 不采用生产 | 可用于临时验证镜像，但会和现有 k3s 形成两套部署系统 |
-| RS1000 本机裸跑 | 不采用 | systemd、日志、环境变量、升级和回滚会分散，后续排查成本高 |
-| Cloudflare / Vercel | 不作为第一版生产后端 | 很适合前端预览或后续拆分，但访问私有 Prometheus 和 Alertmanager webhook 不如 k3s 直接 |
 
 第一阶段：部署在 RS1000 k3s，并继续使用 `https://monitor.liucf.com/` 作为生产入口。
 
@@ -249,41 +317,28 @@ monitor.liucf.com
 
 ### Cloudflare 配置判断
 
-当前 `monitor.liucf.com` 已经在 Cloudflare 开启橙云代理，并把 IPv4 源站切到 RS1000。dmit-uswest 上的 monitor Caddy 反代已经移除。第一版只需要让 RS1000 nginx 继续把 `monitor.liucf.com` 反代到 k3s 服务即可。
+当前 `monitor.liucf.com` 已经在 Cloudflare 开启橙云代理，并把 IPv4 源站切到 RS1000。dmit-uswest 上的 monitor Caddy 反代已经移除。旧 `monitor-status` k3s 资源也已移除，参考副本保留在 `docs/reference/legacy-monitor-status/`。NodeBeacon 完成前，RS1000 nginx 对该域名返回 `204 No Content`；上线时再把 nginx upstream 接到新的 k3s Service。
 
 | 项目 | 当前建议 | 是否需要改 |
 | --- | --- | --- |
 | DNS 记录 | `monitor.liucf.com` 继续代理到 RS1000 `152.53.171.134` | 已切换 |
 | Proxy 状态 | 继续开启橙云代理 | 不需要 |
-| Origin 链路 | RS1000 nginx 反代到 `http://10.77.0.1:31003` | 不需要，除非 NodeBeacon 换端口 |
+| Origin 链路 | 当前返回 `204 No Content`；上线时 RS1000 nginx 反代到新的 NodeBeacon Service | 上线时修改 |
 | Cloudflare Header Guard | RS1000 nginx 要求 `CF-Connecting-IP`，直连源站返回 404 | 保持 |
 | TLS / 证书 | RS1000 nginx 使用 Let’s Encrypt `monitor.liucf.com` 证书 | 保持自动续期 |
 | 缓存规则 | `/api/*`、`/auth/*` 不缓存；HTML 短缓存或不缓存；静态资源可长缓存 | 建议补充 |
 | WAF / Rate Limit | 对 `/api/auth/login` 做限速，保护登录接口 | 建议补充 |
 
-需要改的场景：
+上线接入动作：
 
-- 如果 NodeBeacon 不复用 `31003`，只需要改 RS1000 的 nginx upstream，例如从 `http://10.77.0.1:31003` 改到新的 NodePort 或 Cluster 入口；Cloudflare DNS 仍不用动。
-- 如果前端以后迁到 Cloudflare Pages，才需要新增 Pages 项目和可能的 `api.monitor.liucf.com`，主站 DNS/路由策略才会变化。
-- 如果将来让 Cloudflare Worker 直接访问私有 Prometheus，则需要重新设计网络接入，例如 Workers VPC、Tunnel 或受保护的内部 API；第一版不建议这样做。
-
-第二阶段可选：前端拆到 Cloudflare Pages，API 仍留在 RS1000 k3s。
-
-```text
-静态前端: Cloudflare Pages
-API: api.monitor.liucf.com -> RS1000 nginx -> RS1000 k3s
-```
-
-这种方案兼顾前端访问速度和后端私网安全。Cloudflare Worker 也可以做一层轻代理，但真正查 Prometheus 的 BFF 仍固定在 RS1000 k3s 内侧。
-
-第三阶段：如果想完全 Cloudflare 化，再评估 Workers VPC / D1 / Worker API。
-
-这会让部署更云原生，但网络接入复杂度会比直接放 RS1000 高。当前项目只有五台机器，先不值得为了平台形态牺牲简单性。
+- NodeBeacon Service 使用 NodePort `31003`。
+- RS1000 nginx upstream 指向 `http://10.77.0.1:31003`。
+- Cloudflare DNS 和代理状态保持现状。
 
 ## 10. 安全要求
 
 - 不提交任何真实密码、Token、chat_id、WireGuard private key。
-- 所有密钥放 Kubernetes Secret、`.env` 或平台 secret manager。
+- 生产密钥放 Kubernetes Secret，本地开发使用 `.env`。
 - 后端不开放任意 PromQL 查询接口。
 - 登录 cookie 必须 `httpOnly`，生产环境必须 `Secure`。
 - 对 `/api/auth/login` 做限速。
@@ -297,15 +352,5 @@ API: api.monitor.liucf.com -> RS1000 nginx -> RS1000 k3s
 - NodeBeacon 自身暴露 `/healthz` 和 `/readyz`。
 - NodeBeacon 自身日志进入 Loki。
 - 为 API 添加基础指标：请求量、错误率、Prometheus 查询耗时、缓存命中率。
-- SQLite 需要定期备份；如果 incident 历史变重要，升级到 PostgreSQL。
+- SQLite 需要定期备份，并保留可执行的恢复步骤。
 - 部署文件放 `infra/k8s/`，至少包含 Deployment、Service、Secret 示例和 RS1000 nginx 入口说明。
-
-## 12. 官方资料参考
-
-- Cloudflare Workers: https://developers.cloudflare.com/workers/
-- Cloudflare Pages Functions: https://developers.cloudflare.com/pages/functions/
-- Cloudflare D1: https://developers.cloudflare.com/d1/get-started/
-- Cloudflare Workers VPC: https://developers.cloudflare.com/workers-vpc/
-- Vercel Functions: https://vercel.com/docs/functions
-- Vercel Node.js Runtime: https://vercel.com/docs/functions/runtimes/node-js
-- Vercel Networking / Secure Compute: https://vercel.com/docs/networking

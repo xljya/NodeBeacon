@@ -14,14 +14,6 @@ The backend needs to:
 - Hide Prometheus credentials and PromQL details from the browser.
 - Handle auth, sessions, caching, and incident history.
 
-Alternatives considered:
-
-- Plain Node.js HTTP server.
-- Express.
-- Fastify.
-- A Python backend.
-- Let the frontend query Prometheus directly.
-
 ## Decision
 
 Use `Node.js + TypeScript + Fastify` for the NodeBeacon API.
@@ -34,7 +26,7 @@ Benefits:
 
 - Fastify is small, structured, and suitable for a focused API service.
 - TypeScript gives safer Prometheus response mapping and API contracts.
-- The API can later expose health checks and metrics for Prometheus.
+- The API owns health checks and service metrics for Prometheus.
 
 Costs:
 

@@ -10,13 +10,7 @@ NodeBeacon has two major runtime surfaces:
 - The web UI.
 - The Fastify API that queries Prometheus and manages auth.
 
-The project could split frontend and backend immediately, but the first production target is a single RS1000 k3s service behind `monitor.liucf.com`.
-
-Alternatives considered:
-
-- Separate frontend and API Deployments from the start.
-- Static frontend on Cloudflare Pages with API on RS1000.
-- A single container serving static frontend assets and `/api/*`.
+The first production target is a single RS1000 k3s service behind `monitor.liucf.com`.
 
 ## Decision
 
@@ -36,8 +30,7 @@ Benefits:
 
 Costs:
 
-- Frontend and backend deploy together.
-- If the UI or API grows independently, we may later split them.
+- Frontend and backend share one release path in the first version.
 
 ## References
 

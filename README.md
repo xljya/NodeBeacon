@@ -2,6 +2,8 @@
 
 **English** | [中文](#中文)
 
+UI reference: [Komari Monitor](https://github.com/komari-monitor/komari). NodeBeacon's dashboard layout and interaction direction are inspired by Komari Monitor, while the backend design is Prometheus-based and does not reuse Komari's agent or remote-control model.
+
 NodeBeacon is a lightweight self-hosted node monitoring and uptime dashboard powered by Prometheus.
 
 It collects host metrics from `node_exporter`, probes service availability through `blackbox_exporter`, and presents a clean status view for VPS, homelab, small teams, and personal infrastructure.
@@ -59,6 +61,8 @@ Cloudflare
 
 The backend is planned to run on RS1000 k3s as a Kubernetes Deployment. The first version will ship the web UI and Fastify API in one container.
 
+The public domain is currently reserved and intentionally serves no content until NodeBeacon is ready.
+
 ## Tech Stack
 
 - Frontend: planned React / TypeScript implementation based on the current HTML prototype
@@ -74,6 +78,7 @@ The backend is planned to run on RS1000 k3s as a Kubernetes Deployment. The firs
 - [`monitoring-setup.md`](monitoring-setup.md): Prometheus metric mapping and data-plumbing notes
 - [`docs/development-plan.md`](docs/development-plan.md): current development plan
 - [`docs/adr/`](docs/adr): architecture decision records
+- [`docs/reference/legacy-monitor-status/`](docs/reference/legacy-monitor-status): reference copy of the previous lightweight monitor page
 - [`screenshots/`](screenshots): UI reference screenshots
 
 ## Documentation
@@ -95,6 +100,8 @@ Important project decisions are recorded as ADRs:
 - Authentication endpoints should not be cached by CDN or reverse proxies.
 
 ## 中文
+
+UI 参考：[Komari Monitor](https://github.com/komari-monitor/komari)。NodeBeacon 的仪表盘布局和交互方向参考 Komari Monitor，但后端设计基于 Prometheus，不复用 Komari 的 agent 或远程控制模型。
 
 NodeBeacon 是一个基于 Prometheus 的轻量级自托管节点监控与可用性状态页。
 
@@ -153,6 +160,8 @@ Cloudflare
 
 后端计划运行在 RS1000 k3s 中，由 Kubernetes Deployment 管理。第一版 Web UI 和 Fastify API 会放在同一个容器中交付。
 
+当前公开域名已预留，NodeBeacon 完成前会暂时保持无内容响应。
+
 ## 技术栈
 
 - 前端：计划使用 React / TypeScript，基于当前 HTML 原型实现
@@ -168,6 +177,7 @@ Cloudflare
 - [`monitoring-setup.md`](monitoring-setup.md)：Prometheus 指标映射和数据接入说明
 - [`docs/development-plan.md`](docs/development-plan.md)：当前开发计划
 - [`docs/adr/`](docs/adr)：架构决策记录
+- [`docs/reference/legacy-monitor-status/`](docs/reference/legacy-monitor-status)：旧轻量状态页的参考副本
 - [`screenshots/`](screenshots)：UI 参考截图
 
 ## 文档
