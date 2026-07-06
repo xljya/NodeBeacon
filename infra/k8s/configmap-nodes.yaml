@@ -1,0 +1,87 @@
+# Node registry mounted into the pod at /config/nodes.yaml.
+# The Deployment sets NODEBEACON_NODE_CONFIG=/config/nodes.yaml to load this.
+#
+# The `labels` selectors below are verified against the live RS1000 Prometheus:
+#   - rs1000 -> job="node-exporter" (in-cluster DaemonSet; single-node cluster)
+#   - the four VPS -> job="external-vps-node", instance=<friendly name>
+# This is display + query metadata only. No secrets.
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: nodebeacon-nodes
+  namespace: nodebeacon
+  labels:
+    app.kubernetes.io/name: nodebeacon
+data:
+  nodes.yaml: |
+    nodes:
+      - id: rs1000
+        name: RS1000
+        provider: netcup
+        group: Core
+        region: EU
+        location: Germany
+        displayOrder: 10
+        public: true
+        labels:
+          job: node-exporter
+        tags:
+          - k3s
+          - prometheus
+
+      - id: dmit-uswest
+        name: dmit-uswest
+        provider: DMIT
+        group: Edge
+        region: US
+        location: US West
+        displayOrder: 20
+        public: true
+        labels:
+          job: external-vps-node
+          instance: dmit-uswest
+        tags:
+          - ingress
+          - public
+
+      - id: hostbrr-4t
+        name: hostbrr-4t
+        provider: HostBrr
+        group: Storage
+        region: EU
+        location: Germany
+        displayOrder: 30
+        public: true
+        labels:
+          job: external-vps-node
+          instance: hostbrr-4t
+        tags:
+          - storage
+
+      - id: netcup-1o
+        name: netcup-1o
+        provider: netcup
+        group: Compute
+        region: EU
+        location: Germany
+        displayOrder: 40
+        public: true
+        labels:
+          job: external-vps-node
+          instance: netcup-1o
+        tags:
+          - vps
+
+      - id: huawei-2c1g
+        name: huawei-2c1g
+        provider: Huawei Cloud
+        group: CN
+        region: CN
+        location: China
+        displayOrder: 50
+        public: true
+        labels:
+          job: external-vps-node
+          instance: huawei-2c1g
+        tags:
+          - vps

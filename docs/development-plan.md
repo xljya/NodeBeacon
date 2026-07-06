@@ -1,6 +1,6 @@
 # NodeBeacon 开发文档
 
-最后更新：2026-07-04
+最后更新：2026-07-06
 
 ## 决策记录
 
@@ -33,8 +33,8 @@ NodeBeacon 是给当前五台服务器使用的自托管监控状态页。它不
 - Namespace：`nodebeacon`，和已有 `sre-lab` 学习服务隔离。
 - 入口链路：Cloudflare 橙云代理 -> RS1000 nginx -> RS1000 k3s。
 - 当前源站：Cloudflare `monitor.liucf.com` 的 IPv4 源站指向 RS1000；dmit-uswest 不再承载 monitor 入口。
-- 当前临时状态：`monitor.liucf.com` 保留域名和证书，但 nginx 返回 `204 No Content`，等 NodeBeacon 完成后再接入应用。
-- 第一版目标：替换当前轻量 `monitor-status` 应用，保留现有域名和 Cloudflare 安全边界。
+- 当前状态（2026-07-06 起）：NodeBeacon 已上线。RS1000 nginx 已从 `204 No Content` 切换为反代 k3s Service（NodePort 31003），`https://monitor.liucf.com/` 展示真实五节点总览。
+- 第一版目标（已达成）：替换当前轻量 `monitor-status` 应用，保留现有域名和 Cloudflare 安全边界。
 
 ## 2. 总体架构
 
@@ -248,9 +248,9 @@ P0 验证记录：2026-07-03 已通过 `pnpm install`、`pnpm typecheck`、`pnpm
 | 已完成 | 复刻状态页主界面 | 卡片视图、表格视图、分组筛选、明暗主题可用 | 当前通过高保真原型 iframe 保持 1:1 外观；后续再做组件化收敛 |
 | 已完成 | 分组筛选接入节点配置 | 首页分组选项从节点手动分组生成；支持 `All` 和自定义分组 | 已通过 `/api/status` + `config/nodes.example.yaml` 驱动原型分组；Prometheus 真指标接入仍单独推进 |
 | 已完成 | 接入真实 API 状态 | 前端有 loading、empty、error、stale 数据状态 | 运行页显示 Live/Loading/Fallback/Stale/No data 状态，并保留空节点和筛选无结果反馈 |
-| 待做 | 单容器构建 | API 托管前端静态产物；镜像能本地运行 | 符合 ADR-0005 |
-| 待做 | k3s 基础部署清单 | Deployment、Service、Secret/ConfigMap 示例、PVC 占位 | 第一版可先不启用 SQLite 写入 |
-| 待做 | RS1000 nginx 接入说明 | 明确把 `monitor.liucf.com` upstream 指到 NodePort | 上线时替换当前 `204 No Content` |
+| 已完成 | 单容器构建 | API 托管前端静态产物；镜像能本地运行 | 符合 ADR-0005；多阶段 `Dockerfile`，pnpm workspace 构建后裁剪 devDependencies |
+| 已完成 | k3s 基础部署清单 | Deployment、Service、Secret/ConfigMap 示例、PVC 占位 | 已部署到 RS1000 `nodebeacon` namespace，`kubectl apply -k infra/k8s` |
+| 已完成 | RS1000 nginx 接入说明 | 明确把 `monitor.liucf.com` upstream 指到 NodePort | 已上线：nginx 从 `204 No Content` 切到反代 `10.77.0.1:31003` |
 
 P1 完成判定：`monitor.liucf.com` 可以展示真实五台节点总览；Prometheus 不暴露给浏览器；前端刷新、后端重启和单节点异常都有可接受表现。
 
@@ -259,6 +259,15 @@ P1 进展记录：2026-07-03 已将 `Status Page.dc.html` 原型副本接入 `/a
 P1 进展记录：2026-07-03 已完成 Prometheus client、`metricsService`、`/api/status` 真实指标适配和短缓存。后端只在服务端生成白名单 PromQL，覆盖 `up`、CPU、内存、根分区磁盘、load、uptime 和网络速率；单节点指标缺失会降级为 `degraded` 或 `unknown`，Prometheus 整体不可用时返回过期缓存或 fixture fallback，并通过 `cache.stale=true` 标记。已通过本地 mock Prometheus 和无 Prometheus fallback 路径验证；生产联调时只需要配置真实 `PROMETHEUS_URL` 和节点 label。
 
 P1 进展记录：2026-07-04 已补齐前端 API 状态反馈。状态页在 `/api/status` 加载中、请求失败并使用 fallback、后端返回 `cache.stale=true`、API 返回空节点列表、分组或搜索无结果时都会显示对应状态；正常数据路径显示 `Live data`。同时将运行页 iframe 版本号升级，避免浏览器继续使用旧原型缓存。
+
+P1 进展记录：2026-07-06 已完成单容器构建、k3s 部署和 nginx 上线，P1 全部收尾，MVP 正式对外。
+
+- **单容器**：新增多阶段 `Dockerfile`（node:20-slim + 固定 pnpm@10.15.0）和 `.dockerignore`。构建 shared → api → web 后 `pnpm install --prod` 裁剪 devDependencies，运行时 API 在 `:3001` 同时托管 `/api/*` 和 `apps/web/dist`。
+- **部署清单**：新增 `infra/k8s/`（namespace、node registry ConfigMap、Secret 示例、Deployment、NodePort 31003 Service、SQLite 占位 PVC、kustomization）。Deployment 走只读根文件系统、非 root、就绪/存活探针，`PROMETHEUS_URL` 指向集群内 `monitoring-kube-prometheus-prometheus.monitoring.svc:9090`。
+- **Prometheus label 修正**（关键）：核对线上 Prometheus 后发现旧 `config/nodes.example.yaml` 的 `instance: 10.77.0.x:9100` 与真实抓取标签不符，会导致 `/api/status` 全部拿不到真实数据。真实映射：RS1000 = `{job="node-exporter"}`（集群内 DaemonSet，单节点），四台 VPS = `{job="external-vps-node", instance=<名字>}`。已同步修正示例配置和 ConfigMap。
+- **镜像交付**：在 RS1000 上 `docker build` 后 `docker save | k3s ctr images import`，Deployment 用 `imagePullPolicy: Never`，不依赖外部 registry。
+- **上线切换**：RS1000 nginx 从 `location / { return 204; }` 切换为反代 `http://10.77.0.1:31003`（切换前已备份为 `*.bak.pre-golive-*`）。已验证 `https://monitor.liucf.com/` 返回 200，`/api/status` 返回 `stale=false` 的真实五节点数据（5/5 在线，含真实 CPU/内存/磁盘/负载/网络速率/uptime）。
+- 部署与回滚步骤见 [`infra/README.md`](../infra/README.md)。
 
 ### P2：核心增强
 
@@ -362,13 +371,13 @@ monitor.liucf.com
 
 ### Cloudflare 配置判断
 
-当前 `monitor.liucf.com` 已经在 Cloudflare 开启橙云代理，并把 IPv4 源站切到 RS1000。dmit-uswest 上的 monitor Caddy 反代已经移除。旧 `monitor-status` k3s 资源也已移除，参考副本保留在 `docs/reference/legacy-monitor-status/`。NodeBeacon 完成前，RS1000 nginx 对该域名返回 `204 No Content`；上线时再把 nginx upstream 接到新的 k3s Service。
+当前 `monitor.liucf.com` 已经在 Cloudflare 开启橙云代理，并把 IPv4 源站切到 RS1000。dmit-uswest 上的 monitor Caddy 反代已经移除。旧 `monitor-status` k3s 资源也已移除，参考副本保留在 `docs/reference/legacy-monitor-status/`。2026-07-06 已完成上线：RS1000 nginx 从 `204 No Content` 切换为反代新的 k3s Service（`http://10.77.0.1:31003`），切换前配置备份为 `/etc/nginx/conf.d/monitor.liucf.com.conf.bak.pre-golive-*`。
 
 | 项目 | 当前建议 | 是否需要改 |
 | --- | --- | --- |
 | DNS 记录 | `monitor.liucf.com` 继续代理到 RS1000 `152.53.171.134` | 已切换 |
 | Proxy 状态 | 继续开启橙云代理 | 不需要 |
-| Origin 链路 | 当前返回 `204 No Content`；上线时 RS1000 nginx 反代到新的 NodeBeacon Service | 上线时修改 |
+| Origin 链路 | 已上线：RS1000 nginx 反代到 NodeBeacon Service `http://10.77.0.1:31003` | 已切换 |
 | Cloudflare Header Guard | RS1000 nginx 要求 `CF-Connecting-IP`，直连源站返回 404 | 保持 |
 | TLS / 证书 | RS1000 nginx 使用 Let’s Encrypt `monitor.liucf.com` 证书 | 保持自动续期 |
 | 缓存规则 | `/api/*`、`/auth/*` 不缓存；HTML 短缓存或不缓存；静态资源可长缓存 | 建议补充 |

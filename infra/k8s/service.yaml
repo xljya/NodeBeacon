@@ -1,0 +1,18 @@
+# NodePort 31003 is the contract the RS1000 nginx already proxies to:
+#   monitor.liucf.com -> Cloudflare -> RS1000 nginx -> http://10.77.0.1:31003
+apiVersion: v1
+kind: Service
+metadata:
+  name: nodebeacon
+  namespace: nodebeacon
+  labels:
+    app.kubernetes.io/name: nodebeacon
+spec:
+  type: NodePort
+  selector:
+    app.kubernetes.io/name: nodebeacon
+  ports:
+    - name: http
+      port: 80
+      targetPort: http
+      nodePort: 31003

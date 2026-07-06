@@ -1,0 +1,17 @@
+# Placeholder PVC for P3 (SQLite: sessions / incidents). Mounted at /data but
+# not written to in P1. k3s provisions this via the default local-path
+# StorageClass. Keeping it now means the durable path exists before auth lands.
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: nodebeacon-data
+  namespace: nodebeacon
+  labels:
+    app.kubernetes.io/name: nodebeacon
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 1Gi
+  # storageClassName omitted -> uses the cluster default (local-path on k3s).

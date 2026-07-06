@@ -4,6 +4,7 @@
   "private": true,
   "description": "Self-hosted node monitoring and uptime dashboard powered by Prometheus.",
   "type": "module",
+  "packageManager": "pnpm@10.15.0",
   "scripts": {
     "dev": "pnpm --filter @nodebeacon/shared build && pnpm --parallel --filter @nodebeacon/api --filter @nodebeacon/web dev",
     "dev:api": "pnpm --filter @nodebeacon/shared build && pnpm --filter @nodebeacon/api dev",

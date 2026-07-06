@@ -1,3 +1,19 @@
+# NodeBeacon node registry.
+#
+# `labels` is the Prometheus label selector used to query each node's metrics.
+# It MUST match the label set your Prometheus actually attaches to the node's
+# series (`up`, `node_*`). Verify with:
+#   curl -s "$PROMETHEUS_URL/api/v1/query" --data-urlencode 'query=up' | jq '.data.result[].metric'
+#
+# On the current RS1000 setup:
+#   - RS1000's own metrics come from the in-cluster node-exporter DaemonSet
+#     (job="node-exporter"); its `instance` is a pod IP and is NOT stable, so we
+#     match by job only (single-node cluster => single series).
+#   - The four external VPS are scraped by a custom job "external-vps-node" where
+#     `instance` is the friendly node name.
+#
+# Display metadata (name, provider, group, region, tags) is chosen here and is
+# never inferred from metrics. No secrets belong in this file.
 nodes:
   - id: rs1000
     name: RS1000
@@ -9,7 +25,6 @@ nodes:
     public: true
     labels:
       job: node-exporter
-      instance: 10.77.0.1:9100
     tags:
       - k3s
       - prometheus
@@ -23,8 +38,8 @@ nodes:
     displayOrder: 20
     public: true
     labels:
-      job: node-exporter
-      instance: 10.77.0.2:9100
+      job: external-vps-node
+      instance: dmit-uswest
     tags:
       - ingress
       - public
@@ -38,8 +53,8 @@ nodes:
     displayOrder: 30
     public: true
     labels:
-      job: node-exporter
-      instance: 10.77.0.3:9100
+      job: external-vps-node
+      instance: hostbrr-4t
     tags:
       - storage
 
@@ -52,8 +67,8 @@ nodes:
     displayOrder: 40
     public: true
     labels:
-      job: node-exporter
-      instance: 10.77.0.4:9100
+      job: external-vps-node
+      instance: netcup-1o
     tags:
       - vps
 
@@ -66,7 +81,7 @@ nodes:
     displayOrder: 50
     public: true
     labels:
-      job: node-exporter
-      instance: 10.77.0.5:9100
+      job: external-vps-node
+      instance: huawei-2c1g
     tags:
       - vps

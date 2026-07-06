@@ -1,0 +1,29 @@
+# Keep the build context small and force a clean install inside the image.
+node_modules
+**/node_modules
+dist
+**/dist
+build
+**/build
+*.tsbuildinfo
+
+.git
+.gitignore
+.agents
+
+# Local env and secrets never belong in an image layer.
+.env
+.env.*
+!.env.example
+
+# Docs, screenshots and reference material are not needed to build the app.
+docs
+screenshots
+*.md
+!README.md
+Status Page.dc.html
+support.js
+
+# Editor / OS noise
+.DS_Store
+Thumbs.db
