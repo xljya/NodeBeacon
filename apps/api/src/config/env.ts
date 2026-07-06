@@ -16,6 +16,13 @@ export interface ApiEnv {
   allowRegister: boolean;
   initialOwnerEmail?: string;
   initialOwnerPassword?: string;
+  // GitHub OAuth login. Only the account whose login === githubOwnerLogin is
+  // accepted as owner; everyone else is rejected.
+  githubClientId?: string;
+  githubClientSecret?: string;
+  githubOwnerLogin?: string;
+  githubCallbackUrl?: string;
+  publicBaseUrl?: string;
 }
 
 function numberFromEnv(name: string, fallback: number): number {
@@ -39,6 +46,11 @@ export function loadEnv(): ApiEnv {
   const cookieSecret = process.env.COOKIE_SECRET?.trim();
   const initialOwnerEmail = process.env.INITIAL_OWNER_EMAIL?.trim();
   const initialOwnerPassword = process.env.INITIAL_OWNER_PASSWORD;
+  const githubClientId = process.env.GITHUB_CLIENT_ID?.trim();
+  const githubClientSecret = process.env.GITHUB_CLIENT_SECRET?.trim();
+  const githubOwnerLogin = process.env.GITHUB_OWNER_LOGIN?.trim();
+  const githubCallbackUrl = process.env.GITHUB_CALLBACK_URL?.trim();
+  const publicBaseUrl = process.env.PUBLIC_BASE_URL?.trim();
 
   return {
     host: process.env.API_HOST ?? "0.0.0.0",
@@ -58,6 +70,11 @@ export function loadEnv(): ApiEnv {
     sessionTtlSeconds: numberFromEnv("SESSION_TTL_SECONDS", 7 * 24 * 60 * 60),
     allowRegister: boolFromEnv("ALLOW_REGISTER", false),
     initialOwnerEmail: initialOwnerEmail || undefined,
-    initialOwnerPassword: initialOwnerPassword || undefined
+    initialOwnerPassword: initialOwnerPassword || undefined,
+    githubClientId: githubClientId || undefined,
+    githubClientSecret: githubClientSecret || undefined,
+    githubOwnerLogin: githubOwnerLogin || undefined,
+    githubCallbackUrl: githubCallbackUrl || undefined,
+    publicBaseUrl: publicBaseUrl || undefined
   };
 }

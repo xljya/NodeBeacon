@@ -564,6 +564,43 @@
   opacity: 0.6;
   cursor: not-allowed;
 }
+.login-form {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+.login-divider {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  color: var(--text-muted);
+  font-size: 12px;
+}
+.login-divider::before,
+.login-divider::after {
+  content: "";
+  flex: 1;
+  height: 1px;
+  background: var(--border);
+}
+.login-github {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 11px 16px;
+  border-radius: 9px;
+  border: 1px solid var(--border);
+  background: var(--surface-2);
+  color: var(--text);
+  font-size: 15px;
+  font-weight: 600;
+  text-decoration: none;
+}
+.login-github:hover {
+  background: color-mix(in srgb, var(--accent) 10%, var(--surface-2));
+  border-color: var(--accent);
+}
 .login-back {
   text-align: center;
   color: var(--text-muted);

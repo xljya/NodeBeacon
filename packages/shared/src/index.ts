@@ -100,6 +100,12 @@ export interface AuthResponse {
   user: AuthUser;
 }
 
+/** Public: tells the login page which sign-in methods are enabled. */
+export interface AuthConfigResponse {
+  passwordLoginEnabled: boolean;
+  githubLoginEnabled: boolean;
+}
+
 export interface AdminSummaryResponse {
   generatedAt: string;
   version: string;
