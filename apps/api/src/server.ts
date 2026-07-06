@@ -2,10 +2,16 @@ import { existsSync } from "node:fs";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import fastify from "fastify";
 import cors from "@fastify/cors";
+import cookie from "@fastify/cookie";
+import rateLimit from "@fastify/rate-limit";
 import fastifyStatic from "@fastify/static";
 import { loadEnv } from "./config/env.js";
 import { registerHealthRoutes } from "./routes/health.js";
 import { registerStatusRoutes } from "./routes/status.js";
+import { registerAuthRoutes } from "./routes/auth.js";
+import { registerAdminRoutes } from "./routes/admin.js";
+import { registerAuthGuard } from "./plugins/authGuard.js";
+import { createAuthService } from "./services/authService.js";
 
 const webDistPath = fileURLToPath(new URL("../../web/dist/", import.meta.url));
 
@@ -22,8 +28,18 @@ export async function createApp() {
     credentials: true
   });
 
+  // Cookie must be registered before the auth guard reads request.cookies.
+  await app.register(cookie, { secret: env.cookieSecret });
+  // global:false => only routes that opt in (login) are rate limited.
+  await app.register(rateLimit, { global: false });
+
+  const authService = createAuthService(env);
+  registerAuthGuard(app, env, authService);
+
   await registerHealthRoutes(app);
   await registerStatusRoutes(app, env);
+  await registerAuthRoutes(app, env, authService);
+  await registerAdminRoutes(app, env, authService);
 
   if (existsSync(webDistPath)) {
     await app.register(fastifyStatic, {

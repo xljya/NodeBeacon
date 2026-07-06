@@ -2,11 +2,16 @@ html,
 body,
 #root {
   width: 100%;
-  height: 100%;
+  min-height: 100%;
   margin: 0;
 }
 
 body {
+  font-family: "Space Grotesk", system-ui, -apple-system, sans-serif;
+}
+
+/* Only the public prototype page (full-screen iframe) locks page scroll. */
+body.prototype-active {
   overflow: hidden;
 }
 

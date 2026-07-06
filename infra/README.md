@@ -51,8 +51,8 @@ external registry is used, so the Deployment uses `imagePullPolicy: Never`.
 
 ```sh
 # From a checkout of this repo on RS1000:
-docker build -t nodebeacon:0.1.0 .
-docker save nodebeacon:0.1.0 | sudo k3s ctr images import -
+docker build -t nodebeacon:0.2.0 .
+docker save nodebeacon:0.2.0 | sudo k3s ctr images import -
 ```
 
 ## Deploy
@@ -60,9 +60,15 @@ docker save nodebeacon:0.1.0 | sudo k3s ctr images import -
 ```sh
 kubectl apply -k infra/k8s
 
-# Optional (P3): create the real secret out of band.
+# Create the Secret out of band (never committed). COOKIE_SECRET signs the
+# session cookie; INITIAL_OWNER_* provisions the /admin owner account.
 kubectl -n nodebeacon create secret generic nodebeacon-secrets \
-  --from-literal=COOKIE_SECRET="$(openssl rand -hex 32)"
+  --from-literal=COOKIE_SECRET="$(openssl rand -hex 32)" \
+  --from-literal=INITIAL_OWNER_EMAIL="you@example.com" \
+  --from-literal=INITIAL_OWNER_PASSWORD="a-strong-password"
+
+# The pod reads the Secret via envFrom; restart to pick up changes:
+kubectl -n nodebeacon rollout restart deploy/nodebeacon
 ```
 
 ## Verify

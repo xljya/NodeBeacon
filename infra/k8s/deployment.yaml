@@ -28,7 +28,7 @@ spec:
       containers:
         - name: nodebeacon
           # Built on the node and imported into containerd, so never pull.
-          image: nodebeacon:0.1.0
+          image: nodebeacon:0.2.0
           imagePullPolicy: Never
           ports:
             - name: http
@@ -53,8 +53,11 @@ spec:
               value: "/config/nodes.yaml"
             - name: ALLOW_REGISTER
               value: "false"
-          # Reserved for P3 (COOKIE_SECRET etc.). optional so the pod starts
-          # before the Secret exists.
+            - name: APP_VERSION
+              value: "0.2.0"
+          # Secret supplies COOKIE_SECRET and the owner credentials
+          # (INITIAL_OWNER_EMAIL / INITIAL_OWNER_PASSWORD). optional so the pod
+          # starts before the Secret exists (login stays disabled until then).
           envFrom:
             - secretRef:
                 name: nodebeacon-secrets

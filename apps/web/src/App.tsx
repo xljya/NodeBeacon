@@ -1,39 +1,29 @@
-import { useCallback, type SyntheticEvent } from "react";
-
-const prototypeUrl = "/prototype/Status%20Page.dc.html?v=20260704-api-states-1";
+import { Routes, Route } from "react-router-dom";
+import { PrototypePage } from "./pages/PrototypePage";
+import { LoginPage } from "./pages/LoginPage";
+import { ProtectedRoute } from "./auth/ProtectedRoute";
+import { AdminLayout } from "./admin/AdminLayout";
+import { OverviewPage } from "./admin/pages/OverviewPage";
+import { NodesPage } from "./admin/pages/NodesPage";
+import { UsersPage } from "./admin/pages/UsersPage";
+import { SettingsPage } from "./admin/pages/SettingsPage";
 
 export function App() {
-  const handlePrototypeLoad = useCallback((event: SyntheticEvent<HTMLIFrameElement>) => {
-    const frame = event.currentTarget;
-    let attempts = 0;
-
-    const switchToLightTheme = () => {
-      attempts += 1;
-      const doc = frame.contentDocument;
-      if (!doc) return;
-
-      const section = doc.querySelector<HTMLElement>("#turn3");
-      const themeButton = doc.querySelector<HTMLButtonElement>('button[title="主题"]');
-      if (!section || !themeButton) {
-        if (attempts < 40) window.setTimeout(switchToLightTheme, 100);
-        return;
-      }
-
-      const background = doc.defaultView?.getComputedStyle(section).backgroundColor;
-      if (background === "rgb(11, 14, 20)") {
-        themeButton.click();
-      }
-    };
-
-    switchToLightTheme();
-  }, []);
-
   return (
-    <iframe
-      className="prototype-frame"
-      title="NodeBeacon status page prototype"
-      src={prototypeUrl}
-      onLoad={handlePrototypeLoad}
-    />
+    <Routes>
+      {/* Public status page stays the high-fidelity prototype (iframe). */}
+      <Route path="/" element={<PrototypePage />} />
+      <Route path="/login" element={<LoginPage />} />
+
+      {/* Owner-only admin console. */}
+      <Route element={<ProtectedRoute />}>
+        <Route path="/admin" element={<AdminLayout />}>
+          <Route index element={<OverviewPage />} />
+          <Route path="nodes" element={<NodesPage />} />
+          <Route path="users" element={<UsersPage />} />
+          <Route path="settings" element={<SettingsPage />} />
+        </Route>
+      </Route>
+    </Routes>
   );
 }

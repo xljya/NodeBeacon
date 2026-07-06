@@ -81,6 +81,75 @@ export interface ApiErrorResponse {
   };
 }
 
+// --- Auth & admin (owner-only, read-only in this iteration) ---
+
+export type UserRole = "owner" | "viewer";
+
+export interface AuthUser {
+  id: string;
+  email: string;
+  role: UserRole;
+}
+
+export interface LoginRequest {
+  email: string;
+  password: string;
+}
+
+export interface AuthResponse {
+  user: AuthUser;
+}
+
+export interface AdminSummaryResponse {
+  generatedAt: string;
+  version: string;
+  prometheus: {
+    configured: boolean;
+    /** Host only (never credentials) so the owner can confirm the target. */
+    host?: string;
+    reachable: boolean;
+  };
+  cache: {
+    ttlSeconds: number;
+    stale: boolean;
+  };
+  nodes: {
+    total: number;
+    online: number;
+    degraded: number;
+    offline: number;
+  };
+  auth: {
+    allowRegister: boolean;
+    ownerConfigured: boolean;
+  };
+}
+
+/** A node as seen in the admin console: registry metadata + current health. */
+export interface AdminNode {
+  id: string;
+  name: string;
+  provider: string;
+  group: string;
+  region: string;
+  location?: string;
+  displayOrder: number;
+  public: boolean;
+  labels: Record<string, string>;
+  tags: string[];
+  online: boolean;
+  status: NodeHealthStatus;
+  updatedAt: string;
+}
+
+export interface AdminNodesResponse {
+  nodes: AdminNode[];
+}
+
+export interface AdminUsersResponse {
+  users: AuthUser[];
+}
+
 const gib = 1024 ** 3;
 
 export const statusFixture: ApiStatusResponse = {

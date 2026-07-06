@@ -9,6 +9,13 @@ export interface ApiEnv {
   prometheusBasicAuthPassword?: string;
   prometheusBearerToken?: string;
   statusCacheTtlSeconds: number;
+  // Auth (owner from env; stateless signed-cookie sessions).
+  cookieSecret: string;
+  secureCookie: boolean;
+  sessionTtlSeconds: number;
+  allowRegister: boolean;
+  initialOwnerEmail?: string;
+  initialOwnerPassword?: string;
 }
 
 function numberFromEnv(name: string, fallback: number): number {
@@ -18,11 +25,20 @@ function numberFromEnv(name: string, fallback: number): number {
   return Number.isFinite(parsed) ? parsed : fallback;
 }
 
+function boolFromEnv(name: string, fallback: boolean): boolean {
+  const raw = process.env[name]?.trim().toLowerCase();
+  if (!raw) return fallback;
+  return raw === "true" || raw === "1" || raw === "yes";
+}
+
 export function loadEnv(): ApiEnv {
   const prometheusUrl = process.env.PROMETHEUS_URL?.trim();
   const prometheusBasicAuthUsername = process.env.PROMETHEUS_BASIC_AUTH_USERNAME?.trim();
   const prometheusBasicAuthPassword = process.env.PROMETHEUS_BASIC_AUTH_PASSWORD?.trim();
   const prometheusBearerToken = process.env.PROMETHEUS_BEARER_TOKEN?.trim();
+  const cookieSecret = process.env.COOKIE_SECRET?.trim();
+  const initialOwnerEmail = process.env.INITIAL_OWNER_EMAIL?.trim();
+  const initialOwnerPassword = process.env.INITIAL_OWNER_PASSWORD;
 
   return {
     host: process.env.API_HOST ?? "0.0.0.0",
@@ -34,6 +50,14 @@ export function loadEnv(): ApiEnv {
     prometheusBasicAuthUsername: prometheusBasicAuthUsername || undefined,
     prometheusBasicAuthPassword: prometheusBasicAuthPassword || undefined,
     prometheusBearerToken: prometheusBearerToken || undefined,
-    statusCacheTtlSeconds: numberFromEnv("STATUS_CACHE_TTL_SECONDS", 30)
+    statusCacheTtlSeconds: numberFromEnv("STATUS_CACHE_TTL_SECONDS", 30),
+    // A dev-only fallback keeps local `pnpm dev` working without a .env; in
+    // production COOKIE_SECRET must be set (see the k8s Secret).
+    cookieSecret: cookieSecret || "nodebeacon-dev-insecure-cookie-secret-change-me",
+    secureCookie: (process.env.NODE_ENV ?? "development") === "production",
+    sessionTtlSeconds: numberFromEnv("SESSION_TTL_SECONDS", 7 * 24 * 60 * 60),
+    allowRegister: boolFromEnv("ALLOW_REGISTER", false),
+    initialOwnerEmail: initialOwnerEmail || undefined,
+    initialOwnerPassword: initialOwnerPassword || undefined
   };
 }

@@ -280,6 +280,13 @@ P1 验证记录：2026-07-06 已用浏览器在 `https://monitor.liucf.com/` 端
 - 前端引入 react-router：`/` 保持现有状态页，`/login` 与 `/admin` 为手写 React（延续状态页设计语言）。
 - **下一步（写回）**：节点展示配置可编辑并持久化，届时引入 SQLite（见 P3「节点手动分组管理」「管理后台节点配置页」），并同步落地「SQLite 备份策略」。
 
+进展记录：2026-07-06 已完成登录 + 只读后台的**代码实现**（本地构建通过、后端登录流程本地运行验证通过；**尚未部署到生产，也未做浏览器端到端验证**）。
+
+- **后端**：新增 `@fastify/cookie` 签名 Cookie 会话 + `@node-rs/argon2`（argon2id）；`owner` 由 `INITIAL_OWNER_*` 环境变量创建。新增 `services/authService`、`plugins/authGuard`（`request.user` + `requireOwner` 守卫）、`routes/auth`（`POST /api/auth/login` 限速、`/logout`、`/me`、`/register` 关闭）、`routes/admin`（owner-only 只读 `GET /api/admin/summary|nodes|users`）。`config/env` 增加 cookie/owner/注册相关配置。本地已验证：错误密码 401、正确登录下发 Cookie、`/me` 与 `/api/admin/*` 需登录、无 Cookie 401。
+- **前端**：引入 `react-router-dom`；`/` 保持 iframe 状态页，新增 `/login` 与 `/admin/*`（`AuthProvider` + `ProtectedRoute` 守卫）。后台为手写 React+CSS：侧栏（总览/节点/用户/设置）+ 顶栏（主题切换/登出）+ 内容区；总览卡片、节点紧凑表格 + 只读编辑抽屉（写回占位）、用户表、只读设置卡片。明暗主题延续状态页设计语言。
+- **部署清单**：`infra/k8s/deployment.yaml` 镜像升到 `0.2.0` 并加 `APP_VERSION`；Secret 示例补 `INITIAL_OWNER_EMAIL/PASSWORD`；`infra/README.md` 更新建 Secret 步骤。
+- **待办**：构建 `0.2.0` 镜像并部署到 RS1000；把 owner 邮箱/密码写入 k8s Secret；经 `monitor.liucf.com` 浏览器端到端验证登录与后台四页；确认公开状态页 `/` 不受影响。
+
 ### P2：核心增强
 
 | 状态 | 任务 | 交付标准 | 备注 |
