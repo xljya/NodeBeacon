@@ -1,6 +1,6 @@
 # NodeBeacon single-container image (ADR-0005).
 # The Fastify API serves /api/* and hosts the built web bundle from apps/web/dist.
-# Multi-stage: build the full pnpm workspace, then ship a pruned production tree.
+# Multi-stage: build the full pnpm workspace, then ship the built tree.
 
 # ---- builder ----
 FROM node:20-slim AS builder
@@ -18,12 +18,9 @@ COPY . .
 RUN pnpm install --frozen-lockfile
 
 # Build shared -> api -> web (tsc + vite). Web output lands in apps/web/dist,
-# which the API serves at runtime.
-RUN pnpm build
-
-# Drop devDependencies (tsx, vite, typescript, @types/*) but keep the built
-# dist/ outputs and workspace symlinks so the runtime tree is self-contained.
-RUN pnpm install --prod --frozen-lockfile --ignore-scripts
+# which the API serves at runtime. Remove incremental metadata first so stale
+# host tsbuildinfo files cannot make TypeScript skip emit in Docker.
+RUN find . -name '*.tsbuildinfo' -delete && pnpm build
 
 # ---- runtime ----
 FROM node:20-slim AS runtime
@@ -32,7 +29,7 @@ ENV NODE_ENV=production \
     API_PORT=3001
 WORKDIR /app
 
-# Copy the whole pruned workspace. Preserving the apps/ + packages/ layout keeps
+# Copy the whole built workspace. Preserving the apps/ + packages/ layout keeps
 # the API's relative paths (../../web/dist, ../../../../config) and the pnpm
 # node_modules symlinks intact.
 COPY --from=builder /app /app

@@ -33,7 +33,7 @@ NodeBeacon 是给当前五台服务器使用的自托管监控状态页。它不
 - Namespace：`nodebeacon`，和已有 `sre-lab` 学习服务隔离。
 - 入口链路：Cloudflare 橙云代理 -> RS1000 nginx -> RS1000 k3s。
 - 当前源站：Cloudflare `monitor.liucf.com` 的 IPv4 源站指向 RS1000；dmit-uswest 不再承载 monitor 入口。
-- 当前状态（2026-07-06 起）：NodeBeacon 已上线。RS1000 nginx 已从 `204 No Content` 切换为反代 k3s Service（NodePort 31003），`https://monitor.liucf.com/` 展示真实五节点总览。
+- 当前状态（2026-07-06 16:47 CST 起）：NodeBeacon `0.2.3` 已上线。RS1000 nginx 已从 `204 No Content` 切换为反代 k3s Service（NodePort 31003），`https://monitor.liucf.com/` 展示真实五节点总览；`/login`、密码登录、GitHub OAuth 登录和只读 `/admin` 后台已部署。
 - 第一版目标（已达成）：替换当前轻量 `monitor-status` 应用，保留现有域名和 Cloudflare 安全边界。
 
 ## 2. 总体架构
@@ -262,7 +262,7 @@ P1 进展记录：2026-07-04 已补齐前端 API 状态反馈。状态页在 `/a
 
 P1 进展记录：2026-07-06 已完成单容器构建、k3s 部署和 nginx 上线，P1 全部收尾，MVP 正式对外。
 
-- **单容器**：新增多阶段 `Dockerfile`（node:20-slim + 固定 pnpm@10.15.0）和 `.dockerignore`。构建 shared → api → web 后 `pnpm install --prod` 裁剪 devDependencies，运行时 API 在 `:3001` 同时托管 `/api/*` 和 `apps/web/dist`。
+- **单容器**：新增多阶段 `Dockerfile`（node:20-slim + 固定 pnpm@10.15.0）和 `.dockerignore`。构建 shared → api → web 后保留已构建 workspace，运行时 API 在 `:3001` 同时托管 `/api/*` 和 `apps/web/dist`。
 - **部署清单**：新增 `infra/k8s/`（namespace、node registry ConfigMap、Secret 示例、Deployment、NodePort 31003 Service、SQLite 占位 PVC、kustomization）。Deployment 走只读根文件系统、非 root、就绪/存活探针，`PROMETHEUS_URL` 指向集群内 `monitoring-kube-prometheus-prometheus.monitoring.svc:9090`。
 - **Prometheus label 修正**（关键）：核对线上 Prometheus 后发现旧 `config/nodes.example.yaml` 的 `instance: 10.77.0.x:9100` 与真实抓取标签不符，会导致 `/api/status` 全部拿不到真实数据。真实映射：RS1000 = `{job="node-exporter"}`（集群内 DaemonSet，单节点），四台 VPS = `{job="external-vps-node", instance=<名字>}`。已同步修正示例配置和 ConfigMap。
 - **镜像交付**：在 RS1000 上 `docker build` 后 `docker save | k3s ctr images import`，Deployment 用 `imagePullPolicy: Never`，不依赖外部 registry。
@@ -280,13 +280,16 @@ P1 验证记录：2026-07-06 已用浏览器在 `https://monitor.liucf.com/` 端
 - 前端引入 react-router：`/` 保持现有状态页，`/login` 与 `/admin` 为手写 React（延续状态页设计语言）。
 - **下一步（写回）**：节点展示配置可编辑并持久化，届时引入 SQLite（见 P3「节点手动分组管理」「管理后台节点配置页」），并同步落地「SQLite 备份策略」。
 
-进展记录：2026-07-06 已完成登录 + 只读后台的**代码实现**（本地构建通过、后端登录流程本地运行验证通过；**尚未部署到生产，也未做浏览器端到端验证**）。
+进展记录：2026-07-06 已完成登录 + GitHub OAuth + 只读后台，并部署到生产 `0.2.3`。公开状态页保持不登录可访问，`/login` 同时显示密码登录和「使用 GitHub 登录」，`/admin/*` 由 `owner` 会话保护。
 
 - **后端**：新增 `@fastify/cookie` 签名 Cookie 会话 + `@node-rs/argon2`（argon2id）；`owner` 由 `INITIAL_OWNER_*` 环境变量创建。新增 `services/authService`、`plugins/authGuard`（`request.user` + `requireOwner` 守卫）、`routes/auth`（`POST /api/auth/login` 限速、`/logout`、`/me`、`/register` 关闭）、`routes/admin`（owner-only 只读 `GET /api/admin/summary|nodes|users`）。`config/env` 增加 cookie/owner/注册相关配置。本地已验证：错误密码 401、正确登录下发 Cookie、`/me` 与 `/api/admin/*` 需登录、无 Cookie 401。
-- **GitHub OAuth 登录**：新增 `POST/GET /api/auth/config`（公开，返回可用登录方式）、`GET /api/auth/github`（带签名 state Cookie 防 CSRF，跳转 GitHub 授权）、`GET /api/auth/github/callback`（校验 state → 交换 code → 取 GitHub 用户）。只有 `login === GITHUB_OWNER_LOGIN`（`xljya`）被认作 owner 并登录，其他 GitHub 账号跳回 `/login?error=github_unbound` 并提示「please log in and bind your external account first.」。本地已验证 config 标志、授权跳转参数、state 缺失/不符时的拒绝路径；真实 token 交换需线上 GitHub OAuth App 凭据。
+- **GitHub OAuth 登录**：新增 `GET /api/auth/config`（公开，返回可用登录方式）、`GET /api/auth/github`（带签名 state Cookie 防 CSRF，跳转 GitHub 授权）、`GET /api/auth/github/callback`（校验 state → 交换 code → 取 GitHub 用户）。只有 `login === GITHUB_OWNER_LOGIN`（`xljya`）被认作 owner 并登录，其他 GitHub 账号跳回 `/login?error=github_unbound` 并提示「please log in and bind your external account first.」。生产已验证 config 标志、授权跳转参数、state 缺失/不符时的拒绝路径；真实 owner 授权需由本人在浏览器完成。
 - **前端**：引入 `react-router-dom`；`/` 保持 iframe 状态页，新增 `/login` 与 `/admin/*`（`AuthProvider` + `ProtectedRoute` 守卫）。登录页参考 Komari 布局（账号 + 密码 + Login + 使用 GitHub 登录），风格延续本站。后台为手写 React+CSS：侧栏（总览/节点/用户/设置）+ 顶栏（主题切换/登出）+ 内容区；总览卡片、节点紧凑表格 + 只读编辑抽屉（写回占位）、用户表、只读设置卡片。明暗主题延续状态页设计语言。
-- **部署清单**：`infra/k8s/deployment.yaml` 镜像升到 `0.2.0` 并加 `APP_VERSION`；Secret 示例补 `INITIAL_OWNER_EMAIL/PASSWORD`；`infra/README.md` 更新建 Secret 步骤。
-- **待办**：构建 `0.2.0` 镜像并部署到 RS1000；把 owner 邮箱/密码写入 k8s Secret；经 `monitor.liucf.com` 浏览器端到端验证登录与后台四页；确认公开状态页 `/` 不受影响。
+- **公开页登录入口修复**：`/` 当前仍通过高保真原型 iframe 展示公开状态页。原型顶部 `Login` 按钮最初是静态按钮，没有 `href` 或真实事件，点击不会进入 React 登录页；`0.2.3` 在 `PrototypePage` 加了 iframe 点击桥接，点击原型 `button[title="Login"]` 会跳到 `/login`。
+- **部署清单**：`infra/k8s/deployment.yaml` 镜像升到 `0.2.3` 并同步 `APP_VERSION=0.2.3`；Secret 已由生产集群的 `nodebeacon-secrets` 提供 `COOKIE_SECRET`、`INITIAL_OWNER_EMAIL/PASSWORD`、`GITHUB_CLIENT_ID/SECRET`。
+- **Docker 构建修复**：`0.2.1`/`0.2.2` 试滚动时发现镜像缺 `packages/shared/dist/index.js`，新 Pod 因 `ERR_MODULE_NOT_FOUND` 崩溃，但旧 `0.2.0` Pod 继续接流量。根因是宿主机 `packages/shared/tsconfig.tsbuildinfo` 进入 Docker context，TypeScript 增量构建误判 shared 已构建而跳过 emit；同时 `pnpm install --prod` 会清掉 workspace build 输出。`0.2.3` 修复为 `.dockerignore` 排除 `**/*.tsbuildinfo`，Docker build 前 `find . -name '*.tsbuildinfo' -delete`，并保留构建后的 workspace。
+- **生产验证**：`0.2.3` 已在 RS1000 k3s 成功 rollout。验证项：Deployment `nodebeacon:0.2.3`、Pod `1/1 Running`、`/readyz` 200、`/api/status` 返回真实五节点 5/5 在线、`/api/auth/config` 显示密码和 GitHub 登录均启用、未登录访问 `/api/admin/summary` 返回 401、错误密码返回 `invalid_credentials`、OAuth 入口 302 到 GitHub 并带签名 state cookie、前端 bundle 包含原型 Login → `/login` 桥接。
+- **下一步**：节点展示配置写回仍未开始；需要引入 SQLite，落地 `PATCH /api/admin/nodes/:id`、CSRF、防误操作 UI 和备份策略。
 
 ### P2：核心增强
 
@@ -308,13 +311,13 @@ P2 完成判定：用户可以从总览定位问题节点，进入详情页查�
 
 | 状态 | 任务 | 交付标准 | 备注 |
 | --- | --- | --- | --- |
-| 进行中（提前到当前主线） | 登录和会话 | `owner` 角色可用；cookie 使用 `httpOnly + Secure + SameSite=Lax` | 本轮无状态签名 Cookie；`viewer` 角色和 SQLite 会话延后 |
-| 进行中（提前到当前主线） | 初始管理员创建方式 | 支持通过环境变量创建初始 `owner` 账号 | 避免开放自由注册；本轮就落地 |
-| 进行中（提前到当前主线） | 管理员后台入口和布局 | `/admin` 仅 `owner` 可访问；包含总览、节点、用户、系统设置入口 | 参考 Komari 布局；手写 React+CSS，只读版先上 |
+| 已完成（只读版） | 登录和会话 | `owner` 角色可用；cookie 使用 `httpOnly + Secure + SameSite=Lax` | 生产 `0.2.3` 已上线；本轮无状态签名 Cookie，`viewer` 角色和 SQLite 会话延后 |
+| 已完成 | 初始管理员创建方式 | 支持通过环境变量创建初始 `owner` 账号 | 生产 Secret 提供 `INITIAL_OWNER_*`；自由注册保持关闭 |
+| 已完成（只读版） | 管理员后台入口和布局 | `/admin` 仅 `owner` 可访问；包含总览、节点、用户、系统设置入口 | 参考 Komari 布局；手写 React+CSS；节点编辑抽屉仍为只读占位 |
 | 待做（下一步·写回） | 节点手动分组管理 | 管理后台可修改服务器展示分组、展示名、区域、标签、排序和可见性 | 修改后影响首页分组筛选和节点列表展示；引入 SQLite 可写存储 |
 | 待做（下一步·写回） | 管理端最小闭环 | 可查看用户、节点配置摘要、系统状态，并能保存节点展示配置 | 不做重型后台，先覆盖日常维护路径 |
 | 待做（下一步·写回） | 管理后台节点配置页 | 表格展示所有节点；详情抽屉或编辑面板修改分组和展示元数据 | 组件布局可参考 Komari：顶部摘要、紧凑表格、分段控件、清晰操作按钮 |
-| 部分完成 | 登录限速与安全响应头 | `/api/auth/login` 限速；CSP/HSTS 等安全响应头 | 限速随本轮登录落地；CSP/HSTS 在 nginx/Cloudflare 侧补 |
+| 部分完成 | 登录限速与安全响应头 | `/api/auth/login` 限速；CSP/HSTS 等安全响应头 | 登录限速已随 `0.2.3` 上线；CSP/HSTS 在 nginx/Cloudflare 侧补 |
 | 待做（随写回） | CSRF 防护 | 写回类 admin 接口加 CSRF 校验 | 无状态 Cookie + 状态变更接口上线时补 |
 | 待做（绑定首次 SQLite 写入） | SQLite 备份策略 | 有备份路径、恢复步骤、保留周期和恢复演练说明 | 本轮登录不落 SQLite，时机与节点写回/incident 绑定 |
 | 待做（随写回·多用户） | 会话/用户持久化升级到 SQLite | users + sessions 落 SQLite，支持可撤销会话与 `viewer` 角色 | 从无状态 Cookie 迁移；接口边界本轮已留好 |

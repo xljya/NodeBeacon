@@ -13,10 +13,21 @@ export function PrototypePage() {
   const handlePrototypeLoad = useCallback((event: SyntheticEvent<HTMLIFrameElement>) => {
     const frame = event.currentTarget;
     let attempts = 0;
+    const doc = frame.contentDocument;
+
+    if (doc) {
+      doc.addEventListener("click", (clickEvent) => {
+        const target = clickEvent.target as { closest?: (selector: string) => Element | null } | null;
+        const loginButton = target?.closest?.('button[title="Login"]');
+        if (!loginButton) return;
+
+        clickEvent.preventDefault();
+        window.location.assign("/login");
+      });
+    }
 
     const switchToLightTheme = () => {
       attempts += 1;
-      const doc = frame.contentDocument;
       if (!doc) return;
 
       const section = doc.querySelector<HTMLElement>("#turn3");

@@ -6,6 +6,7 @@ dist
 build
 **/build
 *.tsbuildinfo
+**/*.tsbuildinfo
 
 .git
 .gitignore

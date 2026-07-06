@@ -51,8 +51,8 @@ external registry is used, so the Deployment uses `imagePullPolicy: Never`.
 
 ```sh
 # From a checkout of this repo on RS1000:
-docker build -t nodebeacon:0.2.0 .
-docker save nodebeacon:0.2.0 | sudo k3s ctr images import -
+docker build -t nodebeacon:0.2.3 .
+docker save nodebeacon:0.2.3 | sudo k3s ctr images import -
 ```
 
 ## Deploy
@@ -61,11 +61,15 @@ docker save nodebeacon:0.2.0 | sudo k3s ctr images import -
 kubectl apply -k infra/k8s
 
 # Create the Secret out of band (never committed). COOKIE_SECRET signs the
-# session cookie; INITIAL_OWNER_* provisions the /admin owner account.
+# session cookie; INITIAL_OWNER_* provisions the /admin owner account; GitHub
+# values enable OAuth login.
 kubectl -n nodebeacon create secret generic nodebeacon-secrets \
   --from-literal=COOKIE_SECRET="$(openssl rand -hex 32)" \
   --from-literal=INITIAL_OWNER_EMAIL="you@example.com" \
-  --from-literal=INITIAL_OWNER_PASSWORD="a-strong-password"
+  --from-literal=INITIAL_OWNER_PASSWORD="a-strong-password" \
+  --from-literal=GITHUB_CLIENT_ID="..." \
+  --from-literal=GITHUB_CLIENT_SECRET="..." \
+  --dry-run=client -o yaml | kubectl apply -f -
 
 # The pod reads the Secret via envFrom; restart to pick up changes:
 kubectl -n nodebeacon rollout restart deploy/nodebeacon
@@ -76,13 +80,28 @@ kubectl -n nodebeacon rollout restart deploy/nodebeacon
 ```sh
 kubectl -n nodebeacon rollout status deploy/nodebeacon
 kubectl -n nodebeacon get pods -o wide
+kubectl -n nodebeacon get deploy nodebeacon -o jsonpath='{.spec.template.spec.containers[0].image}{"\n"}'
 
 # Real data through the NodePort:
 curl -s http://10.77.0.1:31003/api/status | jq '.summary, (.nodes[] | {id, status, cpu: .metrics.cpuPercent})'
 
 # Through nginx (Cloudflare header guard requires the CF-Connecting-IP header):
 curl -s -H 'CF-Connecting-IP: 127.0.0.1' -H 'Host: monitor.liucf.com' http://10.77.0.1/api/status | jq '.summary'
+
+# Auth and admin guard through the public hostname:
+curl -s https://monitor.liucf.com/api/auth/config | jq .
+curl -i https://monitor.liucf.com/api/admin/summary
+curl -I https://monitor.liucf.com/api/auth/github
 ```
+
+For `0.2.3`, expected production checks are:
+
+- image: `nodebeacon:0.2.3`
+- `/readyz` and `/healthz`: HTTP 200
+- `/api/status`: `summary.total == 5` and `summary.online == 5`
+- `/api/auth/config`: password and GitHub login both enabled
+- unauthenticated `/api/admin/summary`: HTTP 401
+- public prototype `Login` button: redirects to `/login`
 
 ## Roll back
 
@@ -97,7 +116,18 @@ kubectl delete -k infra/k8s
 ```sh
 docker build -t nodebeacon:<new-tag> .
 docker save nodebeacon:<new-tag> | sudo k3s ctr images import -
-# bump image tag in k8s/deployment.yaml, then:
+# bump image tag and APP_VERSION in k8s/deployment.yaml, then:
 kubectl apply -k infra/k8s
 kubectl -n nodebeacon rollout status deploy/nodebeacon
 ```
+
+## Build notes
+
+- Do not let host `*.tsbuildinfo` files enter the image build context. They can
+  make TypeScript believe `packages/shared` is already built and skip emitting
+  `packages/shared/dist/index.js`, which crashes the API with
+  `ERR_MODULE_NOT_FOUND`.
+- The Dockerfile deletes any stray `*.tsbuildinfo` before `pnpm build`, and
+  `.dockerignore` excludes `**/*.tsbuildinfo`.
+- Keep the built workspace in the runtime image unless a production prune step
+  is proven not to remove workspace `dist/` outputs.
