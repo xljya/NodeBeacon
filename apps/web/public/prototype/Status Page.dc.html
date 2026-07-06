@@ -61,8 +61,8 @@ button{font:inherit}
             <sc-if value="{{ cfgTime }}" hint-placeholder-val="{{ true }}"><div style="display:flex; flex-direction:column; gap:6px;"><span style="font-size:12px; color:var(--text-mute,#606e82);">Current Time</span><span style="font-family:'JetBrains Mono',monospace; font-size:17px; font-weight:600; color:var(--text,#e7edf6);">{{ clock }}</span></div></sc-if>
             <sc-if value="{{ cfgOnline }}" hint-placeholder-val="{{ true }}"><div style="display:flex; flex-direction:column; gap:6px;"><span style="font-size:12px; color:var(--text-mute,#606e82);">Current Online</span><span style="font-family:'JetBrains Mono',monospace; font-size:17px; font-weight:600; color:var(--text,#e7edf6);">{{ kOnlineText }}</span></div></sc-if>
             <sc-if value="{{ cfgRegion }}" hint-placeholder-val="{{ true }}"><div style="display:flex; flex-direction:column; gap:6px;"><span style="font-size:12px; color:var(--text-mute,#606e82);">Region</span><span style="font-family:'JetBrains Mono',monospace; font-size:17px; font-weight:600; color:var(--text,#e7edf6);">{{ kRegions }}</span></div></sc-if>
-            <sc-if value="{{ cfgTraffic }}" hint-placeholder-val="{{ true }}"><div style="display:flex; flex-direction:column; gap:6px;"><span style="font-size:12px; color:var(--text-mute,#606e82);">Traffic Overview</span><span style="font-family:'JetBrains Mono',monospace; font-size:15px; font-weight:600; color:var(--text,#e7edf6);"><span style="color:var(--accent2,#6ba8ff);">↑</span> 334.01 GB <span style="color:var(--text-mute,#606e82);">/</span> <span style="color:var(--ok,#35d69a);">↓</span> 463.14 GB</span></div></sc-if>
-            <sc-if value="{{ cfgSpeed }}" hint-placeholder-val="{{ true }}"><div style="display:flex; flex-direction:column; gap:6px;"><span style="font-size:12px; color:var(--text-mute,#606e82);">Network Speed</span><span style="font-family:'JetBrains Mono',monospace; font-size:15px; font-weight:600; color:var(--text,#e7edf6);"><span style="color:var(--accent2,#6ba8ff);">↑</span> 23 KB/s <span style="color:var(--text-mute,#606e82);">/</span> <span style="color:var(--ok,#35d69a);">↓</span> 75 KB/s</span></div></sc-if>
+            <sc-if value="{{ cfgTraffic }}" hint-placeholder-val="{{ true }}"><div style="display:flex; flex-direction:column; gap:6px;"><span style="font-size:12px; color:var(--text-mute,#606e82);">Traffic Overview</span><span style="font-family:'JetBrains Mono',monospace; font-size:15px; font-weight:600; color:var(--text,#e7edf6);"><span style="color:var(--accent2,#6ba8ff);">↑</span> {{ kTrafficUp }} <span style="color:var(--text-mute,#606e82);">/</span> <span style="color:var(--ok,#35d69a);">↓</span> {{ kTrafficDown }}</span></div></sc-if>
+            <sc-if value="{{ cfgSpeed }}" hint-placeholder-val="{{ true }}"><div style="display:flex; flex-direction:column; gap:6px;"><span style="font-size:12px; color:var(--text-mute,#606e82);">Network Speed</span><span style="font-family:'JetBrains Mono',monospace; font-size:15px; font-weight:600; color:var(--text,#e7edf6);"><span style="color:var(--accent2,#6ba8ff);">↑</span> {{ kSpeedUp }} <span style="color:var(--text-mute,#606e82);">/</span> <span style="color:var(--ok,#35d69a);">↓</span> {{ kSpeedDown }}</span></div></sc-if>
           </div>
           <div style="position:relative; flex:none;">
             <button onClick="{{ toggleCfg }}" title="状态显示设置" style="width:38px;height:38px;border-radius:9px;border:1px solid var(--border,#1e2836);background:var(--panel2,#151c28);color:var(--text-mute,#606e82);display:flex;align-items:center;justify-content:center;cursor:pointer;transition:.15s;" style-hover="background:var(--panel,#111722);color:var(--text,#e7edf6);"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1Z"/></svg></button>
@@ -103,7 +103,17 @@ button{font:inherit}
           </div>
         </div>
 
-        <div style="font-size:13px; color:var(--text-mute,#606e82);">{{ kCountText }}</div>
+        <div style="display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap;">
+          <div style="font-size:13px; color:var(--text-mute,#606e82);">{{ kCountText }}</div>
+          <div title="{{ kDataStatusTitle }}" style="{{ kDataStatusStyle }}">{{ kDataStatusText }}</div>
+        </div>
+
+        <sc-if value="{{ kShowEmpty }}" hint-placeholder-val="{{ false }}">
+          <div style="background:var(--panel,#111722); border:1px solid var(--border,#1e2836); border-radius:14px; padding:28px 24px; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:8px; min-height:180px;">
+            <div style="font-size:15px; font-weight:700; color:var(--text,#e7edf6);">{{ kEmptyTitle }}</div>
+            <div style="font-size:13px; color:var(--text-mute,#606e82); text-align:center;">{{ kEmptyText }}</div>
+          </div>
+        </sc-if>
 
         <sc-if value="{{ kShowGrid }}" hint-placeholder-val="{{ true }}">
           <div style="display:grid; grid-template-columns:repeat(auto-fill,minmax(300px,1fr)); gap:16px;">
@@ -337,7 +347,7 @@ button{font:inherit}
 </x-dc>
 <script type="text/x-dc" data-dc-script>
 class Component extends DCLogic {
-  state = { theme: 'dark', view: 'grid', lang: 'zh', langOpen: false, komariGroup: 'All', komariView: 'grid', komariQuery: '', clock: '22:26:20', expandedNode: '阿里武汉', komariSmooth: false, detailNode: null, detailTab: 'load', loadRange: '实时', latRange: '1小时', cfgOpen: false, cfg: { time: true, online: true, region: true, traffic: true, speed: true } };
+  state = { theme: 'dark', view: 'grid', lang: 'zh', langOpen: false, komariGroup: 'All', komariView: 'grid', komariQuery: '', clock: '22:26:20', expandedNode: '阿里武汉', komariSmooth: false, detailNode: null, detailTab: 'load', loadRange: '实时', latRange: '1小时', cfgOpen: false, apiStatus: null, apiError: null, apiLoading: true, cfg: { time: true, online: true, region: true, traffic: true, speed: true } };
 
   syncPageTheme() {
     if (typeof document === 'undefined') return;
@@ -359,10 +369,31 @@ class Component extends DCLogic {
     };
     tick();
     this._clockTimer = setInterval(tick, 1000);
+    this.loadApiStatus();
+  }
+
+  loadApiStatus() {
+    if (typeof fetch !== 'function') {
+      this.setState({ apiLoading: false, apiError: 'fetch is not available in this browser' });
+      return;
+    }
+    this.setState({ apiLoading: true });
+    this._statusAbort = typeof AbortController !== 'undefined' ? new AbortController() : null;
+    fetch('/api/status', { signal: this._statusAbort ? this._statusAbort.signal : undefined })
+      .then((res) => {
+        if (!res.ok) throw new Error('status request failed: ' + res.status);
+        return res.json();
+      })
+      .then((apiStatus) => this.setState({ apiStatus, apiError: null, apiLoading: false }))
+      .catch((err) => {
+        if (err && err.name === 'AbortError') return;
+        this.setState({ apiError: err && err.message ? err.message : String(err), apiLoading: false });
+      });
   }
 
   componentWillUnmount() {
     if (this._clockTimer) clearInterval(this._clockTimer);
+    if (this._statusAbort) this._statusAbort.abort();
   }
 
   componentDidUpdate() {
@@ -445,7 +476,65 @@ class Component extends DCLogic {
       if (k === 'exp') return base + 'background:var(--crit-weak,rgba(247,98,87,.15));color:var(--crit,#f76257);';
       return base + 'background:var(--panel2,#151c28);color:var(--text-dim,#9aa7ba);border:1px solid var(--border,#1e2836);';
     };
-    const KDATA = [
+    const fmtBytes = (bytes) => {
+      let n = Number(bytes) || 0;
+      const units = ['B', 'KB', 'MB', 'GB', 'TB'];
+      let i = 0;
+      while (n >= 1024 && i < units.length - 1) { n /= 1024; i++; }
+      const digits = n >= 10 || i === 0 ? 0 : 1;
+      return n.toFixed(digits) + ' ' + units[i];
+    };
+    const fmtRate = (bytes) => fmtBytes(bytes) + '/s';
+    const fmtDuration = (seconds) => {
+      const s = Number(seconds) || 0;
+      const days = Math.floor(s / 86400);
+      const hours = Math.floor((s % 86400) / 3600);
+      const minutes = Math.floor((s % 3600) / 60);
+      if (days > 0) return days + ' 天 ' + String(hours).padStart(2, '0') + ' 时 ' + String(minutes).padStart(2, '0') + ' 分';
+      if (hours > 0) return hours + ' 时 ' + String(minutes).padStart(2, '0') + ' 分';
+      return minutes + ' 分';
+    };
+    const osSlug = (name) => {
+      const s = String(name || '').toLowerCase();
+      if (s.indexOf('windows') >= 0) return 'windows';
+      if (s.indexOf('ubuntu') >= 0) return 'ubuntu';
+      return 'debian';
+    };
+    const regionFlag = (region) => {
+      const r = String(region || '').toUpperCase();
+      if (r === 'CN') return '🇨🇳';
+      if (r === 'HK') return '🇭🇰';
+      if (r === 'US') return '🇺🇸';
+      if (r === 'JP') return '🇯🇵';
+      if (r === 'EU') return '🇪🇺';
+      return '🌐';
+    };
+    const apiToKData = (apiStatus) => {
+      if (!apiStatus || !Array.isArray(apiStatus.nodes)) return null;
+      return apiStatus.nodes.map((node) => {
+        const metrics = node.metrics || {};
+        const rx = Number(metrics.networkRxBytesPerSecond) || 0;
+        const tx = Number(metrics.networkTxBytesPerSecond) || 0;
+        const tags = [[node.provider || 'Self-hosted', 'price'], [node.group || 'Default', 'term']]
+          .concat((Array.isArray(node.tags) ? node.tags.slice(0, 2) : []).map((tag) => [tag, 'net']));
+        return {
+          n: node.name || node.id,
+          f: regionFlag(node.region),
+          grp: node.group || 'Default',
+          os: osSlug(node.os && node.os.name),
+          arch: node.os && node.os.arch ? node.os.arch : 'amd64',
+          on: !!node.online,
+          cpu: Number(metrics.cpuPercent) || 0,
+          ram: [Number(metrics.memoryPercent) || 0, fmtBytes(metrics.memoryUsedBytes) + ' / ' + fmtBytes(metrics.memoryTotalBytes)],
+          disk: [Number(metrics.diskPercent) || 0, fmtBytes(metrics.diskUsedBytes) + ' / ' + fmtBytes(metrics.diskTotalBytes)],
+          tf: '↑ ' + fmtBytes(tx * 86400) + '  ↓ ' + fmtBytes(rx * 86400),
+          ns: '↑ ' + fmtRate(tx) + '  ↓ ' + fmtRate(rx),
+          up: node.online ? fmtDuration(metrics.uptimeSeconds) : '—',
+          tg: tags
+        };
+      });
+    };
+    const fallbackKDATA = [
       { n: '阿里武汉', f: '🇨🇳', grp: '国内', os: 'debian', arch: 'amd64', on: true, cpu: 0.5, ram: [14.1, '235.8 MB / 1.64 GB'], disk: [17.1, '6.69 GB / 39.20 GB'], tf: '↑ 1.18 GB  ↓ 1.34 GB', ns: '↑ 1.52 KB/s  ↓ 2.13 KB/s', up: '9 天 15 时 49 分', tg: [['¥38/Annual', 'price'], ['39 day', 'day']] },
       { n: '我的电脑', f: '🇨🇳', grp: '国内', os: 'windows', arch: 'amd64', on: true, cpu: 13.1, ram: [49.0, '14.12 GB / 28.80 GB'], disk: [79.8, '1.21 TB / 1.51 TB'], tf: '↑ 273.8 MB  ↓ 2.68 GB', ns: '↑ 1.53 KB/s  ↓ 2.12 KB/s', up: '14 时 44 分 17 秒', tg: [['¥2300/Once', 'price'], ['Long term', 'term']] },
       { n: 'Laptop', f: '🇨🇳', grp: '国内', os: 'windows', arch: 'amd64', on: false, cpu: 0, ram: [0, '0 B / 15.37 GB'], disk: [0, '0 B / 931.20 GB'], tf: '↑ 0 B  ↓ 0 B', ns: '↑ 0 B/s  ↓ 0 B/s', up: '—', tg: [['¥1699/Once', 'price'], ['Long term', 'term']] },
@@ -459,6 +548,9 @@ class Component extends DCLogic {
       { n: 'Racknerd', f: '🇺🇸', grp: '境外', os: 'debian', arch: 'amd64', on: true, cpu: 45, ram: [68, '2.72 GB / 4 GB'], disk: [88, '70 GB / 80 GB'], tf: '↑ 96 GB  ↓ 154 GB', ns: '↑ 6.2 KB/s  ↓ 12.8 KB/s', up: '188 天 17 时 42 分', tg: [['$17/Annual', 'price'], ['300 day', 'day']] },
       { n: 'Backup-NAS', f: '🇨🇳', grp: '国内', os: 'debian', arch: 'amd64', on: false, cpu: 0, ram: [0, '0 B / 32 GB'], disk: [0, '0 B / 16 TB'], tf: '↑ 0 B  ↓ 0 B', ns: '↑ 0 B/s  ↓ 0 B/s', up: '—', tg: [['Self-built', 'price'], ['Long term', 'term']] }
     ];
+    const apiReady = !!this.state.apiStatus && Array.isArray(this.state.apiStatus.nodes);
+    const apiKDATA = apiToKData(this.state.apiStatus);
+    const KDATA = apiReady ? apiKDATA : fallbackKDATA;
     const kServers = KDATA.map((s) => {
       const oi = OSINFO[s.os] || OSINFO.debian;
       const spd = splitUD(s.ns), tot = splitUD(s.tf);
@@ -496,10 +588,36 @@ class Component extends DCLogic {
     const kTotalN = KDATA.length;
     const kOnlineN = KDATA.filter((x) => x.on).length;
     const kRegionsN = new Set(KDATA.map((x) => x.f)).size;
+    const apiNodes = this.state.apiStatus && Array.isArray(this.state.apiStatus.nodes) ? this.state.apiStatus.nodes : null;
+    const totalTx = apiNodes ? apiNodes.reduce((sum, node) => sum + (Number(node.metrics && node.metrics.networkTxBytesPerSecond) || 0), 0) : null;
+    const totalRx = apiNodes ? apiNodes.reduce((sum, node) => sum + (Number(node.metrics && node.metrics.networkRxBytesPerSecond) || 0), 0) : null;
     const kq = (this.state.komariQuery || '').trim().toLowerCase();
     let kVis = kServers;
     if (this.state.komariGroup !== 'All') kVis = kVis.filter((x) => x.group === this.state.komariGroup);
     if (kq) kVis = kVis.filter((x) => (x.name + ' ' + x.osText + ' ' + x.group).toLowerCase().indexOf(kq) >= 0);
+    const apiStale = !!(this.state.apiStatus && this.state.apiStatus.cache && this.state.apiStatus.cache.stale);
+    const apiEmpty = apiReady && KDATA.length === 0;
+    const kShowEmpty = apiEmpty || kVis.length === 0;
+    const kEmptyTitle = apiEmpty ? 'No servers configured' : 'No matching servers';
+    const kEmptyText = apiEmpty ? 'The status API returned an empty node list.' : 'Try another group or clear the search keyword.';
+    const statusTone = this.state.apiLoading && !apiReady ? 'loading' : this.state.apiError && !apiReady ? 'error' : apiStale ? 'stale' : apiEmpty ? 'empty' : 'live';
+    const statusTextMap = { loading: 'Loading live data', error: 'Using fallback data', stale: 'Stale data', empty: 'No data', live: 'Live data' };
+    const statusTitleMap = {
+      loading: '正在从 /api/status 加载实时数据',
+      error: this.state.apiError || 'Status API request failed',
+      stale: '后端返回了 cache.stale=true，当前显示的是过期缓存或降级数据',
+      empty: 'Status API returned zero nodes',
+      live: 'Status API data is current'
+    };
+    const statusColorMap = {
+      loading: ['var(--accent-weak,rgba(59,130,246,.16))', 'var(--accent2,#6ba8ff)', 'var(--accent,#3b82f6)'],
+      error: ['var(--crit-weak,rgba(247,98,87,.15))', 'var(--crit,#f76257)', 'var(--crit,#f76257)'],
+      stale: ['var(--warn-weak,rgba(245,178,61,.15))', 'var(--warn,#f5b23d)', 'var(--warn,#f5b23d)'],
+      empty: ['var(--panel2,#151c28)', 'var(--text-mute,#606e82)', 'var(--border,#1e2836)'],
+      live: ['var(--ok-weak,rgba(53,214,154,.14))', 'var(--ok,#35d69a)', 'var(--ok,#35d69a)']
+    };
+    const statusColors = statusColorMap[statusTone];
+    const kDataStatusStyle = 'font-size:12px;font-weight:700;padding:5px 10px;border-radius:999px;background:' + statusColors[0] + ';color:' + statusColors[1] + ';border:1px solid ' + statusColors[2] + ';line-height:1;white-space:nowrap;';
     const kPreventGroupSelect = (e) => {
       if (e && e.preventDefault) e.preventDefault();
       const sel = typeof window !== 'undefined' && window.getSelection ? window.getSelection() : null;
@@ -512,7 +630,11 @@ class Component extends DCLogic {
     const kVbtn = (id) => { const on = this.state.komariView === id; return 'border:none;cursor:pointer;padding:8px 11px;border-radius:8px;display:flex;align-items:center;transition:.15s;' + (on ? 'background:var(--accent,#3b82f6);color:#fff;' : 'background:transparent;color:var(--text-mute,#606e82);'); };
     const kLangList = [['English (en)', 'en'], ['Bahasa Indonesia (id)', 'id'], ['日本語 (ja)', 'ja'], ['简体中文 (zh)', 'zh'], ['繁體中文 (zh-tw)', 'zh-tw']];
     const kLangs = kLangList.map((l) => { const on = this.state.lang === l[1]; return { label: l[0], onSelect: () => this.setState({ lang: l[1], langOpen: false }), style: 'border:none;cursor:pointer;text-align:left;font-family:inherit;font-size:14px;padding:10px 14px;border-radius:8px;white-space:nowrap;transition:.12s;' + (on ? 'background:var(--accent,#3b82f6);color:#fff;' : 'background:transparent;color:var(--text,#e7edf6);') }; });
-    const kGroupTabs = ['All', 'HK', '国内'].map((g) => ({ key: 'group-' + g, label: g, active: this.state.komariGroup === g, style: kGtab(g), onClick: () => this.setState({ komariGroup: g }) }));
+    const kGroupNames = ['All'].concat([...new Set(KDATA.map((x) => x.grp))]);
+    if (this.state.komariGroup !== 'All' && kGroupNames.indexOf(this.state.komariGroup) < 0) {
+      setTimeout(() => this.setState({ komariGroup: 'All' }), 0);
+    }
+    const kGroupTabs = kGroupNames.map((g) => ({ key: 'group-' + g, label: g, active: this.state.komariGroup === g, style: kGtab(g), onClick: () => this.setState({ komariGroup: g }) }));
 
     // ===== 状态显示设置 popover =====
     const cfg = this.state.cfg;
@@ -574,6 +696,10 @@ class Component extends DCLogic {
       clock: this.state.clock,
       kOnlineText: kOnlineN + ' / ' + kTotalN,
       kRegions: String(kRegionsN),
+      kTrafficUp: totalTx != null ? fmtBytes(totalTx * 86400) : '334.01 GB',
+      kTrafficDown: totalRx != null ? fmtBytes(totalRx * 86400) : '463.14 GB',
+      kSpeedUp: totalTx != null ? fmtRate(totalTx) : '23 KB/s',
+      kSpeedDown: totalRx != null ? fmtRate(totalRx) : '75 KB/s',
       kToggleTheme: () => this.setState((s) => ({ theme: s.theme === 'dark' ? 'light' : 'dark' })),
       langOpen: this.state.langOpen,
       langs: kLangs,
@@ -610,10 +736,16 @@ class Component extends DCLogic {
       kSmoothKnob: 'position:absolute;top:2.5px;left:2.5px;width:16px;height:16px;border-radius:50%;background:#fff;transition:transform .2s;transform:translateX(' + (this.state.komariSmooth ? '17px' : '0') + ');',
       kToggleSmooth: () => this.setState((st) => ({ komariSmooth: !st.komariSmooth })),
       kVisible: kVis,
+      kShowEmpty,
+      kEmptyTitle,
+      kEmptyText,
+      kDataStatusText: statusTextMap[statusTone],
+      kDataStatusTitle: statusTitleMap[statusTone],
+      kDataStatusStyle,
       komariQuery: this.state.komariQuery,
       kSearch: (e) => this.setState({ komariQuery: e.target.value }),
       kCountText: kTotalN + ' servers total, ' + kOnlineN + ' online',
-      lastUpdated: '2026-07-01 14:22:36 CST'
+      lastUpdated: this.state.apiStatus && this.state.apiStatus.generatedAt ? new Date(this.state.apiStatus.generatedAt).toLocaleString() : '2026-07-01 14:22:36 CST'
     };
   }
 }

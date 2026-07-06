@@ -1,8 +1,10 @@
 *.zip
 .env
 .env.*
+!.env.example
 node_modules/
 dist/
 build/
+*.tsbuildinfo
 .DS_Store
 Thumbs.db

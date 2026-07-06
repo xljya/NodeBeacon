@@ -1,0 +1,23 @@
+{
+  "name": "nodebeacon",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Self-hosted node monitoring and uptime dashboard powered by Prometheus.",
+  "type": "module",
+  "scripts": {
+    "dev": "pnpm --filter @nodebeacon/shared build && pnpm --parallel --filter @nodebeacon/api --filter @nodebeacon/web dev",
+    "dev:api": "pnpm --filter @nodebeacon/shared build && pnpm --filter @nodebeacon/api dev",
+    "dev:web": "pnpm --filter @nodebeacon/shared build && pnpm --filter @nodebeacon/web dev",
+    "build": "pnpm -r build",
+    "typecheck": "pnpm -r typecheck",
+    "lint": "pnpm -r lint"
+  },
+  "devDependencies": {
+    "@types/node": "^20.19.2",
+    "typescript": "^5.8.3"
+  },
+  "engines": {
+    "node": ">=20.19.0",
+    "pnpm": ">=9.0.0"
+  }
+}

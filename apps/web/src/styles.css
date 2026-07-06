@@ -1,0 +1,19 @@
+html,
+body,
+#root {
+  width: 100%;
+  height: 100%;
+  margin: 0;
+}
+
+body {
+  overflow: hidden;
+}
+
+.prototype-frame {
+  display: block;
+  width: 100%;
+  height: 100vh;
+  border: 0;
+  background: #eef3f9;
+}

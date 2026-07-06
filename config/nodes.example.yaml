@@ -1,0 +1,72 @@
+nodes:
+  - id: rs1000
+    name: RS1000
+    provider: netcup
+    group: Core
+    region: EU
+    location: Germany
+    displayOrder: 10
+    public: true
+    labels:
+      job: node-exporter
+      instance: 10.77.0.1:9100
+    tags:
+      - k3s
+      - prometheus
+
+  - id: dmit-uswest
+    name: dmit-uswest
+    provider: DMIT
+    group: Edge
+    region: US
+    location: US West
+    displayOrder: 20
+    public: true
+    labels:
+      job: node-exporter
+      instance: 10.77.0.2:9100
+    tags:
+      - ingress
+      - public
+
+  - id: hostbrr-4t
+    name: hostbrr-4t
+    provider: HostBrr
+    group: Storage
+    region: EU
+    location: Germany
+    displayOrder: 30
+    public: true
+    labels:
+      job: node-exporter
+      instance: 10.77.0.3:9100
+    tags:
+      - storage
+
+  - id: netcup-1o
+    name: netcup-1o
+    provider: netcup
+    group: Compute
+    region: EU
+    location: Germany
+    displayOrder: 40
+    public: true
+    labels:
+      job: node-exporter
+      instance: 10.77.0.4:9100
+    tags:
+      - vps
+
+  - id: huawei-2c1g
+    name: huawei-2c1g
+    provider: Huawei Cloud
+    group: CN
+    region: CN
+    location: China
+    displayOrder: 50
+    public: true
+    labels:
+      job: node-exporter
+      instance: 10.77.0.5:9100
+    tags:
+      - vps

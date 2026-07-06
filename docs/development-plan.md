@@ -1,6 +1,6 @@
 # NodeBeacon 开发文档
 
-最后更新：2026-07-03
+最后更新：2026-07-04
 
 ## 决策记录
 
@@ -95,6 +95,7 @@ flowchart LR
 | `metricsService` | 把 CPU、内存、磁盘、网络、uptime 等 PromQL 聚合成节点数据 |
 | `nodeRegistry` | 管理五台服务器的展示名、分组、区域、标签和 Prometheus label 映射 |
 | `authService` | 注册、登录、退出、会话校验、密码 hash |
+| `adminService` | 管理后台数据聚合、节点展示配置、手动分组和系统设置写入 |
 | `incidentService` | 读取当前告警和历史故障事件 |
 | `cacheService` | 给总览接口加 15-30 秒缓存，避免前端刷新打爆 Prometheus |
 | `config` | 管理 Prometheus URL、密钥、cookie secret、是否允许注册等配置 |
@@ -113,6 +114,10 @@ flowchart LR
 | `POST /api/auth/login` | 登录 | 公开 |
 | `POST /api/auth/logout` | 退出 | 登录 |
 | `GET /api/auth/me` | 当前用户 | 登录 |
+| `GET /api/admin/summary` | 管理后台总览：节点配置、用户、系统状态摘要 | `owner` |
+| `GET /api/admin/nodes` | 管理端节点列表，包含展示配置和 Prometheus label 映射 | `owner` |
+| `PATCH /api/admin/nodes/:id` | 修改节点展示名、手动分组、区域、标签、排序和可见性 | `owner` |
+| `GET /api/admin/users` | 用户和角色列表 | `owner` |
 
 总览接口返回的数据应该接近前端原型的数据结构，但字段改成稳定 JSON：
 
@@ -220,31 +225,40 @@ flowchart TD
 
 | 状态 | 任务 | 交付标准 | 备注 |
 | --- | --- | --- | --- |
-| 待做 | 初始化前端工程 `apps/web` | React + TypeScript 项目可本地启动；能承载当前状态页原型 | 优先复刻真实页面，不做营销首页 |
-| 待做 | 初始化后端工程 `apps/api` | Fastify + TypeScript 项目可本地启动；暴露 `/healthz` | 第一版后端同时托管静态前端 |
-| 待做 | 定义 `/api/status` 数据合同 | 有 TypeScript 类型、示例 JSON、错误格式和字段说明 | 前后端先围绕这一个接口对齐 |
-| 待做 | 建立节点配置 `config/nodes.example.yaml` | 包含五台节点的 `id/name/provider/group/labels` 示例 | 不写入任何真实密钥 |
-| 待做 | 建立环境变量样例 `.env.example` | 覆盖 `PROMETHEUS_URL`、cookie secret、注册开关、缓存 TTL | 真实值只放部署环境 |
-| 待做 | 从 HTML 原型拆出 UI 结构 | 明确布局、主题、节点卡片、表格视图、筛选项和状态色 | 以复用当前视觉为主 |
-| 待做 | 配好基础脚本 | 至少有 `dev`、`build`、`typecheck`、`lint` | 没有测试框架前先保证类型检查 |
+| 已完成 | 初始化前端工程 `apps/web` | React + TypeScript 项目可本地启动；能承载当前状态页原型 | 优先复刻真实页面，不做营销首页 |
+| 已完成 | 初始化后端工程 `apps/api` | Fastify + TypeScript 项目可本地启动；暴露 `/healthz` | 第一版后端同时托管静态前端 |
+| 已完成 | 定义 `/api/status` 数据合同 | 有 TypeScript 类型、示例 JSON、错误格式和字段说明 | 前后端先围绕这一个接口对齐 |
+| 已完成 | 建立节点配置 `config/nodes.example.yaml` | 包含五台节点的 `id/name/provider/group/labels/displayOrder` 示例 | `group` 作为手动展示分组，不从指标自动猜测；不写入任何真实密钥 |
+| 已完成 | 建立环境变量样例 `.env.example` | 覆盖 `PROMETHEUS_URL`、cookie secret、注册开关、缓存 TTL | 真实值只放部署环境 |
+| 已完成 | 从 HTML 原型拆出 UI 结构 | 明确布局、主题、节点卡片、表格视图、筛选项和状态色 | 以复用当前视觉为主 |
+| 已完成 | 配好基础脚本 | 至少有 `dev`、`build`、`typecheck`、`lint` | 没有测试框架前先保证类型检查 |
 
 P0 完成判定：前端和后端都能独立启动，`/api/status` 的返回结构冻结到第一版，后续开发不再围绕字段名反复改动。
+
+P0 验证记录：2026-07-03 已通过 `pnpm install`、`pnpm typecheck`、`pnpm build`、`pnpm lint`；编译后的 API 已验证 `/healthz`、`/api/status` 和静态前端托管；浏览器验证网格卡片、表格视图和主题切换可用；前端首页当前直接承载 `Status Page.dc.html` 原型文件，保证浅色主题、统计条、搜索区、分组切换和节点卡片布局 1:1 呈现，后续再逐步把原型假数据替换成 `/api/status` 数据。
 
 ### P1：MVP 上线必需能力
 
 | 状态 | 任务 | 交付标准 | 备注 |
 | --- | --- | --- | --- |
-| 待做 | 实现 Prometheus client | 只封装白名单查询；支持超时、错误分类和基础日志 | 不开放任意 PromQL |
-| 待做 | 实现 `metricsService` | 聚合在线状态、CPU、内存、磁盘、uptime、load、网络速率 | 第一版只服务 `/api/status` |
-| 待做 | 实现 `/api/status` | 返回五台节点真实数据；单节点失败不拖垮整页 | 失败节点显示 degraded 或 unknown |
-| 待做 | 增加短缓存 | 总览接口缓存 15-30 秒；返回 `generatedAt` | 防止刷新页面打爆 Prometheus |
-| 待做 | 复刻状态页主界面 | 卡片视图、表格视图、分组筛选、明暗主题可用 | 优先保证移动端和桌面端不溢出 |
-| 待做 | 接入真实 API 状态 | 前端有 loading、empty、error、stale 数据状态 | 不能只有理想态 |
+| 已完成 | 实现 Prometheus client | 只封装白名单查询；支持超时、错误分类和基础日志 | 不开放任意 PromQL；支持可选 Basic Auth / Bearer Token |
+| 已完成 | 实现 `metricsService` | 聚合在线状态、CPU、内存、磁盘、uptime、load、网络速率 | 第一版只服务 `/api/status`；节点指标缺失时降级为 degraded 或 unknown |
+| 已完成 | 实现 `/api/status` | 返回五台节点真实数据；单节点失败不拖垮整页 | 配置 `PROMETHEUS_URL` 时走真实 Prometheus；不可用时返回 stale 缓存或 fixture fallback |
+| 已完成 | 增加短缓存 | 总览接口缓存 15-30 秒；返回 `generatedAt` | 防止刷新页面打爆 Prometheus；过期缓存可作为 stale 降级返回 |
+| 已完成 | 复刻状态页主界面 | 卡片视图、表格视图、分组筛选、明暗主题可用 | 当前通过高保真原型 iframe 保持 1:1 外观；后续再做组件化收敛 |
+| 已完成 | 分组筛选接入节点配置 | 首页分组选项从节点手动分组生成；支持 `All` 和自定义分组 | 已通过 `/api/status` + `config/nodes.example.yaml` 驱动原型分组；Prometheus 真指标接入仍单独推进 |
+| 已完成 | 接入真实 API 状态 | 前端有 loading、empty、error、stale 数据状态 | 运行页显示 Live/Loading/Fallback/Stale/No data 状态，并保留空节点和筛选无结果反馈 |
 | 待做 | 单容器构建 | API 托管前端静态产物；镜像能本地运行 | 符合 ADR-0005 |
 | 待做 | k3s 基础部署清单 | Deployment、Service、Secret/ConfigMap 示例、PVC 占位 | 第一版可先不启用 SQLite 写入 |
 | 待做 | RS1000 nginx 接入说明 | 明确把 `monitor.liucf.com` upstream 指到 NodePort | 上线时替换当前 `204 No Content` |
 
 P1 完成判定：`monitor.liucf.com` 可以展示真实五台节点总览；Prometheus 不暴露给浏览器；前端刷新、后端重启和单节点异常都有可接受表现。
+
+P1 进展记录：2026-07-03 已将 `Status Page.dc.html` 原型副本接入 `/api/status`，节点卡片、在线数、更新时间、流量/速率摘要和分组筛选可以从 API 合同数据渲染；浏览器验证可见节点为 `config/nodes.example.yaml` 中的 5 台服务器，旧原型假节点不再显示。
+
+P1 进展记录：2026-07-03 已完成 Prometheus client、`metricsService`、`/api/status` 真实指标适配和短缓存。后端只在服务端生成白名单 PromQL，覆盖 `up`、CPU、内存、根分区磁盘、load、uptime 和网络速率；单节点指标缺失会降级为 `degraded` 或 `unknown`，Prometheus 整体不可用时返回过期缓存或 fixture fallback，并通过 `cache.stale=true` 标记。已通过本地 mock Prometheus 和无 Prometheus fallback 路径验证；生产联调时只需要配置真实 `PROMETHEUS_URL` 和节点 label。
+
+P1 进展记录：2026-07-04 已补齐前端 API 状态反馈。状态页在 `/api/status` 加载中、请求失败并使用 fallback、后端返回 `cache.stale=true`、API 返回空节点列表、分组或搜索无结果时都会显示对应状态；正常数据路径显示 `Live data`。同时将运行页 iframe 版本号升级，避免浏览器继续使用旧原型缓存。
 
 ### P2：核心增强
 
@@ -266,13 +280,44 @@ P2 完成判定：用户可以从总览定位问题节点，进入详情页查�
 | --- | --- | --- | --- |
 | 待做 | 登录和会话 | `owner/viewer` 两个角色；cookie 使用 `httpOnly + Secure + SameSite=Lax` | 注册默认关闭 |
 | 待做 | 初始管理员创建方式 | 支持通过环境变量创建初始 `owner` 账号 | 避免开放自由注册 |
-| 待做 | 管理端最小闭环 | 可查看用户、节点配置摘要、系统状态 | 不做重型后台 |
+| 待做 | 管理员后台入口和布局 | `/admin` 仅 `owner` 可访问；包含总览、节点、用户、系统设置入口 | 参考 Komari 的克制组件密度和运维工具布局，不做营销式页面 |
+| 待做 | 节点手动分组管理 | 管理后台可修改服务器展示分组、展示名、区域、标签、排序和可见性 | 修改后影响首页分组筛选和节点列表展示 |
+| 待做 | 管理端最小闭环 | 可查看用户、节点配置摘要、系统状态，并能保存节点展示配置 | 不做重型后台，先覆盖日常维护路径 |
+| 待做 | 管理后台节点配置页 | 表格展示所有节点；详情抽屉或编辑面板修改分组和展示元数据 | 组件布局可参考 Komari：顶部摘要、紧凑表格、分段控件、清晰操作按钮 |
 | 待做 | SQLite 备份策略 | 有备份路径、恢复步骤、保留周期和恢复演练说明 | 第一版固定使用 SQLite |
 | 待做 | Cloudflare 缓存和 WAF 规则 | `/api/*`、`/auth/*` 不缓存；登录限速 | 和 RS1000 nginx 配置一起记录 |
 | 待做 | UI 细节打磨 | 空状态、骨架屏、键盘可访问性、移动端触控区域 | 保证长期使用舒服 |
 | 待做 | 文档补齐 | README、部署文档、环境变量、故障排查、ADR 更新 | 每个生产决策都能追溯 |
 
 P3 完成判定：NodeBeacon 不只是能上线，还能长期维护、升级、备份，并且登录态和敏感信息展示边界清晰。
+
+管理后台第一版建议保持轻量，先做一个运维工具式后台，而不是完整 CMS：
+
+- `/admin/overview`：系统健康、数据源连接、缓存命中、最近告警和版本信息。
+- `/admin/nodes`：服务器列表、手动分组、标签、区域、排序、是否公开展示。
+- `/admin/users`：用户列表、角色、最近登录时间、禁用账号。
+- `/admin/settings`：注册开关、缓存 TTL、公开页展示策略和安全提示。
+
+后台视觉延续状态页的设计语言：浅色和深色主题一致、顶部摘要 + 紧凑表格 + 右侧抽屉/面板编辑；组件密度和操作路径可以参考 Komari 的监控后台风格，但 NodeBeacon 只保留当前项目需要的节点展示配置、用户和系统状态管理。
+
+Komari 参考源码链接，供接手开发样式和布局时直接对照：
+
+| 用途 | 参考链接 | NodeBeacon 使用方式 |
+| --- | --- | --- |
+| Komari 主项目 | [komari-monitor/komari](https://github.com/komari-monitor/komari) | 只参考产品边界和页面入口，不复用远控、agent 或执行类能力 |
+| Komari 前端项目 | [komari-monitor/komari-web](https://github.com/komari-monitor/komari-web/tree/radix) | 主要参考对象；当前前端默认分支为 `radix` |
+| 首页布局 | [`src/pages/Index.tsx`](https://github.com/komari-monitor/komari-web/blob/radix/src/pages/Index.tsx) | 参考状态页首页的信息密度、节点区域组织和加载入口 |
+| 首页节点卡片 | [`src/components/NodeDisplay.tsx`](https://github.com/komari-monitor/komari-web/blob/radix/src/components/NodeDisplay.tsx)、[`src/components/Node.tsx`](https://github.com/komari-monitor/komari-web/blob/radix/src/components/Node.tsx) | 参考卡片内容层级、状态标签、指标条和节点基础信息布局 |
+| 首页表格视图 | [`src/components/NodeTable.tsx`](https://github.com/komari-monitor/komari-web/blob/radix/src/components/NodeTable.tsx) | 参考紧凑表格、列密度、节点状态和指标展示方式 |
+| 顶部导航和主题 | [`src/components/NavBar.tsx`](https://github.com/komari-monitor/komari-web/blob/radix/src/components/NavBar.tsx)、[`src/components/ThemeSwitch.tsx`](https://github.com/komari-monitor/komari-web/blob/radix/src/components/ThemeSwitch.tsx)、[`src/components/ColorSwitch.tsx`](https://github.com/komari-monitor/komari-web/blob/radix/src/components/ColorSwitch.tsx) | 参考顶部操作区、主题切换、语言/配色入口的组件拆分 |
+| 全局样式和节点样式 | [`src/global.css`](https://github.com/komari-monitor/komari-web/blob/radix/src/global.css)、[`src/components/NodeDisplay.css`](https://github.com/komari-monitor/komari-web/blob/radix/src/components/NodeDisplay.css) | 参考变量、基础排版、暗色/浅色过渡和节点列表样式 |
+| UI 基础组件 | [`src/components/ui`](https://github.com/komari-monitor/komari-web/tree/radix/src/components/ui) | 参考 button、table、drawer、input、select 等基础组件的 API 和视觉密度 |
+| 管理后台布局 | [`src/pages/admin/_layout.tsx`](https://github.com/komari-monitor/komari-web/blob/radix/src/pages/admin/_layout.tsx)、[`src/components/admin/AdminPanelBar.tsx`](https://github.com/komari-monitor/komari-web/blob/radix/src/components/admin/AdminPanelBar.tsx) | 参考后台侧边栏/顶部栏/内容区结构，但菜单项按 NodeBeacon 简化 |
+| 管理后台首页 | [`src/pages/admin/index.tsx`](https://github.com/komari-monitor/komari-web/blob/radix/src/pages/admin/index.tsx) | 参考后台总览页的信息卡片和状态摘要 |
+| 管理后台节点表 | [`src/components/admin/NodeTable.tsx`](https://github.com/komari-monitor/komari-web/blob/radix/src/components/admin/NodeTable.tsx)、[`src/components/admin/NodeTable`](https://github.com/komari-monitor/komari-web/tree/radix/src/components/admin/NodeTable) | 参考管理端节点表格、批量操作和编辑入口；NodeBeacon 首先实现分组/标签/排序/可见性 |
+| 管理后台设置页 | [`src/pages/admin/settings`](https://github.com/komari-monitor/komari-web/tree/radix/src/pages/admin/settings)、[`src/components/admin/SettingCard.tsx`](https://github.com/komari-monitor/komari-web/blob/radix/src/components/admin/SettingCard.tsx) | 参考设置页分组、表单密度和卡片式配置项 |
+
+接手实现时先从 Komari 前端源码看布局和组件拆分，再回到 NodeBeacon 按现有数据合同重写：样式和交互节奏可以参考，API、权限、节点模型和 Prometheus 适配必须按 NodeBeacon 文档实现。
 
 ### 第一轮开发顺序
 
@@ -286,7 +331,7 @@ P3 完成判定：NodeBeacon 不只是能上线，还能长期维护、升级、
 6. 构建单容器镜像，准备 k3s Deployment / Service / Secret / ConfigMap。
 7. 在 RS1000 k3s 试运行，通过 nginx 把 `monitor.liucf.com` 接入 NodeBeacon。
 
-暂缓事项：注册登录、管理后台、Incident 历史和复杂通知都放到 P2/P3。这样每一步都能产生可验证结果，也能避免第一版在账号系统和细节优化里失焦。
+暂缓事项：完整账号体系、管理后台编辑能力、Incident 历史和复杂通知都放到 P2/P3。P1 先保留节点手动分组的数据结构和首页展示路径，后台页面等登录闭环完成后再接入写入能力。这样每一步都能产生可验证结果，也能避免第一版在账号系统和细节优化里失焦。
 
 ## 9. 部署决策：RS1000 k3s
 
