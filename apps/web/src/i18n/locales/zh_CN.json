@@ -112,5 +112,69 @@
       "degraded": "降级",
       "unknown": "未知"
     }
+  },
+  "status": {
+    "header": { "login": "登录" },
+    "stats": {
+      "time": "当前时间",
+      "online": "当前在线",
+      "region": "地区",
+      "traffic": "流量概览",
+      "speed": "网络速率",
+      "settingsTitle": "状态显示设置"
+    },
+    "controls": {
+      "searchPlaceholder": "按名称、地区、系统搜索节点…",
+      "viewMode": "视图",
+      "grid": "网格",
+      "table": "表格",
+      "group": "分组",
+      "all": "全部"
+    },
+    "badge": {
+      "live": "实时数据",
+      "loading": "正在加载实时数据",
+      "fallback": "使用降级数据",
+      "stale": "过期数据",
+      "empty": "无数据"
+    },
+    "card": {
+      "os": "系统",
+      "cpu": "CPU",
+      "ram": "内存",
+      "disk": "磁盘",
+      "traffic": "总流量",
+      "netSpd": "网速",
+      "uptime": "运行时间",
+      "online": "在线",
+      "offline": "离线",
+      "load": "负载",
+      "memory": "内存",
+      "updatedAt": "最后上报"
+    },
+    "table": {
+      "name": "节点名称",
+      "system": "系统",
+      "status": "状态",
+      "cpu": "CPU",
+      "ram": "内存",
+      "disk": "磁盘",
+      "upSpeed": "上传速度",
+      "downSpeed": "下载速度",
+      "upTotal": "总上传",
+      "downTotal": "总下载"
+    },
+    "count": "共 {{total}} 台，{{online}} 台在线",
+    "empty": {
+      "noConfigTitle": "未配置任何服务器",
+      "noConfigText": "状态接口返回了空的节点列表。",
+      "noMatchTitle": "没有匹配的服务器",
+      "noMatchText": "试试其他分组或清空搜索关键词。"
+    },
+    "lastUpdated": "最后更新 {{time}}",
+    "footer": "祝你有美好的一天，朋友。",
+    "units": { "d": "天", "h": "时", "m": "分" },
+    "theme": "切换主题",
+    "language": "语言"
   }
 }

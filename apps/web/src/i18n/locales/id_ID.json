@@ -112,5 +112,69 @@
       "degraded": "Terdegradasi",
       "unknown": "Tidak diketahui"
     }
+  },
+  "status": {
+    "header": { "login": "Masuk" },
+    "stats": {
+      "time": "Waktu Saat Ini",
+      "online": "Online Saat Ini",
+      "region": "Wilayah",
+      "traffic": "Ikhtisar Trafik",
+      "speed": "Kecepatan Jaringan",
+      "settingsTitle": "Pengaturan tampilan"
+    },
+    "controls": {
+      "searchPlaceholder": "Cari node berdasarkan nama, wilayah, OS…",
+      "viewMode": "Mode Tampilan",
+      "grid": "Grid",
+      "table": "Tabel",
+      "group": "Grup",
+      "all": "Semua"
+    },
+    "badge": {
+      "live": "Data langsung",
+      "loading": "Memuat data langsung",
+      "fallback": "Memakai data cadangan",
+      "stale": "Data usang",
+      "empty": "Tidak ada data"
+    },
+    "card": {
+      "os": "OS",
+      "cpu": "CPU",
+      "ram": "RAM",
+      "disk": "Disk",
+      "traffic": "Trafik",
+      "netSpd": "Kecepatan",
+      "uptime": "Uptime",
+      "online": "Online",
+      "offline": "Offline",
+      "load": "Beban",
+      "memory": "Memori",
+      "updatedAt": "Laporan terakhir"
+    },
+    "table": {
+      "name": "Node",
+      "system": "OS",
+      "status": "Status",
+      "cpu": "CPU",
+      "ram": "RAM",
+      "disk": "Disk",
+      "upSpeed": "Kecepatan unggah",
+      "downSpeed": "Kecepatan unduh",
+      "upTotal": "Total unggah",
+      "downTotal": "Total unduh"
+    },
+    "count": "{{total}} server total, {{online}} online",
+    "empty": {
+      "noConfigTitle": "Belum ada server dikonfigurasi",
+      "noConfigText": "API status mengembalikan daftar node kosong.",
+      "noMatchTitle": "Tidak ada server yang cocok",
+      "noMatchText": "Coba grup lain atau hapus kata kunci pencarian."
+    },
+    "lastUpdated": "Terakhir diperbarui {{time}}",
+    "footer": "Semoga harimu menyenangkan, teman.",
+    "units": { "d": "h", "h": "j", "m": "mnt" },
+    "theme": "Ganti tema",
+    "language": "Bahasa"
   }
 }

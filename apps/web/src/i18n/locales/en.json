@@ -112,5 +112,69 @@
       "degraded": "Degraded",
       "unknown": "Unknown"
     }
+  },
+  "status": {
+    "header": { "login": "Login" },
+    "stats": {
+      "time": "Current Time",
+      "online": "Current Online",
+      "region": "Region",
+      "traffic": "Traffic Overview",
+      "speed": "Network Speed",
+      "settingsTitle": "Display settings"
+    },
+    "controls": {
+      "searchPlaceholder": "Search nodes by name, region, OS…",
+      "viewMode": "View Mode",
+      "grid": "Grid",
+      "table": "Table",
+      "group": "Group",
+      "all": "All"
+    },
+    "badge": {
+      "live": "Live data",
+      "loading": "Loading live data",
+      "fallback": "Using fallback data",
+      "stale": "Stale data",
+      "empty": "No data"
+    },
+    "card": {
+      "os": "OS",
+      "cpu": "CPU",
+      "ram": "RAM",
+      "disk": "Disk",
+      "traffic": "Traffic",
+      "netSpd": "Net Spd",
+      "uptime": "Uptime",
+      "online": "Online",
+      "offline": "Offline",
+      "load": "Load",
+      "memory": "Memory",
+      "updatedAt": "Last report"
+    },
+    "table": {
+      "name": "Node",
+      "system": "OS",
+      "status": "Status",
+      "cpu": "CPU",
+      "ram": "RAM",
+      "disk": "Disk",
+      "upSpeed": "Up speed",
+      "downSpeed": "Down speed",
+      "upTotal": "Up total",
+      "downTotal": "Down total"
+    },
+    "count": "{{total}} servers total, {{online}} online",
+    "empty": {
+      "noConfigTitle": "No servers configured",
+      "noConfigText": "The status API returned an empty node list.",
+      "noMatchTitle": "No matching servers",
+      "noMatchText": "Try another group or clear the search keyword."
+    },
+    "lastUpdated": "Last updated {{time}}",
+    "footer": "Have a nice day, my friend.",
+    "units": { "d": "d", "h": "h", "m": "m" },
+    "theme": "Toggle theme",
+    "language": "Language"
   }
 }

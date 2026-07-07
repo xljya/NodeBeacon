@@ -112,5 +112,69 @@
       "degraded": "劣化",
       "unknown": "不明"
     }
+  },
+  "status": {
+    "header": { "login": "ログイン" },
+    "stats": {
+      "time": "現在時刻",
+      "online": "オンライン数",
+      "region": "リージョン",
+      "traffic": "トラフィック概要",
+      "speed": "ネットワーク速度",
+      "settingsTitle": "表示設定"
+    },
+    "controls": {
+      "searchPlaceholder": "名前・リージョン・OS で検索…",
+      "viewMode": "表示",
+      "grid": "グリッド",
+      "table": "テーブル",
+      "group": "グループ",
+      "all": "すべて"
+    },
+    "badge": {
+      "live": "リアルタイム",
+      "loading": "リアルタイムデータを読み込み中",
+      "fallback": "フォールバックデータ使用中",
+      "stale": "古いデータ",
+      "empty": "データなし"
+    },
+    "card": {
+      "os": "OS",
+      "cpu": "CPU",
+      "ram": "メモリ",
+      "disk": "ディスク",
+      "traffic": "総トラフィック",
+      "netSpd": "速度",
+      "uptime": "稼働時間",
+      "online": "オンライン",
+      "offline": "オフライン",
+      "load": "負荷",
+      "memory": "メモリ",
+      "updatedAt": "最終報告"
+    },
+    "table": {
+      "name": "ノード名",
+      "system": "OS",
+      "status": "状態",
+      "cpu": "CPU",
+      "ram": "メモリ",
+      "disk": "ディスク",
+      "upSpeed": "上り速度",
+      "downSpeed": "下り速度",
+      "upTotal": "総上り",
+      "downTotal": "総下り"
+    },
+    "count": "全 {{total}} 台中 {{online}} 台オンライン",
+    "empty": {
+      "noConfigTitle": "サーバーが未設定です",
+      "noConfigText": "ステータス API が空のノードリストを返しました。",
+      "noMatchTitle": "一致するサーバーがありません",
+      "noMatchText": "別のグループを選ぶか検索キーワードをクリアしてください。"
+    },
+    "lastUpdated": "最終更新 {{time}}",
+    "footer": "良い一日を、友よ。",
+    "units": { "d": "日", "h": "時", "m": "分" },
+    "theme": "テーマ切り替え",
+    "language": "言語"
   }
 }

@@ -1,5 +1,5 @@
 import { Routes, Route } from "react-router-dom";
-import { PrototypePage } from "./pages/PrototypePage";
+import { StatusPage } from "./status/StatusPage";
 import { LoginPage } from "./pages/LoginPage";
 import { ProtectedRoute } from "./auth/ProtectedRoute";
 import { AdminLayout } from "./admin/AdminLayout";
@@ -11,8 +11,8 @@ import { SettingsPage } from "./admin/pages/SettingsPage";
 export function App() {
   return (
     <Routes>
-      {/* Public status page stays the high-fidelity prototype (iframe). */}
-      <Route path="/" element={<PrototypePage />} />
+      {/* Public status page: native React dashboard driven by /api/status. */}
+      <Route path="/" element={<StatusPage />} />
       <Route path="/login" element={<LoginPage />} />
 
       {/* Owner-only admin console. */}

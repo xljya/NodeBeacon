@@ -51,8 +51,8 @@ external registry is used, so the Deployment uses `imagePullPolicy: Never`.
 
 ```sh
 # From a checkout of this repo on RS1000:
-docker build -t nodebeacon:0.2.4 .
-docker save nodebeacon:0.2.4 | sudo k3s ctr images import -
+docker build -t nodebeacon:0.3.0 .
+docker save nodebeacon:0.3.0 | sudo k3s ctr images import -
 ```
 
 ## Deploy
@@ -94,15 +94,16 @@ curl -i https://monitor.liucf.com/api/admin/summary
 curl -I https://monitor.liucf.com/api/auth/github
 ```
 
-For `0.2.4`, expected production checks are:
+For `0.3.0`, expected production checks are:
 
-- image: `nodebeacon:0.2.4`
+- image: `nodebeacon:0.3.0`
 - `/readyz` and `/healthz`: HTTP 200
 - `/api/status`: `summary.total == 5` and `summary.online == 5`
 - `/api/auth/config`: password and GitHub login both enabled
 - unauthenticated `/api/admin/summary`: HTTP 401
-- public prototype `Login` button: redirects to `/login`
-- `/login` and `/admin`: language switcher (en / id / ja / zh-CN / zh-TW) present;
+- home `/`: native React status page (no iframe) rendering the real 5 nodes;
+  header has a working language switcher + theme toggle + `Login` link to `/login`
+- `/`, `/login`, `/admin`: language switcher (en / id / ja / zh-CN / zh-TW) present;
   selecting a language re-renders UI text and persists to `localStorage['nb-lang']`
 
 ## Roll back

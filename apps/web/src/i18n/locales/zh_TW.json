@@ -112,5 +112,69 @@
       "degraded": "降級",
       "unknown": "未知"
     }
+  },
+  "status": {
+    "header": { "login": "登入" },
+    "stats": {
+      "time": "目前時間",
+      "online": "目前在線",
+      "region": "地區",
+      "traffic": "流量概覽",
+      "speed": "網路速率",
+      "settingsTitle": "狀態顯示設定"
+    },
+    "controls": {
+      "searchPlaceholder": "依名稱、地區、系統搜尋節點…",
+      "viewMode": "檢視",
+      "grid": "網格",
+      "table": "表格",
+      "group": "分組",
+      "all": "全部"
+    },
+    "badge": {
+      "live": "即時資料",
+      "loading": "正在載入即時資料",
+      "fallback": "使用降級資料",
+      "stale": "過期資料",
+      "empty": "無資料"
+    },
+    "card": {
+      "os": "系統",
+      "cpu": "CPU",
+      "ram": "記憶體",
+      "disk": "磁碟",
+      "traffic": "總流量",
+      "netSpd": "網速",
+      "uptime": "運行時間",
+      "online": "在線",
+      "offline": "離線",
+      "load": "負載",
+      "memory": "記憶體",
+      "updatedAt": "最後回報"
+    },
+    "table": {
+      "name": "節點名稱",
+      "system": "系統",
+      "status": "狀態",
+      "cpu": "CPU",
+      "ram": "記憶體",
+      "disk": "磁碟",
+      "upSpeed": "上傳速度",
+      "downSpeed": "下載速度",
+      "upTotal": "總上傳",
+      "downTotal": "總下載"
+    },
+    "count": "共 {{total}} 台，{{online}} 台在線",
+    "empty": {
+      "noConfigTitle": "未設定任何伺服器",
+      "noConfigText": "狀態介面回傳了空的節點清單。",
+      "noMatchTitle": "沒有符合的伺服器",
+      "noMatchText": "試試其他分組或清除搜尋關鍵字。"
+    },
+    "lastUpdated": "最後更新 {{time}}",
+    "footer": "祝你有美好的一天，朋友。",
+    "units": { "d": "天", "h": "時", "m": "分" },
+    "theme": "切換主題",
+    "language": "語言"
   }
 }
