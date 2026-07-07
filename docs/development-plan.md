@@ -468,3 +468,5 @@ apps/web/src/
 ```
 
 `zh_CN.json` 为文案源；缺失 key 自动回退到 `zh-CN`。新增界面文案时先补 `zh_CN` 与 `en`，再补其余三语。
+
+i18n-P1 上线记录：2026-07-07 已随 `0.2.4` 部署到 RS1000 k3s（`docker build` → `k3s ctr import` → `kubectl apply -k infra/k8s`，滚动更新成功，Pod `1/1 Running`，镜像 `nodebeacon:0.2.4`）。生产验证（经 Cloudflare `https://monitor.liucf.com`）：`/readyz`+`/healthz` 200、`/api/status` 5/5 在线、`/api/auth/config` 密码+GitHub 均启用、未登录 `/api/admin/summary` 401、`/login` 载入新前端 bundle 且日文等 locale 文案已内联在生产 JS 中。公开状态页仍为原型 iframe（i18n-P2 待做）。
