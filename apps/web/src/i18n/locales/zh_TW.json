@@ -1,0 +1,116 @@
+{
+  "common": {
+    "loading": "載入中…",
+    "notConfigured": "未設定",
+    "yes": "是",
+    "no": "否",
+    "verifying": "正在驗證登入狀態…",
+    "loadFailed": "載入失敗",
+    "requestFailed": "請求失敗 ({{status}})"
+  },
+  "login": {
+    "subtitle": "登入管理主控台",
+    "email": "帳號（電子郵件）",
+    "password": "密碼",
+    "passwordPlaceholder": "請輸入密碼",
+    "submit": "登入",
+    "submitting": "登入中…",
+    "or": "或",
+    "github": "使用 GitHub 登入",
+    "back": "← 返回狀態頁",
+    "err_generic": "登入失敗",
+    "err_github_unbound": "請先登入並綁定你的外部帳號。",
+    "err_github_failed": "GitHub 登入失敗，請重試。",
+    "err_github_disabled": "GitHub 登入未啟用。"
+  },
+  "admin": {
+    "nav": {
+      "overview": "總覽",
+      "nodes": "節點",
+      "users": "使用者",
+      "settings": "設定",
+      "public": "公開狀態頁"
+    },
+    "topbar": {
+      "title": "管理後台",
+      "toggleTheme": "切換主題",
+      "logout": "登出"
+    },
+    "overview": {
+      "title": "總覽",
+      "generatedAt": "產生於 {{time}} · v{{version}}",
+      "nodesCard": "節點",
+      "onlineSuffix": " / {{total}} 在線",
+      "degradedOffline": "降級 {{degraded}} · 離線 {{offline}}",
+      "prometheus": "資料來源 Prometheus",
+      "status": "狀態",
+      "reachable": "可達",
+      "unreachable": "不可達 / 降級",
+      "host": "Host",
+      "cache": "快取",
+      "ttl": "TTL",
+      "data": "資料",
+      "stale": "stale 降級",
+      "realtime": "即時",
+      "auth": "認證",
+      "owner": "Owner",
+      "configured": "已設定",
+      "allowRegister": "開放註冊"
+    },
+    "nodes": {
+      "title": "節點",
+      "subtitle": "{{count}} 台 · 顯示設定來自節點註冊表",
+      "thName": "名稱",
+      "thGroup": "分組",
+      "thRegion": "區域",
+      "thProvider": "供應商",
+      "thStatus": "狀態",
+      "thVisible": "可見",
+      "thOrder": "排序",
+      "visiblePublic": "公開",
+      "visibleHidden": "隱藏",
+      "view": "檢視",
+      "drawerAria": "節點 {{name}}",
+      "close": "關閉",
+      "editNote": "節點顯示設定的編輯與寫回將在下一步實作（本版唯讀）。",
+      "fName": "顯示名稱",
+      "fGroup": "分組",
+      "fRegion": "區域",
+      "fOrder": "排序",
+      "fTags": "標籤",
+      "fVisibility": "可見性",
+      "selector": "Prometheus 選擇器",
+      "saveNext": "儲存（下一步）",
+      "saveNextTitle": "下一步實作"
+    },
+    "users": {
+      "title": "使用者",
+      "subtitle": "{{count}} 個帳號 · owner 由環境變數建立",
+      "thEmail": "電子郵件",
+      "thRole": "角色",
+      "thId": "ID",
+      "hint": "多使用者、viewer 角色與帳號停用將隨 SQLite 持久化在後續版本加入。"
+    },
+    "settings": {
+      "title": "設定",
+      "subtitle": "本版為唯讀；寫入能力隨管理端寫回一起開放",
+      "allowRegisterTitle": "開放註冊",
+      "allowRegisterDesc": "是否允許自由註冊新帳號（生產環境應保持關閉）",
+      "on": "開啟",
+      "off": "關閉",
+      "ttlTitle": "狀態快取 TTL",
+      "ttlDesc": "/api/status 的短快取時長，防止重新整理打爆 Prometheus",
+      "prometheusTitle": "資料來源 Prometheus",
+      "prometheusDesc": "後端伺服器端查詢目標（憑證不下發到瀏覽器）",
+      "publicPolicyTitle": "公開顯示策略",
+      "publicPolicyDesc": "公開狀態頁顯示基本在線狀態；敏感資訊需登入後檢視",
+      "publicPolicyValue": "公開唯讀"
+    },
+    "status": {
+      "online": "在線",
+      "offline": "離線",
+      "degraded": "降級",
+      "unknown": "未知"
+    }
+  }
+}

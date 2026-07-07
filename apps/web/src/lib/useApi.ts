@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
+import i18n from "../i18n/config";
 import { apiGet } from "./api";
 
 export interface ApiHookState<T> {
@@ -20,7 +21,7 @@ export function useApi<T>(path: string): ApiHookState<T> {
     try {
       setData(await apiGet<T>(path));
     } catch (err) {
-      setError(err instanceof Error ? err.message : "加载失败");
+      setError(err instanceof Error ? err.message : i18n.t("common.loadFailed"));
     } finally {
       setLoading(false);
     }

@@ -1,0 +1,116 @@
+{
+  "common": {
+    "loading": "Memuat…",
+    "notConfigured": "Belum dikonfigurasi",
+    "yes": "Ya",
+    "no": "Tidak",
+    "verifying": "Memverifikasi sesi Anda…",
+    "loadFailed": "Gagal memuat",
+    "requestFailed": "Permintaan gagal ({{status}})"
+  },
+  "login": {
+    "subtitle": "Masuk ke konsol admin",
+    "email": "Akun (email)",
+    "password": "Kata sandi",
+    "passwordPlaceholder": "Masukkan kata sandi",
+    "submit": "Masuk",
+    "submitting": "Sedang masuk…",
+    "or": "atau",
+    "github": "Masuk dengan GitHub",
+    "back": "← Kembali ke halaman status",
+    "err_generic": "Gagal masuk",
+    "err_github_unbound": "Silakan masuk dan tautkan akun eksternal Anda terlebih dahulu.",
+    "err_github_failed": "Masuk dengan GitHub gagal, silakan coba lagi.",
+    "err_github_disabled": "Masuk dengan GitHub dinonaktifkan."
+  },
+  "admin": {
+    "nav": {
+      "overview": "Ringkasan",
+      "nodes": "Node",
+      "users": "Pengguna",
+      "settings": "Pengaturan",
+      "public": "Halaman status publik"
+    },
+    "topbar": {
+      "title": "Konsol admin",
+      "toggleTheme": "Ganti tema",
+      "logout": "Keluar"
+    },
+    "overview": {
+      "title": "Ringkasan",
+      "generatedAt": "Dibuat pada {{time}} · v{{version}}",
+      "nodesCard": "Node",
+      "onlineSuffix": " / {{total}} online",
+      "degradedOffline": "Terdegradasi {{degraded}} · Offline {{offline}}",
+      "prometheus": "Sumber data: Prometheus",
+      "status": "Status",
+      "reachable": "Terjangkau",
+      "unreachable": "Tidak terjangkau / terdegradasi",
+      "host": "Host",
+      "cache": "Cache",
+      "ttl": "TTL",
+      "data": "Data",
+      "stale": "Fallback usang",
+      "realtime": "Langsung",
+      "auth": "Autentikasi",
+      "owner": "Owner",
+      "configured": "Terkonfigurasi",
+      "allowRegister": "Pendaftaran terbuka"
+    },
+    "nodes": {
+      "title": "Node",
+      "subtitle": "{{count}} node · konfigurasi tampilan dari registri node",
+      "thName": "Nama",
+      "thGroup": "Grup",
+      "thRegion": "Wilayah",
+      "thProvider": "Penyedia",
+      "thStatus": "Status",
+      "thVisible": "Terlihat",
+      "thOrder": "Urutan",
+      "visiblePublic": "Publik",
+      "visibleHidden": "Tersembunyi",
+      "view": "Lihat",
+      "drawerAria": "Node {{name}}",
+      "close": "Tutup",
+      "editNote": "Pengeditan dan penulisan balik konfigurasi tampilan node akan diterapkan pada langkah berikutnya (versi ini hanya-baca).",
+      "fName": "Nama tampilan",
+      "fGroup": "Grup",
+      "fRegion": "Wilayah",
+      "fOrder": "Urutan",
+      "fTags": "Tag",
+      "fVisibility": "Visibilitas",
+      "selector": "Selektor Prometheus",
+      "saveNext": "Simpan (langkah berikutnya)",
+      "saveNextTitle": "Langkah berikutnya"
+    },
+    "users": {
+      "title": "Pengguna",
+      "subtitle": "{{count}} akun · owner dibuat via variabel lingkungan",
+      "thEmail": "Email",
+      "thRole": "Peran",
+      "thId": "ID",
+      "hint": "Multi-pengguna, peran viewer, dan penonaktifan akun akan hadir bersama persistensi SQLite pada versi mendatang."
+    },
+    "settings": {
+      "title": "Pengaturan",
+      "subtitle": "Versi ini hanya-baca; kemampuan tulis hadir bersama write-back admin",
+      "allowRegisterTitle": "Pendaftaran terbuka",
+      "allowRegisterDesc": "Apakah akun baru boleh mendaftar bebas (sebaiknya nonaktif di produksi)",
+      "on": "Aktif",
+      "off": "Nonaktif",
+      "ttlTitle": "TTL cache status",
+      "ttlDesc": "Durasi cache singkat untuk /api/status, agar refresh tidak membebani Prometheus",
+      "prometheusTitle": "Sumber data: Prometheus",
+      "prometheusDesc": "Target kueri sisi server (kredensial tidak dikirim ke browser)",
+      "publicPolicyTitle": "Kebijakan tampilan publik",
+      "publicPolicyDesc": "Halaman status publik menampilkan status online dasar; info sensitif perlu masuk",
+      "publicPolicyValue": "Publik hanya-baca"
+    },
+    "status": {
+      "online": "Online",
+      "offline": "Offline",
+      "degraded": "Terdegradasi",
+      "unknown": "Tidak diketahui"
+    }
+  }
+}

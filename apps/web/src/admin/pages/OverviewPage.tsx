@@ -1,12 +1,14 @@
 import type { ReactNode } from "react";
 import { AlertCircle, Database, Gauge, Server, ShieldCheck } from "lucide-react";
+import { useTranslation } from "react-i18next";
 import type { AdminSummaryResponse } from "@nodebeacon/shared";
 import { useApi } from "../../lib/useApi";
 
 export function OverviewPage() {
+  const { t } = useTranslation();
   const { data, error, loading } = useApi<AdminSummaryResponse>("/api/admin/summary");
 
-  if (loading) return <div className="admin-state">加载中…</div>;
+  if (loading) return <div className="admin-state">{t("common.loading")}</div>;
   if (error) {
     return (
       <div className="admin-state error">
@@ -19,61 +21,69 @@ export function OverviewPage() {
   return (
     <div className="page">
       <div className="page-head">
-        <h2>总览</h2>
+        <h2>{t("admin.overview.title")}</h2>
         <span className="page-sub">
-          生成于 {new Date(data.generatedAt).toLocaleString()} · v{data.version}
+          {t("admin.overview.generatedAt", {
+            time: new Date(data.generatedAt).toLocaleString(),
+            version: data.version
+          })}
         </span>
       </div>
 
       <div className="card-grid">
-        <Card icon={<Server size={18} />} title="节点">
+        <Card icon={<Server size={18} />} title={t("admin.overview.nodesCard")}>
           <div className="metric">
             {data.nodes.online}
-            <span> / {data.nodes.total} 在线</span>
+            <span>{t("admin.overview.onlineSuffix", { total: data.nodes.total })}</span>
           </div>
           <div className="metric-sub">
-            降级 {data.nodes.degraded} · 离线 {data.nodes.offline}
+            {t("admin.overview.degradedOffline", {
+              degraded: data.nodes.degraded,
+              offline: data.nodes.offline
+            })}
           </div>
         </Card>
 
-        <Card icon={<Database size={18} />} title="数据源 Prometheus">
+        <Card icon={<Database size={18} />} title={t("admin.overview.prometheus")}>
           <div className="kv">
-            <span>状态</span>
+            <span>{t("admin.overview.status")}</span>
             <b className={data.prometheus.reachable ? "ok" : "bad"}>
               {data.prometheus.configured
                 ? data.prometheus.reachable
-                  ? "可达"
-                  : "不可达 / 降级"
-                : "未配置"}
+                  ? t("admin.overview.reachable")
+                  : t("admin.overview.unreachable")
+                : t("common.notConfigured")}
             </b>
           </div>
           <div className="kv">
-            <span>Host</span>
+            <span>{t("admin.overview.host")}</span>
             <b className="mono">{data.prometheus.host ?? "—"}</b>
           </div>
         </Card>
 
-        <Card icon={<Gauge size={18} />} title="缓存">
+        <Card icon={<Gauge size={18} />} title={t("admin.overview.cache")}>
           <div className="kv">
-            <span>TTL</span>
+            <span>{t("admin.overview.ttl")}</span>
             <b className="mono">{data.cache.ttlSeconds}s</b>
           </div>
           <div className="kv">
-            <span>数据</span>
-            <b className={data.cache.stale ? "bad" : "ok"}>{data.cache.stale ? "stale 降级" : "实时"}</b>
+            <span>{t("admin.overview.data")}</span>
+            <b className={data.cache.stale ? "bad" : "ok"}>
+              {data.cache.stale ? t("admin.overview.stale") : t("admin.overview.realtime")}
+            </b>
           </div>
         </Card>
 
-        <Card icon={<ShieldCheck size={18} />} title="认证">
+        <Card icon={<ShieldCheck size={18} />} title={t("admin.overview.auth")}>
           <div className="kv">
-            <span>Owner</span>
+            <span>{t("admin.overview.owner")}</span>
             <b className={data.auth.ownerConfigured ? "ok" : "bad"}>
-              {data.auth.ownerConfigured ? "已配置" : "未配置"}
+              {data.auth.ownerConfigured ? t("admin.overview.configured") : t("common.notConfigured")}
             </b>
           </div>
           <div className="kv">
-            <span>开放注册</span>
-            <b>{data.auth.allowRegister ? "是" : "否"}</b>
+            <span>{t("admin.overview.allowRegister")}</span>
+            <b>{data.auth.allowRegister ? t("common.yes") : t("common.no")}</b>
           </div>
         </Card>
       </div>

@@ -1,5 +1,7 @@
 /** Small fetch helpers that always send the session cookie and normalize errors. */
 
+import i18n from "../i18n/config";
+
 export class ApiError extends Error {
   constructor(message: string, readonly status: number) {
     super(message);
@@ -9,7 +11,7 @@ export class ApiError extends Error {
 
 async function toError(res: Response): Promise<ApiError> {
   const body = await res.json().catch(() => null);
-  const message = body?.error?.message ?? `请求失败 (${res.status})`;
+  const message = body?.error?.message ?? i18n.t("common.requestFailed", { status: res.status });
   return new ApiError(message, res.status);
 }
 

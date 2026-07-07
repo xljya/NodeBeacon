@@ -1,18 +1,21 @@
 import { useEffect, useState, type FormEvent } from "react";
 import { Navigate, useLocation, useNavigate, useSearchParams } from "react-router-dom";
 import { Github, Loader2, LogIn } from "lucide-react";
+import { useTranslation } from "react-i18next";
 import type { AuthConfigResponse } from "@nodebeacon/shared";
 import { useAuth } from "../auth/AuthProvider";
 import { apiGet } from "../lib/api";
+import { LanguageSwitch } from "../components/LanguageSwitch";
 import "../admin/admin.css";
 
-const ERROR_MESSAGES: Record<string, string> = {
-  github_unbound: "please log in and bind your external account first.",
-  github_failed: "GitHub 登录失败，请重试。",
-  github_disabled: "GitHub 登录未启用。"
+const ERROR_KEYS: Record<string, string> = {
+  github_unbound: "login.err_github_unbound",
+  github_failed: "login.err_github_failed",
+  github_disabled: "login.err_github_disabled"
 };
 
 export function LoginPage() {
+  const { t } = useTranslation();
   const { user, loading, login } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
@@ -27,8 +30,8 @@ export function LoginPage() {
   // Surface an error passed back from the GitHub OAuth redirect.
   useEffect(() => {
     const code = searchParams.get("error");
-    if (code) setError(ERROR_MESSAGES[code] ?? "登录失败");
-  }, [searchParams]);
+    if (code) setError(t(ERROR_KEYS[code] ?? "login.err_generic"));
+  }, [searchParams, t]);
 
   useEffect(() => {
     apiGet<AuthConfigResponse>("/api/auth/config")
@@ -50,7 +53,7 @@ export function LoginPage() {
       await login(email.trim(), password);
       navigate(from, { replace: true });
     } catch (err) {
-      setError(err instanceof Error ? err.message : "登录失败");
+      setError(err instanceof Error ? err.message : t("login.err_generic"));
     } finally {
       setSubmitting(false);
     }
@@ -66,7 +69,10 @@ export function LoginPage() {
           <span className="login-logo">◈</span>
           <div>
             <h1>NodeBeacon</h1>
-            <p>登录管理控制台</p>
+            <p>{t("login.subtitle")}</p>
+          </div>
+          <div className="login-lang">
+            <LanguageSwitch />
           </div>
         </div>
 
@@ -75,7 +81,7 @@ export function LoginPage() {
         {passwordEnabled && (
           <form className="login-form" onSubmit={handleSubmit}>
             <label className="login-field">
-              <span>账号（邮箱）</span>
+              <span>{t("login.email")}</span>
               <input
                 type="email"
                 autoComplete="username"
@@ -87,34 +93,40 @@ export function LoginPage() {
             </label>
 
             <label className="login-field">
-              <span>密码</span>
+              <span>{t("login.password")}</span>
               <input
                 type="password"
                 autoComplete="current-password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                placeholder="请输入密码"
+                placeholder={t("login.passwordPlaceholder")}
                 required
               />
             </label>
 
             <button className="login-submit" type="submit" disabled={submitting || !email || !password}>
               {submitting ? <Loader2 className="spin" size={16} /> : <LogIn size={16} />}
-              {submitting ? "登录中…" : "登录"}
+              {submitting ? t("login.submitting") : t("login.submit")}
             </button>
           </form>
         )}
 
-        {passwordEnabled && githubEnabled && <div className="login-divider"><span>或</span></div>}
+        {passwordEnabled && githubEnabled && (
+          <div className="login-divider">
+            <span>{t("login.or")}</span>
+          </div>
+        )}
 
         {githubEnabled && (
           <a className="login-github" href="/api/auth/github">
             <Github size={17} />
-            使用 GitHub 登录
+            {t("login.github")}
           </a>
         )}
 
-        <a className="login-back" href="/">← 返回状态页</a>
+        <a className="login-back" href="/">
+          {t("login.back")}
+        </a>
       </div>
     </div>
   );

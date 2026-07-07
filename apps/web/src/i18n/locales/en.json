@@ -1,0 +1,116 @@
+{
+  "common": {
+    "loading": "Loading…",
+    "notConfigured": "Not configured",
+    "yes": "Yes",
+    "no": "No",
+    "verifying": "Verifying your session…",
+    "loadFailed": "Failed to load",
+    "requestFailed": "Request failed ({{status}})"
+  },
+  "login": {
+    "subtitle": "Sign in to the admin console",
+    "email": "Account (email)",
+    "password": "Password",
+    "passwordPlaceholder": "Enter your password",
+    "submit": "Sign in",
+    "submitting": "Signing in…",
+    "or": "or",
+    "github": "Sign in with GitHub",
+    "back": "← Back to status page",
+    "err_generic": "Sign-in failed",
+    "err_github_unbound": "Please log in and bind your external account first.",
+    "err_github_failed": "GitHub sign-in failed, please try again.",
+    "err_github_disabled": "GitHub sign-in is disabled."
+  },
+  "admin": {
+    "nav": {
+      "overview": "Overview",
+      "nodes": "Nodes",
+      "users": "Users",
+      "settings": "Settings",
+      "public": "Public status page"
+    },
+    "topbar": {
+      "title": "Admin console",
+      "toggleTheme": "Toggle theme",
+      "logout": "Sign out"
+    },
+    "overview": {
+      "title": "Overview",
+      "generatedAt": "Generated at {{time}} · v{{version}}",
+      "nodesCard": "Nodes",
+      "onlineSuffix": " / {{total}} online",
+      "degradedOffline": "Degraded {{degraded}} · Offline {{offline}}",
+      "prometheus": "Data source: Prometheus",
+      "status": "Status",
+      "reachable": "Reachable",
+      "unreachable": "Unreachable / degraded",
+      "host": "Host",
+      "cache": "Cache",
+      "ttl": "TTL",
+      "data": "Data",
+      "stale": "Stale fallback",
+      "realtime": "Live",
+      "auth": "Auth",
+      "owner": "Owner",
+      "configured": "Configured",
+      "allowRegister": "Open registration"
+    },
+    "nodes": {
+      "title": "Nodes",
+      "subtitle": "{{count}} nodes · display config from the node registry",
+      "thName": "Name",
+      "thGroup": "Group",
+      "thRegion": "Region",
+      "thProvider": "Provider",
+      "thStatus": "Status",
+      "thVisible": "Visible",
+      "thOrder": "Order",
+      "visiblePublic": "Public",
+      "visibleHidden": "Hidden",
+      "view": "View",
+      "drawerAria": "Node {{name}}",
+      "close": "Close",
+      "editNote": "Editing and writing back node display config is coming next (read-only for now).",
+      "fName": "Display name",
+      "fGroup": "Group",
+      "fRegion": "Region",
+      "fOrder": "Order",
+      "fTags": "Tags",
+      "fVisibility": "Visibility",
+      "selector": "Prometheus selector",
+      "saveNext": "Save (coming next)",
+      "saveNextTitle": "Coming next"
+    },
+    "users": {
+      "title": "Users",
+      "subtitle": "{{count}} accounts · owner created via environment variables",
+      "thEmail": "Email",
+      "thRole": "Role",
+      "thId": "ID",
+      "hint": "Multi-user, the viewer role and account disabling will arrive with SQLite persistence in a later version."
+    },
+    "settings": {
+      "title": "Settings",
+      "subtitle": "This version is read-only; write access ships with admin write-back",
+      "allowRegisterTitle": "Open registration",
+      "allowRegisterDesc": "Whether new accounts may register freely (should stay off in production)",
+      "on": "On",
+      "off": "Off",
+      "ttlTitle": "Status cache TTL",
+      "ttlDesc": "Short cache duration for /api/status, so refreshes don't hammer Prometheus",
+      "prometheusTitle": "Data source: Prometheus",
+      "prometheusDesc": "Server-side query target (credentials never reach the browser)",
+      "publicPolicyTitle": "Public display policy",
+      "publicPolicyDesc": "The public status page shows basic online status; sensitive info requires sign-in",
+      "publicPolicyValue": "Public read-only"
+    },
+    "status": {
+      "online": "Online",
+      "offline": "Offline",
+      "degraded": "Degraded",
+      "unknown": "Unknown"
+    }
+  }
+}

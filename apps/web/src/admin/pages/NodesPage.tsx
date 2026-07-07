@@ -1,5 +1,6 @@
 import { useState, type ReactNode } from "react";
 import { AlertCircle, X } from "lucide-react";
+import { useTranslation } from "react-i18next";
 import type { AdminNode, AdminNodesResponse } from "@nodebeacon/shared";
 import { useApi } from "../../lib/useApi";
 import { StatusBadge } from "../components/StatusBadge";
@@ -12,10 +13,11 @@ function formatSelector(labels: Record<string, string>): string {
 }
 
 export function NodesPage() {
+  const { t } = useTranslation();
   const { data, error, loading } = useApi<AdminNodesResponse>("/api/admin/nodes");
   const [selected, setSelected] = useState<AdminNode | null>(null);
 
-  if (loading) return <div className="admin-state">加载中…</div>;
+  if (loading) return <div className="admin-state">{t("common.loading")}</div>;
   if (error) {
     return (
       <div className="admin-state error">
@@ -28,21 +30,21 @@ export function NodesPage() {
   return (
     <div className="page">
       <div className="page-head">
-        <h2>节点</h2>
-        <span className="page-sub">{nodes.length} 台 · 展示配置来自节点注册表</span>
+        <h2>{t("admin.nodes.title")}</h2>
+        <span className="page-sub">{t("admin.nodes.subtitle", { count: nodes.length })}</span>
       </div>
 
       <div className="table-wrap">
         <table className="data-table">
           <thead>
             <tr>
-              <th>名称</th>
-              <th>分组</th>
-              <th>区域</th>
-              <th>供应商</th>
-              <th>状态</th>
-              <th>可见</th>
-              <th>排序</th>
+              <th>{t("admin.nodes.thName")}</th>
+              <th>{t("admin.nodes.thGroup")}</th>
+              <th>{t("admin.nodes.thRegion")}</th>
+              <th>{t("admin.nodes.thProvider")}</th>
+              <th>{t("admin.nodes.thStatus")}</th>
+              <th>{t("admin.nodes.thVisible")}</th>
+              <th>{t("admin.nodes.thOrder")}</th>
               <th />
             </tr>
           </thead>
@@ -59,9 +61,9 @@ export function NodesPage() {
                 <td>
                   <StatusBadge status={n.status} />
                 </td>
-                <td>{n.public ? "公开" : "隐藏"}</td>
+                <td>{n.public ? t("admin.nodes.visiblePublic") : t("admin.nodes.visibleHidden")}</td>
                 <td className="mono">{n.displayOrder}</td>
-                <td className="row-action">查看</td>
+                <td className="row-action">{t("admin.nodes.view")}</td>
               </tr>
             ))}
           </tbody>
@@ -74,42 +76,43 @@ export function NodesPage() {
 }
 
 function NodeDrawer({ node, onClose }: { node: AdminNode; onClose: () => void }) {
+  const { t } = useTranslation();
   return (
     <>
       <div className="drawer-scrim" onClick={onClose} />
-      <aside className="drawer" role="dialog" aria-label={`节点 ${node.name}`}>
+      <aside className="drawer" role="dialog" aria-label={t("admin.nodes.drawerAria", { name: node.name })}>
         <div className="drawer-head">
           <h3>{node.name}</h3>
-          <button className="icon-btn" onClick={onClose} aria-label="关闭">
+          <button className="icon-btn" onClick={onClose} aria-label={t("admin.nodes.close")}>
             <X size={18} />
           </button>
         </div>
         <div className="drawer-body">
-          <div className="edit-note">节点展示配置的编辑与写回将在下一步实现（本版只读）。</div>
-          <Field label="展示名">
+          <div className="edit-note">{t("admin.nodes.editNote")}</div>
+          <Field label={t("admin.nodes.fName")}>
             <input value={node.name} disabled />
           </Field>
-          <Field label="分组">
+          <Field label={t("admin.nodes.fGroup")}>
             <input value={node.group} disabled />
           </Field>
-          <Field label="区域">
+          <Field label={t("admin.nodes.fRegion")}>
             <input value={node.region} disabled />
           </Field>
-          <Field label="排序">
+          <Field label={t("admin.nodes.fOrder")}>
             <input value={String(node.displayOrder)} disabled />
           </Field>
-          <Field label="标签">
+          <Field label={t("admin.nodes.fTags")}>
             <input value={node.tags.join(", ")} disabled />
           </Field>
-          <Field label="可见性">
-            <input value={node.public ? "公开" : "隐藏"} disabled />
+          <Field label={t("admin.nodes.fVisibility")}>
+            <input value={node.public ? t("admin.nodes.visiblePublic") : t("admin.nodes.visibleHidden")} disabled />
           </Field>
           <div className="field">
-            <span>Prometheus 选择器</span>
+            <span>{t("admin.nodes.selector")}</span>
             <code className="selector">{formatSelector(node.labels)}</code>
           </div>
-          <button className="primary-btn" disabled title="下一步实现">
-            保存（下一步）
+          <button className="primary-btn" disabled title={t("admin.nodes.saveNextTitle")}>
+            {t("admin.nodes.saveNext")}
           </button>
         </div>
       </aside>

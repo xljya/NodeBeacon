@@ -1,6 +1,6 @@
 # NodeBeacon 开发文档
 
-最后更新：2026-07-06
+最后更新：2026-07-07
 
 ## 决策记录
 
@@ -299,7 +299,7 @@ P1 验证记录：2026-07-06 已用浏览器在 `https://monitor.liucf.com/` 端
 | 待做 | 实现趋势查询接口 | `query_range` 支持 CPU、内存、磁盘、网络、延迟 | 严格限制 `metric` 和 `range` 枚举 |
 | 待做 | 节点详情页 | 展示趋势图、近期状态、基础指标和探测结果 | 可从卡片和表格进入 |
 | 待做 | Blackbox 延迟和 HTTP 状态 | 展示公网探测延迟、成功率和 HTTP 状态码 | 用于判断入口和节点健康 |
-| 待做 | 前端组件化 | 公开状态页从 iframe 原型迁移到原生 React 组件 | 引入 react-router 后顺势统一；复用状态页设计语言 |
+| 待做 | 前端组件化 | 公开状态页从 iframe 原型迁移到原生 React 组件 | 引入 react-router 后顺势统一；复用状态页设计语言；**捆绑公开页 i18n（见 §12 i18n-P2），组件化时接入第 12 节的 i18n 基础，让截图里的语言下拉真正生效** |
 | 待做 | NodeBeacon 自身 `/metrics` | 暴露 Prometheus 文本指标：请求量、错误率、Prom 查询耗时、缓存命中率 | 具体化「自身可观测性」；后续接 Grafana/Loki |
 | 待做 | 基础自动化测试 | 引入 vitest；覆盖 `/api/status`、auth、admin 只读接口的关键路径 | 目前只有 typecheck，随 auth/admin 复杂度上升补测试 |
 | 待做（后移） | Alertmanager webhook | 接收 firing/resolved 事件并归一化 | 先落 SQLite；排在节点详情/趋势 + 只读后台之后 |
@@ -436,3 +436,35 @@ monitor.liucf.com
 - 为 API 添加基础指标：请求量、错误率、Prometheus 查询耗时、缓存命中率。
 - SQLite 需要定期备份，并保留可执行的恢复步骤。
 - 部署文件放 `infra/k8s/`，至少包含 Deployment、Service、Secret 示例和 RS1000 nginx 入口说明。
+
+## 12. 多语言（i18n）
+
+截图里的语言下拉（English / Bahasa Indonesia / 日本語 / 简体中文 / 繁體中文）最初只存在于公开状态页原型（`apps/web/public/prototype/Status Page.dc.html` 的 `kLangList`）里，且是**装饰性、不工作的**——只切 `state.lang`，从不真正翻译文案。本功能把它做成真正可用的 i18n。
+
+技术选型参考 Komari 前端（`komari-web`）：`i18next` + `react-i18next` + `i18next-browser-languagedetector`，单一 `translation` 命名空间，`localStorage` + `navigator` 语言探测。但**文案与 key 按 NodeBeacon 自身界面编写**，不复用 Komari 的文案。
+
+支持语言（与截图一致）：`en`、`id`、`ja`、`zh-CN`、`zh-TW`。默认策略：探测浏览器/localStorage，命中支持语言则用之，否则**回退 `zh-CN`**；用户选择缓存在 `localStorage['nb-lang']`。
+
+### i18n 阶段规划
+
+| 状态 | 阶段 | 交付标准 | 备注 |
+| --- | --- | --- | --- |
+| 已完成 | i18n-P1：基础 + 登录/后台本地化 | i18next 初始化 + 5 语言 JSON + 可用的 `LanguageSwitch`；登录页与后台（布局、总览、节点、用户、设置、状态徽章）全量走 `t()` | 我们拥有源码的 React 界面全部本地化；不动 iframe 原型 |
+| 待做（捆绑 P2 前端组件化） | i18n-P2：公开状态页多语言 | 公开状态页从 iframe 原型迁移到原生 React 组件后，其文案接入同一套 `translation` 资源与 `LanguageSwitch`，截图里的语言下拉真正生效 | 不在将被替换的原型 HTML 上做废功；见 P2「前端组件化」行 |
+| 待做（随功能增长） | i18n 覆盖新增 UI | 后续管理端写回 UI（`PATCH /api/admin/nodes/:id` 等）新增文案一律走 i18n key | 禁止再硬编码中文；新增 key 同步补齐 5 个 JSON |
+| 待做（可选·低优先） | 语言偏好服务端持久化 | 等 P3「会话/用户持久化升级到 SQLite」落地后，可把语言偏好随账号存储 | 当前 localStorage 已够用 |
+| 待做（可选） | 扩展语言 / 时间格式本地化 | 结构支持随时加语言；后端返回的少量文案与时间格式按需本地化 | 非阻塞 |
+
+### i18n 代码结构（i18n-P1 交付）
+
+```text
+apps/web/src/
+  i18n/
+    config.ts                 # i18next 初始化 + LANGUAGES 列表（供 LanguageSwitch 用）
+    locales/
+      en.json  zh_CN.json  zh_TW.json  ja_JP.json  id_ID.json
+  components/
+    LanguageSwitch.tsx        # 语言下拉（Globe 图标 + popover），复刻截图交互
+```
+
+`zh_CN.json` 为文案源；缺失 key 自动回退到 `zh-CN`。新增界面文案时先补 `zh_CN` 与 `en`，再补其余三语。

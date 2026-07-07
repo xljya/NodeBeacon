@@ -505,6 +505,9 @@
   gap: 12px;
   margin-bottom: 4px;
 }
+.login-lang {
+  margin-left: auto;
+}
 .login-logo {
   font-size: 28px;
   color: var(--accent);
@@ -617,4 +620,48 @@
   to {
     transform: rotate(360deg);
   }
+}
+
+/* ---------- Language switch ---------- */
+
+.lang-switch {
+  position: relative;
+  display: inline-flex;
+}
+.lang-menu {
+  position: absolute;
+  top: calc(100% + 6px);
+  right: 0;
+  z-index: 40;
+  margin: 0;
+  padding: 6px;
+  list-style: none;
+  min-width: 190px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  box-shadow: var(--shadow);
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.lang-item {
+  width: 100%;
+  text-align: left;
+  border: 0;
+  background: transparent;
+  color: var(--text);
+  font: inherit;
+  font-size: 14px;
+  padding: 9px 12px;
+  border-radius: 7px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.lang-item:hover {
+  background: var(--surface-2);
+}
+.lang-item.active {
+  background: var(--accent);
+  color: var(--accent-fg);
 }

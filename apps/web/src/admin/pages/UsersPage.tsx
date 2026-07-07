@@ -1,11 +1,13 @@
 import { AlertCircle } from "lucide-react";
+import { useTranslation } from "react-i18next";
 import type { AdminUsersResponse } from "@nodebeacon/shared";
 import { useApi } from "../../lib/useApi";
 
 export function UsersPage() {
+  const { t } = useTranslation();
   const { data, error, loading } = useApi<AdminUsersResponse>("/api/admin/users");
 
-  if (loading) return <div className="admin-state">加载中…</div>;
+  if (loading) return <div className="admin-state">{t("common.loading")}</div>;
   if (error) {
     return (
       <div className="admin-state error">
@@ -18,17 +20,17 @@ export function UsersPage() {
   return (
     <div className="page">
       <div className="page-head">
-        <h2>用户</h2>
-        <span className="page-sub">{users.length} 个账号 · owner 由环境变量创建</span>
+        <h2>{t("admin.users.title")}</h2>
+        <span className="page-sub">{t("admin.users.subtitle", { count: users.length })}</span>
       </div>
 
       <div className="table-wrap">
         <table className="data-table">
           <thead>
             <tr>
-              <th>邮箱</th>
-              <th>角色</th>
-              <th>ID</th>
+              <th>{t("admin.users.thEmail")}</th>
+              <th>{t("admin.users.thRole")}</th>
+              <th>{t("admin.users.thId")}</th>
             </tr>
           </thead>
           <tbody>
@@ -47,9 +49,7 @@ export function UsersPage() {
         </table>
       </div>
 
-      <p className="admin-hint">
-        多用户、`viewer` 角色和账号禁用将随 SQLite 持久化在后续版本加入。
-      </p>
+      <p className="admin-hint">{t("admin.users.hint")}</p>
     </div>
   );
 }

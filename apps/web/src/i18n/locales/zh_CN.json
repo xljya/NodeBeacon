@@ -1,0 +1,116 @@
+{
+  "common": {
+    "loading": "加载中…",
+    "notConfigured": "未配置",
+    "yes": "是",
+    "no": "否",
+    "verifying": "正在校验登录状态…",
+    "loadFailed": "加载失败",
+    "requestFailed": "请求失败 ({{status}})"
+  },
+  "login": {
+    "subtitle": "登录管理控制台",
+    "email": "账号（邮箱）",
+    "password": "密码",
+    "passwordPlaceholder": "请输入密码",
+    "submit": "登录",
+    "submitting": "登录中…",
+    "or": "或",
+    "github": "使用 GitHub 登录",
+    "back": "← 返回状态页",
+    "err_generic": "登录失败",
+    "err_github_unbound": "请先登录并绑定你的外部账号。",
+    "err_github_failed": "GitHub 登录失败，请重试。",
+    "err_github_disabled": "GitHub 登录未启用。"
+  },
+  "admin": {
+    "nav": {
+      "overview": "总览",
+      "nodes": "节点",
+      "users": "用户",
+      "settings": "设置",
+      "public": "公开状态页"
+    },
+    "topbar": {
+      "title": "管理后台",
+      "toggleTheme": "切换主题",
+      "logout": "登出"
+    },
+    "overview": {
+      "title": "总览",
+      "generatedAt": "生成于 {{time}} · v{{version}}",
+      "nodesCard": "节点",
+      "onlineSuffix": " / {{total}} 在线",
+      "degradedOffline": "降级 {{degraded}} · 离线 {{offline}}",
+      "prometheus": "数据源 Prometheus",
+      "status": "状态",
+      "reachable": "可达",
+      "unreachable": "不可达 / 降级",
+      "host": "Host",
+      "cache": "缓存",
+      "ttl": "TTL",
+      "data": "数据",
+      "stale": "stale 降级",
+      "realtime": "实时",
+      "auth": "认证",
+      "owner": "Owner",
+      "configured": "已配置",
+      "allowRegister": "开放注册"
+    },
+    "nodes": {
+      "title": "节点",
+      "subtitle": "{{count}} 台 · 展示配置来自节点注册表",
+      "thName": "名称",
+      "thGroup": "分组",
+      "thRegion": "区域",
+      "thProvider": "供应商",
+      "thStatus": "状态",
+      "thVisible": "可见",
+      "thOrder": "排序",
+      "visiblePublic": "公开",
+      "visibleHidden": "隐藏",
+      "view": "查看",
+      "drawerAria": "节点 {{name}}",
+      "close": "关闭",
+      "editNote": "节点展示配置的编辑与写回将在下一步实现（本版只读）。",
+      "fName": "展示名",
+      "fGroup": "分组",
+      "fRegion": "区域",
+      "fOrder": "排序",
+      "fTags": "标签",
+      "fVisibility": "可见性",
+      "selector": "Prometheus 选择器",
+      "saveNext": "保存（下一步）",
+      "saveNextTitle": "下一步实现"
+    },
+    "users": {
+      "title": "用户",
+      "subtitle": "{{count}} 个账号 · owner 由环境变量创建",
+      "thEmail": "邮箱",
+      "thRole": "角色",
+      "thId": "ID",
+      "hint": "多用户、viewer 角色和账号禁用将随 SQLite 持久化在后续版本加入。"
+    },
+    "settings": {
+      "title": "设置",
+      "subtitle": "本版为只读；写入能力随管理端写回一起开放",
+      "allowRegisterTitle": "开放注册",
+      "allowRegisterDesc": "是否允许自由注册新账号（生产环境应保持关闭）",
+      "on": "开启",
+      "off": "关闭",
+      "ttlTitle": "状态缓存 TTL",
+      "ttlDesc": "/api/status 的短缓存时长，防止刷新打爆 Prometheus",
+      "prometheusTitle": "数据源 Prometheus",
+      "prometheusDesc": "后端服务端查询目标（凭据不下发到浏览器）",
+      "publicPolicyTitle": "公开展示策略",
+      "publicPolicyDesc": "公开状态页展示基础在线状态；敏感信息需登录后查看",
+      "publicPolicyValue": "公开只读"
+    },
+    "status": {
+      "online": "在线",
+      "offline": "离线",
+      "degraded": "降级",
+      "unknown": "未知"
+    }
+  }
+}
