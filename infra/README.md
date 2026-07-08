@@ -51,8 +51,8 @@ external registry is used, so the Deployment uses `imagePullPolicy: Never`.
 
 ```sh
 # From a checkout of this repo on RS1000:
-docker build -t nodebeacon:0.3.0 .
-docker save nodebeacon:0.3.0 | sudo k3s ctr images import -
+docker build -t nodebeacon:0.3.1 .
+docker save nodebeacon:0.3.1 | sudo k3s ctr images import -
 ```
 
 ## Deploy
@@ -94,9 +94,9 @@ curl -i https://monitor.liucf.com/api/admin/summary
 curl -I https://monitor.liucf.com/api/auth/github
 ```
 
-For `0.3.0`, expected production checks are:
+For `0.3.1`, expected production checks are:
 
-- image: `nodebeacon:0.3.0`
+- image: `nodebeacon:0.3.1`
 - `/readyz` and `/healthz`: HTTP 200
 - `/api/status`: `summary.total == 5` and `summary.online == 5`
 - `/api/auth/config`: password and GitHub login both enabled

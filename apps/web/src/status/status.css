@@ -158,8 +158,11 @@
   position: relative;
 }
 .stat-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(120px, auto));
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
   gap: 16px 44px;
 }
 .stat-item {
