@@ -171,6 +171,23 @@
       "noMatchTitle": "一致するサーバーがありません",
       "noMatchText": "別のグループを選ぶか検索キーワードをクリアしてください。"
     },
+    "detail": {
+      "back": "一覧に戻る",
+      "notFoundTitle": "ノードが見つかりません",
+      "notFoundText": "id「{{id}}」のノードは設定されていません。",
+      "trendsTitle": "トレンド",
+      "loginTitle": "サインインしてトレンドを表示",
+      "loginText": "トレンドグラフの閲覧にはサインインが必要です。",
+      "chartEmpty": "この期間のデータはありません",
+      "chartError": "トレンドデータを取得できません",
+      "metricCpu": "CPU 使用率",
+      "metricMemory": "メモリ使用率",
+      "metricDisk": "ディスク使用率",
+      "metricNetwork": "ネットワーク速度",
+      "metricLoad": "ロード（1 分）",
+      "legendRx": "受信",
+      "legendTx": "送信"
+    },
     "lastUpdated": "最終更新 {{time}}",
     "footer": "良い一日を、友よ。",
     "units": { "d": "日", "h": "時", "m": "分" },

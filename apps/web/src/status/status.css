@@ -673,3 +673,237 @@
     display: none;
   }
 }
+
+/* ---------- Node detail page ---------- */
+
+.node-name-link {
+  text-decoration: none;
+}
+.node-name-link:hover {
+  color: var(--accent);
+  text-decoration: underline;
+}
+
+.detail-back {
+  display: inline-block;
+  margin-bottom: 14px;
+  font-size: 13px;
+  color: var(--text-dim);
+  text-decoration: none;
+}
+.detail-back:hover {
+  color: var(--accent);
+}
+
+.detail-head {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 18px 20px;
+  margin-bottom: 16px;
+  box-shadow: 0 1px 2px var(--card-shadow);
+}
+.detail-head-main {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.detail-name {
+  font-size: 22px;
+  font-weight: 700;
+}
+.detail-head-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 18px;
+  margin-top: 10px;
+  font-size: 13px;
+  color: var(--text-dim);
+}
+.detail-meta-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.detail-head .node-tags {
+  margin-top: 12px;
+}
+
+.detail-current {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 14px;
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 16px 20px;
+  margin-bottom: 20px;
+  box-shadow: 0 1px 2px var(--card-shadow);
+}
+.detail-netbox {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  justify-content: center;
+  font-size: 13px;
+}
+.detail-netbox-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+}
+.detail-netbox-row .l {
+  color: var(--text-mute);
+}
+.detail-netbox-row .v {
+  font-family: "JetBrains Mono", ui-monospace, monospace;
+  font-size: 12px;
+  color: var(--text-dim);
+}
+
+.detail-trends-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+.detail-trends-title {
+  font-size: 16px;
+  font-weight: 700;
+}
+.range-tabs {
+  display: inline-flex;
+  gap: 4px;
+  background: var(--panel2);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 3px;
+}
+.range-tab {
+  border: 0;
+  background: transparent;
+  color: var(--text-dim);
+  font: inherit;
+  font-size: 12.5px;
+  font-weight: 600;
+  padding: 5px 12px;
+  border-radius: 8px;
+  cursor: pointer;
+}
+.range-tab:hover {
+  color: var(--text);
+}
+.range-tab.active {
+  background: var(--accent);
+  color: var(--accent-fg);
+}
+
+.detail-login-cta {
+  display: inline-block;
+  margin-top: 14px;
+  background: var(--accent);
+  color: var(--accent-fg);
+  text-decoration: none;
+  font-size: 13px;
+  font-weight: 600;
+  padding: 8px 18px;
+  border-radius: 9px;
+}
+.detail-login-cta:hover {
+  background: var(--accent2);
+}
+
+.trend-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  gap: 14px;
+  margin-bottom: 24px;
+}
+.trend-chart {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 14px 16px 8px;
+  box-shadow: 0 1px 2px var(--card-shadow);
+  min-width: 0;
+}
+.trend-chart-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 8px;
+}
+.trend-chart-title {
+  font-size: 13.5px;
+  font-weight: 700;
+}
+.trend-legend {
+  display: inline-flex;
+  gap: 12px;
+  font-size: 11.5px;
+  color: var(--text-dim);
+}
+.trend-legend-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+.trend-legend-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+}
+.trend-chart-svg {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+.trend-gridline {
+  stroke: var(--border);
+  stroke-width: 1;
+  stroke-dasharray: 3 4;
+}
+.trend-gridline-base {
+  stroke-dasharray: none;
+}
+.trend-tick {
+  fill: var(--text-mute);
+  font-family: "JetBrains Mono", ui-monospace, monospace;
+  font-size: 10px;
+}
+.trend-cursor {
+  stroke: var(--text-mute);
+  stroke-width: 1;
+  stroke-dasharray: 2 3;
+}
+.trend-chart-empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 140px;
+  font-size: 12.5px;
+  color: var(--text-mute);
+}
+.trend-chart-readout {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 14px;
+  padding: 6px 2px 6px;
+  font-family: "JetBrains Mono", ui-monospace, monospace;
+  font-size: 11px;
+  color: var(--text-dim);
+  min-height: 24px;
+}
+.trend-readout-time {
+  color: var(--text-mute);
+}
+
+@media (max-width: 720px) {
+  .detail-trends-head {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+}

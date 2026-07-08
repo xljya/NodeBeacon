@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { Link } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import type { MetricView, NodeView } from "../nodeView";
 import { OsLogo } from "./OsLogo";
@@ -27,7 +28,14 @@ export function NodeCard({ node }: { node: NodeView }) {
       <div className="node-card-head">
         <div className="node-name-wrap">
           <span className="node-flag">{node.flag}</span>
-          <span className="node-name">{node.name}</span>
+          {/* Stop propagation so opening the detail page doesn't toggle expand. */}
+          <Link
+            to={`/nodes/${encodeURIComponent(node.id)}`}
+            className="node-name node-name-link"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {node.name}
+          </Link>
         </div>
         <span className={`status-pill ${node.online ? "online" : "offline"}`}>
           {node.online ? t("status.card.online") : t("status.card.offline")}

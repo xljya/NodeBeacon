@@ -171,6 +171,23 @@
       "noMatchTitle": "No matching servers",
       "noMatchText": "Try another group or clear the search keyword."
     },
+    "detail": {
+      "back": "Back to overview",
+      "notFoundTitle": "Node not found",
+      "notFoundText": "No node with id \"{{id}}\" is configured.",
+      "trendsTitle": "Trends",
+      "loginTitle": "Sign in to view trends",
+      "loginText": "Trend charts require sign-in.",
+      "chartEmpty": "No data in this range",
+      "chartError": "Trend data unavailable",
+      "metricCpu": "CPU usage",
+      "metricMemory": "Memory usage",
+      "metricDisk": "Disk usage",
+      "metricNetwork": "Network speed",
+      "metricLoad": "Load (1m)",
+      "legendRx": "Down",
+      "legendTx": "Up"
+    },
     "lastUpdated": "Last updated {{time}}",
     "footer": "Have a nice day, my friend.",
     "units": { "d": "d", "h": "h", "m": "m" },

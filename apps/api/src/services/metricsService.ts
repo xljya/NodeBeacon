@@ -18,7 +18,7 @@ export interface MetricsBuildResult {
   failedQueryCount: number;
 }
 
-type MatcherOperator = "=" | "!=" | "=~" | "!~";
+export type MatcherOperator = "=" | "!=" | "=~" | "!~";
 type NodeMetricName =
   | "up"
   | "cpu"
@@ -31,14 +31,14 @@ type NodeMetricName =
   | "networkRx"
   | "networkTx";
 
-interface LabelMatcher {
+export interface LabelMatcher {
   name: string;
   operator: MatcherOperator;
   value: string;
 }
 
-const networkDeviceExclude = "lo|docker.*|veth.*|br-.*|cni.*|flannel.*";
-const filesystemTypeExclude = "tmpfs|devtmpfs|overlay|squashfs|nsfs";
+export const networkDeviceExclude = "lo|docker.*|veth.*|br-.*|cni.*|flannel.*";
+export const filesystemTypeExclude = "tmpfs|devtmpfs|overlay|squashfs|nsfs";
 
 function clampPercent(value: number | null): number {
   if (value === null) return 0;
@@ -70,7 +70,7 @@ function buildSelector(labels: Record<string, string>, extra: LabelMatcher[] = [
     .join(",")}}`;
 }
 
-function metric(name: string, labels: Record<string, string>, extra: LabelMatcher[] = []): string {
+export function metric(name: string, labels: Record<string, string>, extra: LabelMatcher[] = []): string {
   return `${name}${buildSelector(labels, extra)}`;
 }
 

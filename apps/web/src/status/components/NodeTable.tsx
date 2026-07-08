@@ -1,3 +1,4 @@
+import { Link } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import type { MetricView, NodeView } from "../nodeView";
 import { OsLogo } from "./OsLogo";
@@ -31,7 +32,9 @@ export function NodeTable({ nodes }: { nodes: NodeView[] }) {
         <div className="node-row" key={node.id}>
           <span className="tname">
             <span className="node-flag">{node.flag}</span>
-            <span className="nm">{node.name}</span>
+            <Link to={`/nodes/${encodeURIComponent(node.id)}`} className="nm node-name-link">
+              {node.name}
+            </Link>
           </span>
           <span className="hide-sm">
             <span className="node-os-logo" style={{ width: 18, height: 18 }}>

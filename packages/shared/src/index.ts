@@ -81,6 +81,60 @@ export interface ApiErrorResponse {
   };
 }
 
+// --- Node list / detail / trend endpoints (P2) ---
+
+/** Public node metadata (no Prometheus label mapping — that stays server-side). */
+export interface NodeMeta {
+  id: string;
+  name: string;
+  provider: string;
+  group: string;
+  region: string;
+  location?: string;
+  displayOrder: number;
+  tags: string[];
+  online: boolean;
+  status: NodeHealthStatus;
+  updatedAt: string;
+}
+
+export interface ApiNodesResponse {
+  generatedAt: string;
+  nodes: NodeMeta[];
+}
+
+export interface ApiNodeDetailResponse {
+  generatedAt: string;
+  node: StatusNode;
+}
+
+/** Whitelisted trend metrics — the API rejects anything else. */
+export const TREND_METRICS = ["cpu", "memory", "disk", "network", "load"] as const;
+export type TrendMetric = (typeof TREND_METRICS)[number];
+
+/** Whitelisted trend ranges — each maps to a fixed step server-side. */
+export const TREND_RANGES = ["1h", "4h", "24h", "7d"] as const;
+export type TrendRange = (typeof TREND_RANGES)[number];
+
+export type TrendUnit = "percent" | "bytes_per_second" | "load";
+
+export interface TrendSeries {
+  /** "value" for single-series metrics; "rx" / "tx" for network. */
+  name: string;
+  /** [unix seconds, value]; null where Prometheus had no sample. */
+  points: Array<[number, number | null]>;
+}
+
+export interface ApiNodeRangeResponse {
+  nodeId: string;
+  metric: TrendMetric;
+  range: TrendRange;
+  stepSeconds: number;
+  unit: TrendUnit;
+  generatedAt: string;
+  series: TrendSeries[];
+}
+
 // --- Auth & admin (owner-only, read-only in this iteration) ---
 
 export type UserRole = "owner" | "viewer";

@@ -171,6 +171,23 @@
       "noMatchTitle": "沒有符合的伺服器",
       "noMatchText": "試試其他分組或清除搜尋關鍵字。"
     },
+    "detail": {
+      "back": "返回總覽",
+      "notFoundTitle": "找不到該節點",
+      "notFoundText": "沒有設定 id 為「{{id}}」的節點。",
+      "trendsTitle": "趨勢",
+      "loginTitle": "登入後查看趨勢",
+      "loginText": "趨勢圖需要登入後查看。",
+      "chartEmpty": "該時間範圍內暫無資料",
+      "chartError": "趨勢資料暫不可用",
+      "metricCpu": "CPU 使用率",
+      "metricMemory": "記憶體使用率",
+      "metricDisk": "磁碟使用率",
+      "metricNetwork": "網路速率",
+      "metricLoad": "負載（1 分鐘）",
+      "legendRx": "下行",
+      "legendTx": "上行"
+    },
     "lastUpdated": "最後更新 {{time}}",
     "footer": "祝你有美好的一天，朋友。",
     "units": { "d": "天", "h": "時", "m": "分" },

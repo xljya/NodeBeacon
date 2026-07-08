@@ -8,6 +8,7 @@ import fastifyStatic from "@fastify/static";
 import { loadEnv } from "./config/env.js";
 import { registerHealthRoutes } from "./routes/health.js";
 import { registerStatusRoutes } from "./routes/status.js";
+import { registerNodeRoutes } from "./routes/nodes.js";
 import { registerAuthRoutes } from "./routes/auth.js";
 import { registerAdminRoutes } from "./routes/admin.js";
 import { registerAuthGuard } from "./plugins/authGuard.js";
@@ -38,6 +39,7 @@ export async function createApp() {
 
   await registerHealthRoutes(app);
   await registerStatusRoutes(app, env);
+  await registerNodeRoutes(app, env);
   await registerAuthRoutes(app, env, authService);
   await registerAdminRoutes(app, env, authService);
 

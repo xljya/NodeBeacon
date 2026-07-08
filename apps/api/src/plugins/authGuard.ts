@@ -17,6 +17,7 @@ declare module "fastify" {
     user?: AuthUser;
   }
   interface FastifyInstance {
+    requireAuth: preHandlerHookHandler;
     requireOwner: preHandlerHookHandler;
     setSession(reply: FastifyReply, user: AuthUser): void;
     clearSession(reply: FastifyReply): void;
@@ -76,6 +77,14 @@ export function registerAuthGuard(app: FastifyInstance, env: ApiEnv, authService
 
   app.decorate("clearSession", function clearSession(reply: FastifyReply): void {
     reply.clearCookie(SESSION_COOKIE, { path: "/" });
+  });
+
+  app.decorate("requireAuth", function requireAuth(request: FastifyRequest, reply: FastifyReply, done: (err?: Error) => void): void {
+    if (!request.user) {
+      reply.code(401).send(buildApiError("unauthorized", "Authentication required."));
+      return;
+    }
+    done();
   });
 
   app.decorate("requireOwner", function requireOwner(request: FastifyRequest, reply: FastifyReply, done: (err?: Error) => void): void {

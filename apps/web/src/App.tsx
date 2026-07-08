@@ -1,5 +1,6 @@
 import { Routes, Route } from "react-router-dom";
 import { StatusPage } from "./status/StatusPage";
+import { NodeDetailPage } from "./status/NodeDetailPage";
 import { LoginPage } from "./pages/LoginPage";
 import { ProtectedRoute } from "./auth/ProtectedRoute";
 import { AdminLayout } from "./admin/AdminLayout";
@@ -13,6 +14,8 @@ export function App() {
     <Routes>
       {/* Public status page: native React dashboard driven by /api/status. */}
       <Route path="/" element={<StatusPage />} />
+      {/* Node detail: header is public; trend charts require sign-in. */}
+      <Route path="/nodes/:id" element={<NodeDetailPage />} />
       <Route path="/login" element={<LoginPage />} />
 
       {/* Owner-only admin console. */}

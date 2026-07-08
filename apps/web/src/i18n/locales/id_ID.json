@@ -171,6 +171,23 @@
       "noMatchTitle": "Tidak ada server yang cocok",
       "noMatchText": "Coba grup lain atau hapus kata kunci pencarian."
     },
+    "detail": {
+      "back": "Kembali ke ringkasan",
+      "notFoundTitle": "Node tidak ditemukan",
+      "notFoundText": "Tidak ada node dengan id \"{{id}}\".",
+      "trendsTitle": "Tren",
+      "loginTitle": "Masuk untuk melihat tren",
+      "loginText": "Grafik tren memerlukan login.",
+      "chartEmpty": "Tidak ada data dalam rentang ini",
+      "chartError": "Data tren tidak tersedia",
+      "metricCpu": "Penggunaan CPU",
+      "metricMemory": "Penggunaan memori",
+      "metricDisk": "Penggunaan disk",
+      "metricNetwork": "Kecepatan jaringan",
+      "metricLoad": "Beban (1 mnt)",
+      "legendRx": "Unduh",
+      "legendTx": "Unggah"
+    },
     "lastUpdated": "Terakhir diperbarui {{time}}",
     "footer": "Semoga harimu menyenangkan, teman.",
     "units": { "d": "h", "h": "j", "m": "mnt" },

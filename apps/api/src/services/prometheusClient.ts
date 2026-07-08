@@ -5,11 +5,16 @@ export interface PrometheusVectorResult {
   value: [number, string];
 }
 
+export interface PrometheusMatrixResult {
+  metric: Record<string, string>;
+  values: Array<[number, string]>;
+}
+
 interface PrometheusQueryResponse {
   status: "success" | "error";
   data?: {
     resultType: string;
-    result: PrometheusVectorResult[];
+    result: unknown[];
   };
   errorType?: string;
   error?: string;
@@ -46,10 +51,37 @@ export class PrometheusClient {
   }
 
   async query(query: string): Promise<PrometheusVectorResult[]> {
-    const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), this.#timeoutMs);
     const endpoint = new URL(`${this.#baseUrl}/api/v1/query`);
     endpoint.searchParams.set("query", query);
+    const data = await this.#request(endpoint);
+    if (data.resultType !== "vector") {
+      throw new PrometheusQueryError("Prometheus returned an unsupported response shape.", "bad_response");
+    }
+    return data.result as PrometheusVectorResult[];
+  }
+
+  /** Runs /api/v1/query_range. start/end are unix seconds, step in seconds. */
+  async queryRange(
+    query: string,
+    startSeconds: number,
+    endSeconds: number,
+    stepSeconds: number
+  ): Promise<PrometheusMatrixResult[]> {
+    const endpoint = new URL(`${this.#baseUrl}/api/v1/query_range`);
+    endpoint.searchParams.set("query", query);
+    endpoint.searchParams.set("start", String(startSeconds));
+    endpoint.searchParams.set("end", String(endSeconds));
+    endpoint.searchParams.set("step", String(stepSeconds));
+    const data = await this.#request(endpoint);
+    if (data.resultType !== "matrix") {
+      throw new PrometheusQueryError("Prometheus returned an unsupported response shape.", "bad_response");
+    }
+    return data.result as PrometheusMatrixResult[];
+  }
+
+  async #request(endpoint: URL): Promise<{ resultType: string; result: unknown[] }> {
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), this.#timeoutMs);
 
     try {
       const response = await fetch(endpoint, {
@@ -73,11 +105,11 @@ export class PrometheusClient {
         );
       }
 
-      if (!payload.data || payload.data.resultType !== "vector" || !Array.isArray(payload.data.result)) {
+      if (!payload.data || !Array.isArray(payload.data.result)) {
         throw new PrometheusQueryError("Prometheus returned an unsupported response shape.", "bad_response");
       }
 
-      return payload.data.result;
+      return payload.data;
     } catch (error) {
       if (error instanceof PrometheusQueryError) {
         throw error;

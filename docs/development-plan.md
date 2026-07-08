@@ -1,6 +1,6 @@
 # NodeBeacon 开发文档
 
-最后更新：2026-07-07
+最后更新：2026-07-09
 
 ## 决策记录
 
@@ -107,7 +107,7 @@ flowchart LR
 | `GET /api/status` | 五台服务器总览，替换前端卡片假数据 | 公开 |
 | `GET /api/nodes` | 节点列表和元数据 | 公开 |
 | `GET /api/nodes/:id` | 单台服务器详情 | 登录 |
-| `GET /api/nodes/:id/range?metric=cpu&range=4h` | 单指标趋势图 | 登录 |
+| `GET /api/nodes/:id/range?metric=cpu&range=4h` | 单指标趋势图（`metric ∈ cpu/memory/disk/network/load`，`range ∈ 1h/4h/24h/7d`） | 登录 |
 | `GET /api/latency` | blackbox 公网探测结果 | 公开 |
 | `GET /api/incidents` | 故障事件时间线 | 登录 |
 | `POST /api/auth/register` | 注册 | 关闭 |
@@ -295,17 +295,23 @@ P1 验证记录：2026-07-06 已用浏览器在 `https://monitor.liucf.com/` 端
 
 | 状态 | 任务 | 交付标准 | 备注 |
 | --- | --- | --- | --- |
-| 待做 | 实现 `GET /api/nodes` 和 `GET /api/nodes/:id` | 节点元数据和单节点详情可查询 | 复用 node registry |
-| 待做 | 实现趋势查询接口 | `query_range` 支持 CPU、内存、磁盘、网络、延迟 | 严格限制 `metric` 和 `range` 枚举 |
-| 待做 | 节点详情页 | 展示趋势图、近期状态、基础指标和探测结果 | 可从卡片和表格进入 |
+| 已完成 | 实现 `GET /api/nodes` 和 `GET /api/nodes/:id` | 节点元数据和单节点详情可查询 | `0.4.0`：`/api/nodes` 公开（仅 public 节点、不含 Prometheus label 映射）；`/api/nodes/:id` 登录后返回完整节点 |
+| 已完成 | 实现趋势查询接口 | `query_range` 支持 CPU、内存、磁盘、网络、负载 | `0.4.0`：`GET /api/nodes/:id/range?metric=&range=`；`metric ∈ cpu/memory/disk/network/load`、`range ∈ 1h/4h/24h/7d` 严格枚举，越界 400；按 range 分级缓存；blackbox 延迟指标另行推进 |
+| 已完成 | 节点详情页 | 展示趋势图、近期状态、基础指标和探测结果 | `0.4.0`：`/nodes/:id` 从卡片和表格节点名进入；探测结果随 Blackbox 任务补 |
 | 待做 | Blackbox 延迟和 HTTP 状态 | 展示公网探测延迟、成功率和 HTTP 状态码 | 用于判断入口和节点健康 |
-| 部分完成（主面板） | 前端组件化 | 公开状态页从 iframe 原型迁移到原生 React 组件 | `0.3.0` 已把首页主面板（卡片/表格/分组/搜索/主题/自动刷新）从 iframe 迁到原生 React，并接入 i18n（见 §12 i18n-P2）；**节点详情/趋势视图仍待做，依赖后端 `query_range` 接口** |
+| 已完成 | 前端组件化 | 公开状态页从 iframe 原型迁移到原生 React 组件 | `0.3.0` 首页主面板迁移；`0.4.0` 补齐节点详情/趋势视图（手写 SVG 折线图，无图表库依赖） |
 | 待做 | NodeBeacon 自身 `/metrics` | 暴露 Prometheus 文本指标：请求量、错误率、Prom 查询耗时、缓存命中率 | 具体化「自身可观测性」；后续接 Grafana/Loki |
 | 待做 | 基础自动化测试 | 引入 vitest；覆盖 `/api/status`、auth、admin 只读接口的关键路径 | 目前只有 typecheck，随 auth/admin 复杂度上升补测试 |
 | 待做（后移） | Alertmanager webhook | 接收 firing/resolved 事件并归一化 | 先落 SQLite；排在节点详情/趋势 + 只读后台之后 |
 | 待做（后移） | Incident 时间线 | 展示故障开始、恢复、持续时间和影响节点 | 登录前后展示粒度可不同；随 SQLite 写入一起做 |
 
 P2 完成判定：用户可以从总览定位问题节点，进入详情页查看最近趋势，并通过 incident 时间线理解故障发生和恢复过程。
+
+P2 进展记录：2026-07-09 `0.4.0` 交付节点详情 + 趋势主线（P2 前三项 + 前端组件化收尾）。
+
+- **后端**：`PrometheusClient` 新增 `queryRange()`（`/api/v1/query_range`，matrix 校验，与 instant 查询共用超时/错误分类）。新增 `services/trendService`：`metric ∈ cpu/memory/disk/network/load`、`range ∈ 1h/4h/24h/7d` 白名单，每档固定 step（30s/2m/10m/1h）并随档位放大 `rate()` 窗口（2m/5m/15m/2h），趋势结果按 range 分级缓存（30s～15min）。新增 `routes/nodes`：`GET /api/nodes`（公开，仅 `public` 节点元数据 + 健康状态，不暴露 Prometheus label 映射）、`GET /api/nodes/:id`（登录）、`GET /api/nodes/:id/range`（登录）；`authGuard` 新增 `requireAuth`（区别于 `requireOwner`）。非法 metric/range 返回 400，未知节点 404，无 Prometheus 或查询失败 503 `trends_unavailable`。
+- **前端**：新增 `/nodes/:id` 详情页（`status/NodeDetailPage.tsx`）：节点头（旗帜/状态/标签/系统/uptime/负载/最后上报）+ 实时指标卡（CPU/内存/磁盘条 + 网速/流量），快照随 `/api/status` 每 20s 刷新；趋势区 5 张图（CPU/内存/磁盘/网络 rx+tx/负载）+ 1h/4h/24h/7d 范围切换（localStorage 记忆），登录后每 60s 刷新、`document.hidden` 暂停；未登录显示「登录后查看趋势」CTA（页面头部信息保持公开）。图表为手写 SVG 组件（`TrendChart.tsx`：面积/双折线、y/x 刻度、断点断线、hover 十字线读数），未引入图表库。状态页卡片和表格的节点名变为详情页链接。新增 `status.detail.*` 文案并补齐 5 语言 JSON。
+- **验证**：本机以 mock Prometheus（`/api/v1/query` + `query_range` 合成数据）跑生产构建端到端验证——`/api/nodes` 公开返回、未登录 detail/range 401、错误 metric/range 400、未知节点 404、network 返回 rx/tx 双序列；浏览器验证登录前 CTA、登录后 5 图渲染、范围切换、明暗主题、卡片/表格入口跳转，控制台无报错、无 missing-key。`pnpm typecheck`/`build` 通过。
 
 ### P3：权限、管理和长期体验
 
@@ -450,7 +456,7 @@ monitor.liucf.com
 | 状态 | 阶段 | 交付标准 | 备注 |
 | --- | --- | --- | --- |
 | 已完成 | i18n-P1：基础 + 登录/后台本地化 | i18next 初始化 + 5 语言 JSON + 可用的 `LanguageSwitch`；登录页与后台（布局、总览、节点、用户、设置、状态徽章）全量走 `t()` | 我们拥有源码的 React 界面全部本地化；不动 iframe 原型 |
-| 已完成（主面板） | i18n-P2：公开状态页多语言 | `0.3.0` 已把首页主面板改为原生 React，文案接入同一套 `translation` 资源与 `LanguageSwitch`，首页的语言/主题下拉真正生效 | 新增 `status.*` 命名空间；节点详情/趋势页随后端 `query_range` 接口再做 |
+| 已完成 | i18n-P2：公开状态页多语言 | `0.3.0` 已把首页主面板改为原生 React，文案接入同一套 `translation` 资源与 `LanguageSwitch`，首页的语言/主题下拉真正生效 | 新增 `status.*` 命名空间；`0.4.0` 节点详情/趋势页文案（`status.detail.*`）已随功能补齐 5 语言 |
 | 待做（随功能增长） | i18n 覆盖新增 UI | 后续管理端写回 UI（`PATCH /api/admin/nodes/:id` 等）新增文案一律走 i18n key | 禁止再硬编码中文；新增 key 同步补齐 5 个 JSON |
 | 待做（可选·低优先） | 语言偏好服务端持久化 | 等 P3「会话/用户持久化升级到 SQLite」落地后，可把语言偏好随账号存储 | 当前 localStorage 已够用 |
 | 待做（可选） | 扩展语言 / 时间格式本地化 | 结构支持随时加语言；后端返回的少量文案与时间格式按需本地化 | 非阻塞 |
