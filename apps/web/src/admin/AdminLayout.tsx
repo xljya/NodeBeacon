@@ -1,6 +1,8 @@
 import { useEffect, useState } from "react";
 import { NavLink, Outlet, useNavigate } from "react-router-dom";
 import {
+  Activity,
+  BookOpen,
   ExternalLink,
   Info,
   LayoutDashboard,
@@ -13,16 +15,39 @@ import {
   Users
 } from "lucide-react";
 import { useTranslation } from "react-i18next";
+import type { AdminSummaryResponse } from "@nodebeacon/shared";
 import { useAuth } from "../auth/AuthProvider";
 import { LanguageSwitch } from "../components/LanguageSwitch";
+import { useApi } from "../lib/useApi";
 import "./admin.css";
 
-const NAV = [
-  { to: "/admin", labelKey: "admin.nav.overview", icon: LayoutDashboard, end: true },
-  { to: "/admin/nodes", labelKey: "admin.nav.nodes", icon: Server, end: false },
-  { to: "/admin/users", labelKey: "admin.nav.users", icon: Users, end: false },
-  { to: "/admin/settings", labelKey: "admin.nav.settings", icon: Settings, end: false },
-  { to: "/admin/about", labelKey: "admin.nav.about", icon: Info, end: false }
+const NAV_GROUPS = [
+  {
+    labelKey: "admin.nav.groupMonitor",
+    items: [
+      { to: "/admin", labelKey: "admin.nav.overview", icon: LayoutDashboard, end: true },
+      { to: "/admin/nodes", labelKey: "admin.nav.nodes", icon: Server, end: false }
+    ]
+  },
+  {
+    labelKey: "admin.nav.groupManage",
+    items: [
+      { to: "/admin/users", labelKey: "admin.nav.users", icon: Users, end: false },
+      { to: "/admin/settings", labelKey: "admin.nav.settings", icon: Settings, end: false },
+      { to: "/admin/activity", labelKey: "admin.nav.activity", icon: Activity, end: false },
+      { to: "/admin/about", labelKey: "admin.nav.about", icon: Info, end: false }
+    ]
+  }
+];
+
+const SIDEBAR_LINKS = [
+  { href: "/", labelKey: "admin.nav.public", icon: ExternalLink, external: false },
+  {
+    href: "https://github.com/xljya/NodeBeacon/blob/main/docs/development-plan.md",
+    labelKey: "admin.nav.documentation",
+    icon: BookOpen,
+    external: true
+  }
 ];
 
 type Theme = "light" | "dark";
@@ -30,6 +55,7 @@ type Theme = "light" | "dark";
 export function AdminLayout() {
   const { t } = useTranslation();
   const { user, logout } = useAuth();
+  const { data: summary } = useApi<AdminSummaryResponse>("/api/admin/summary");
   const navigate = useNavigate();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [theme, setTheme] = useState<Theme>(
@@ -51,25 +77,41 @@ export function AdminLayout() {
       <aside className={sidebarOpen ? "admin-sidebar open" : "admin-sidebar"}>
         <div className="admin-brand">
           <span className="admin-logo">◈</span> NodeBeacon
+          {summary?.version && <span className="admin-brand-version">v{summary.version}</span>}
         </div>
         <nav className="admin-nav">
-          {NAV.map(({ to, labelKey, icon: Icon, end }) => (
-            <NavLink
-              key={to}
-              to={to}
-              end={end}
-              onClick={() => setSidebarOpen(false)}
-              className={({ isActive }) => (isActive ? "admin-nav-item active" : "admin-nav-item")}
+          {NAV_GROUPS.map((group) => (
+            <div className="admin-nav-section" key={group.labelKey}>
+              <div className="admin-nav-heading">{t(group.labelKey)}</div>
+              {group.items.map(({ to, labelKey, icon: Icon, end }) => (
+                <NavLink
+                  key={to}
+                  to={to}
+                  end={end}
+                  onClick={() => setSidebarOpen(false)}
+                  className={({ isActive }) => (isActive ? "admin-nav-item active" : "admin-nav-item")}
+                >
+                  <Icon size={17} />
+                  <span>{t(labelKey)}</span>
+                </NavLink>
+              ))}
+            </div>
+          ))}
+        </nav>
+        <div className="admin-sidebar-links">
+          {SIDEBAR_LINKS.map(({ href, labelKey, icon: Icon, external }) => (
+            <a
+              className="admin-nav-item"
+              href={href}
+              key={labelKey}
+              target={external ? "_blank" : undefined}
+              rel={external ? "noreferrer" : undefined}
             >
               <Icon size={17} />
               <span>{t(labelKey)}</span>
-            </NavLink>
+            </a>
           ))}
-        </nav>
-        <a className="admin-nav-item admin-nav-external" href="/">
-          <ExternalLink size={17} />
-          <span>{t("admin.nav.public")}</span>
-        </a>
+        </div>
       </aside>
 
       <div className="admin-main">
@@ -89,6 +131,7 @@ export function AdminLayout() {
             </div>
           </div>
           <div className="admin-topbar-actions">
+            {summary?.version && <span className="admin-version-chip">v{summary.version}</span>}
             <LanguageSwitch />
             <button
               className="icon-btn"

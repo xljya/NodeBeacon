@@ -9,7 +9,7 @@ import type { ApiEnv } from "../config/env.js";
 import type { AuthService } from "../services/authService.js";
 import { getStatus } from "../services/statusService.js";
 
-const APP_VERSION = process.env.APP_VERSION ?? "0.4.2";
+const APP_VERSION = process.env.APP_VERSION ?? "0.4.3";
 
 function safeHost(url: string): string | undefined {
   try {

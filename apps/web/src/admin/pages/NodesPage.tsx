@@ -40,6 +40,7 @@ export function NodesPage() {
   const [group, setGroup] = useState("all");
   const [region, setRegion] = useState("all");
   const [visibility, setVisibility] = useState<VisibilityFilter>("all");
+  const [selectedIds, setSelectedIds] = useState<string[]>([]);
 
   const nodes = data?.nodes ?? [];
   const groups = useMemo(() => unique(nodes.map((node) => node.group)), [nodes]);
@@ -72,9 +73,33 @@ export function NodesPage() {
 
   const online = nodes.filter((node) => node.online).length;
   const hidden = nodes.filter((node) => !node.public).length;
+  const selectedNodes = useMemo(
+    () => nodes.filter((node) => selectedIds.includes(node.id)),
+    [nodes, selectedIds]
+  );
+  const allFilteredSelected =
+    filteredNodes.length > 0 && filteredNodes.every((node) => selectedIds.includes(node.id));
 
   const copyNodeSelector = async (node: AdminNode) => {
     await navigator.clipboard?.writeText(formatSelector(node.labels));
+  };
+
+  const copySelectedSelectors = async () => {
+    await navigator.clipboard?.writeText(
+      selectedNodes.map((node) => `${node.name} ${formatSelector(node.labels)}`).join("\n")
+    );
+  };
+
+  const toggleNodeSelection = (id: string) => {
+    setSelectedIds((prev) => (prev.includes(id) ? prev.filter((item) => item !== id) : [...prev, id]));
+  };
+
+  const toggleFilteredSelection = () => {
+    if (allFilteredSelected) {
+      setSelectedIds((prev) => prev.filter((id) => !filteredNodes.some((node) => node.id === id)));
+      return;
+    }
+    setSelectedIds((prev) => [...new Set([...prev, ...filteredNodes.map((node) => node.id)])]);
   };
 
   if (loading) return <div className="admin-state">{t("common.loading")}</div>;
@@ -141,10 +166,38 @@ export function NodesPage() {
         </Select>
       </div>
 
+      {selectedNodes.length > 0 && (
+        <div className="bulk-bar">
+          <div>
+            <b>{t("admin.nodes.selectedCount", { count: selectedNodes.length })}</b>
+            <span>{t("admin.nodes.bulkHint")}</span>
+          </div>
+          <div className="bulk-actions">
+            <button className="ghost-btn" onClick={copySelectedSelectors}>
+              <Copy size={15} /> {t("admin.nodes.copySelectedSelectors")}
+            </button>
+            <button className="primary-btn" disabled title={t("admin.nodes.saveNextTitle")}>
+              {t("admin.nodes.editSelectedNext")}
+            </button>
+            <button className="icon-btn" onClick={() => setSelectedIds([])} title={t("admin.nodes.clearSelection")}>
+              <X size={15} />
+            </button>
+          </div>
+        </div>
+      )}
+
       <div className="table-wrap">
         <table className="data-table">
           <thead>
             <tr>
+              <th className="select-col">
+                <input
+                  type="checkbox"
+                  checked={allFilteredSelected}
+                  onChange={toggleFilteredSelection}
+                  aria-label={t("admin.nodes.selectAll")}
+                />
+              </th>
               <th>{t("admin.nodes.thName")}</th>
               <th>{t("admin.nodes.thGroup")}</th>
               <th>{t("admin.nodes.thRegion")}</th>
@@ -158,7 +211,20 @@ export function NodesPage() {
           </thead>
           <tbody>
             {filteredNodes.map((node) => (
-              <tr key={node.id} className="clickable" onClick={() => setSelected(node)}>
+              <tr
+                key={node.id}
+                className={selectedIds.includes(node.id) ? "clickable selected" : "clickable"}
+                onClick={() => setSelected(node)}
+              >
+                <td className="select-col">
+                  <input
+                    type="checkbox"
+                    checked={selectedIds.includes(node.id)}
+                    onClick={(event) => event.stopPropagation()}
+                    onChange={() => toggleNodeSelection(node.id)}
+                    aria-label={t("admin.nodes.selectNode", { name: node.name })}
+                  />
+                </td>
                 <td>
                   <b>{node.name}</b>
                   <div className="muted mono">{node.id}</div>

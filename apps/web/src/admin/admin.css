@@ -74,11 +74,48 @@
 .admin-logo {
   color: var(--accent);
 }
+.admin-brand-version,
+.admin-version-chip {
+  display: inline-flex;
+  align-items: center;
+  min-height: 22px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: var(--surface-2);
+  color: var(--text-muted);
+  font-family: "JetBrains Mono", ui-monospace, monospace;
+  font-size: 11px;
+  font-weight: 600;
+}
+.admin-brand-version {
+  margin-left: auto;
+}
 
 .admin-nav {
   display: flex;
   flex-direction: column;
+  gap: 12px;
+}
+.admin-nav-section {
+  display: flex;
+  flex-direction: column;
   gap: 2px;
+}
+.admin-nav-heading {
+  padding: 6px 12px 3px;
+  color: var(--text-muted);
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+.admin-sidebar-links {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin-top: auto;
+  padding-top: 12px;
+  border-top: 1px solid var(--border);
 }
 .admin-nav-item {
   display: flex;
@@ -101,13 +138,6 @@
   color: var(--accent);
   border-left-color: var(--accent);
 }
-.admin-nav-external {
-  margin-top: auto;
-  border-top: 1px solid var(--border);
-  border-radius: 0;
-  padding-top: 14px;
-}
-
 .admin-main {
   flex: 1;
   display: flex;
@@ -629,6 +659,34 @@ button.admin-menu-btn {
 .empty-table b {
   color: var(--text);
 }
+.bulk-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 16px;
+  padding: 12px 14px;
+  border: 1px solid color-mix(in srgb, var(--accent) 26%, var(--border));
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--accent) 7%, var(--surface));
+}
+.bulk-bar b {
+  display: block;
+  font-size: 14px;
+}
+.bulk-bar span {
+  display: block;
+  margin-top: 2px;
+  color: var(--text-muted);
+  font-size: 12px;
+}
+.bulk-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  gap: 8px;
+}
 
 /* ---------- Table ---------- */
 
@@ -669,9 +727,22 @@ button.admin-menu-btn {
 .data-table tr.clickable:hover {
   background: var(--surface-2);
 }
+.data-table tr.selected {
+  background: color-mix(in srgb, var(--accent) 7%, var(--surface));
+}
 .muted {
   color: var(--text-muted);
   font-size: 12px;
+}
+.select-col {
+  width: 42px;
+  text-align: center;
+}
+.select-col input {
+  width: 16px;
+  height: 16px;
+  accent-color: var(--accent);
+  cursor: pointer;
 }
 .row-action {
   color: var(--accent);
@@ -1017,6 +1088,74 @@ button.admin-menu-btn {
   line-height: 1.4;
 }
 
+/* ---------- Activity ---------- */
+
+.activity-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1.1fr) minmax(340px, 0.9fr);
+  gap: 16px;
+}
+.activity-timeline {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.timeline-item {
+  display: flex;
+  gap: 12px;
+  padding: 12px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--surface-2);
+}
+.timeline-icon {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 34px;
+  height: 34px;
+  border-radius: 9px;
+  color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 12%, transparent);
+}
+.timeline-item.ok .timeline-icon {
+  color: var(--ok);
+  background: color-mix(in srgb, var(--ok) 12%, transparent);
+}
+.timeline-item.warn .timeline-icon {
+  color: var(--warn);
+  background: color-mix(in srgb, var(--warn) 12%, transparent);
+}
+.timeline-item b,
+.activity-node-row b {
+  display: block;
+  font-size: 14px;
+}
+.timeline-item p {
+  margin: 4px 0;
+  color: var(--text);
+  font-size: 13px;
+}
+.timeline-item span,
+.activity-node-row span {
+  color: var(--text-muted);
+  font-size: 12px;
+}
+.activity-node-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto minmax(136px, auto);
+  align-items: center;
+  gap: 12px;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--border);
+}
+.activity-node-row:last-child {
+  border-bottom: 0;
+}
+.activity-node-row > div {
+  min-width: 0;
+}
+
 /* ---------- Login ---------- */
 
 .login-screen {
@@ -1220,7 +1359,8 @@ button.admin-menu-btn {
     grid-template-columns: 1fr;
   }
   .settings-grid,
-  .admin-section-grid {
+  .admin-section-grid,
+  .activity-layout {
     grid-template-columns: 1fr;
   }
   .span-2 {
@@ -1273,6 +1413,10 @@ button.admin-menu-btn {
   .admin-content {
     padding: 16px;
   }
+  .admin-version-chip,
+  .admin-brand-version {
+    display: none;
+  }
   .page-head-spread {
     align-items: flex-start;
     flex-direction: column;
@@ -1300,7 +1444,21 @@ button.admin-menu-btn {
     overflow-x: auto;
   }
   .data-table {
-    min-width: 840px;
+    min-width: 980px;
+  }
+  .bulk-bar {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+  .bulk-actions {
+    justify-content: flex-start;
+    width: 100%;
+  }
+  .activity-node-row {
+    grid-template-columns: minmax(0, 1fr) auto;
+  }
+  .activity-node-row > .mono {
+    grid-column: 1 / -1;
   }
   .list-row {
     grid-template-columns: minmax(0, 1fr) auto;

@@ -25,11 +25,15 @@
   },
   "admin": {
     "nav": {
+      "groupMonitor": "监控",
+      "groupManage": "管理",
       "overview": "总览",
       "nodes": "节点",
       "users": "用户",
       "settings": "设置",
+      "activity": "活动",
       "about": "关于",
+      "documentation": "文档",
       "public": "公开状态页"
     },
     "topbar": {
@@ -139,6 +143,13 @@
       "openDetailTitle": "打开公开详情",
       "openHiddenTitle": "隐藏节点不在公开详情页展示",
       "viewDetailsTitle": "查看管理详情",
+      "selectedCount": "已选择 {{count}} 台",
+      "bulkHint": "注册表持久化落地前，批量写入保持关闭。",
+      "copySelectedSelectors": "复制选择器",
+      "editSelectedNext": "编辑所选（下一步）",
+      "clearSelection": "清空选择",
+      "selectAll": "选择所有筛选结果",
+      "selectNode": "选择 {{name}}",
       "saveNext": "保存（下一步）",
       "saveNextTitle": "下一步实现"
     },
@@ -257,6 +268,26 @@
       "komariReferenceDesc": "打开参考的 Komari 前端项目",
       "runtimeSettings": "运行设置",
       "runtimeSettingsDesc": "查看实际配置和安全开关"
+    },
+    "activity": {
+      "title": "活动",
+      "subtitle": "运行快照生成于 {{time}}",
+      "snapshotTitle": "实时快照，不是持久化审计日志",
+      "snapshotText": "本页把当前管理 API 数据整理成运维时间线。持久化审计事件会随 SQLite 写回阶段加入。",
+      "timelineTitle": "运维时间线",
+      "timelineDesc": "当前服务与访问状态",
+      "nodeSnapshot": "节点快照已刷新",
+      "nodeSnapshotText": "最新状态响应中 {{online}} / {{total}} 台节点在线。",
+      "dataSource": "数据源已检查",
+      "prometheusReachable": "Prometheus 可达，状态缓存为实时数据。",
+      "prometheusDegraded": "Prometheus 降级，或响应正在使用 stale fallback。",
+      "adminGuard": "管理端守卫已检查",
+      "ownerConfigured": "Owner 认证已配置。",
+      "ownerMissing": "Owner 认证尚未完整配置。",
+      "userSnapshot": "用户快照已加载",
+      "userSnapshotText": "Owner 控制台当前可见 {{count}} 个账号记录。",
+      "recentNodes": "最近节点上报",
+      "recentNodesDesc": "来自当前管理端节点列表的最新 node-exporter 时间戳"
     },
     "status": {
       "online": "在线",

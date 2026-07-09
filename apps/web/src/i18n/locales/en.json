@@ -25,11 +25,15 @@
   },
   "admin": {
     "nav": {
+      "groupMonitor": "Monitor",
+      "groupManage": "Manage",
       "overview": "Overview",
       "nodes": "Nodes",
       "users": "Users",
       "settings": "Settings",
+      "activity": "Activity",
       "about": "About",
+      "documentation": "Documentation",
       "public": "Public status page"
     },
     "topbar": {
@@ -139,6 +143,13 @@
       "openDetailTitle": "Open public detail",
       "openHiddenTitle": "Hidden nodes are not on the public detail page",
       "viewDetailsTitle": "View admin details",
+      "selectedCount": "{{count}} selected",
+      "bulkHint": "Bulk writes are disabled until registry persistence lands.",
+      "copySelectedSelectors": "Copy selectors",
+      "editSelectedNext": "Edit selected (coming next)",
+      "clearSelection": "Clear selection",
+      "selectAll": "Select all filtered nodes",
+      "selectNode": "Select {{name}}",
       "saveNext": "Save (coming next)",
       "saveNextTitle": "Coming next"
     },
@@ -257,6 +268,26 @@
       "komariReferenceDesc": "Open the referenced Komari frontend project",
       "runtimeSettings": "Runtime settings",
       "runtimeSettingsDesc": "Review effective config and security switches"
+    },
+    "activity": {
+      "title": "Activity",
+      "subtitle": "Runtime snapshot generated at {{time}}",
+      "snapshotTitle": "Live snapshot, not a persisted audit log",
+      "snapshotText": "This view reshapes current admin API data into an operations timeline. Persistent audit events will come with SQLite write-back.",
+      "timelineTitle": "Operations timeline",
+      "timelineDesc": "Current service and access state",
+      "nodeSnapshot": "Node snapshot refreshed",
+      "nodeSnapshotText": "{{online}} of {{total}} nodes are online in the latest status response.",
+      "dataSource": "Data source checked",
+      "prometheusReachable": "Prometheus is reachable and the status cache is live.",
+      "prometheusDegraded": "Prometheus is degraded or the response is using stale fallback data.",
+      "adminGuard": "Admin guard checked",
+      "ownerConfigured": "Owner authentication is configured.",
+      "ownerMissing": "Owner authentication is not fully configured.",
+      "userSnapshot": "User snapshot loaded",
+      "userSnapshotText": "{{count}} account records are visible to the owner console.",
+      "recentNodes": "Recent node reports",
+      "recentNodesDesc": "Latest node-exporter timestamps from the current admin node list"
     },
     "status": {
       "online": "Online",

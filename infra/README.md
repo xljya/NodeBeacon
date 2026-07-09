@@ -51,8 +51,8 @@ external registry is used, so the Deployment uses `imagePullPolicy: Never`.
 
 ```sh
 # From a checkout of this repo on RS1000:
-docker build -t nodebeacon:0.4.2 .
-docker save nodebeacon:0.4.2 | sudo k3s ctr images import -
+docker build -t nodebeacon:0.4.3 .
+docker save nodebeacon:0.4.3 | sudo k3s ctr images import -
 ```
 
 ## Deploy
@@ -94,9 +94,9 @@ curl -i https://monitor.liucf.com/api/admin/summary
 curl -I https://monitor.liucf.com/api/auth/github
 ```
 
-For `0.4.2`, expected production checks are:
+For `0.4.3`, expected production checks are:
 
-- image: `nodebeacon:0.4.2`
+- image: `nodebeacon:0.4.3`
 - `/readyz` and `/healthz`: HTTP 200
 - `/api/status`: `summary.total == 5` and `summary.online == 5`
 - `/api/auth/config`: password and GitHub login both enabled
@@ -112,12 +112,15 @@ For `0.4.2`, expected production checks are:
   appear after owner sign-in, with a working 1h/4h/24h/7d switch
 - `/admin`: enhanced read-only console renders the health overview, dense nodes
   table with search/status/group/region/visibility filters, row actions,
-  users access model, grouped settings panels, and a collapsed mobile sidebar.
+  grouped sidebar navigation, users access model, grouped settings panels,
+  version chips, and a collapsed mobile sidebar.
 - `/admin/about`: owner-only runtime/about page renders version, delivery,
   Prometheus/cache/auth boundaries, and repo/reference links.
+- `/admin/activity`: owner-only live activity snapshot renders current admin API
+  data as an operations timeline without claiming persisted audit logs.
 - `/admin/nodes`: row actions can copy the Prometheus selector, open public
-  detail for visible nodes, and open the admin drawer without double-triggering
-  the row click.
+  detail for visible nodes, open the admin drawer without double-triggering the
+  row click, and copy selectors for selected rows from the bulk bar.
 - `/admin/settings`: read-only appearance section shows browser-local theme
   preference boundaries alongside data/cache/auth/security/release sections.
 
