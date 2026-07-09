@@ -8,6 +8,7 @@ import { OverviewPage } from "./admin/pages/OverviewPage";
 import { NodesPage } from "./admin/pages/NodesPage";
 import { UsersPage } from "./admin/pages/UsersPage";
 import { SettingsPage } from "./admin/pages/SettingsPage";
+import { AboutPage } from "./admin/pages/AboutPage";
 
 export function App() {
   return (
@@ -25,6 +26,7 @@ export function App() {
           <Route path="nodes" element={<NodesPage />} />
           <Route path="users" element={<UsersPage />} />
           <Route path="settings" element={<SettingsPage />} />
+          <Route path="about" element={<AboutPage />} />
         </Route>
       </Route>
     </Routes>

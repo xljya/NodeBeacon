@@ -184,6 +184,11 @@
 .ghost-btn:hover {
   background: var(--surface-2);
 }
+.icon-btn:disabled,
+.ghost-btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
 .primary-btn {
   padding: 9px 16px;
   background: var(--accent);
@@ -224,6 +229,13 @@ button.admin-menu-btn {
 .page-sub {
   color: var(--text-muted);
   font-size: 13px;
+}
+.page-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  gap: 10px;
 }
 .admin-state {
   color: var(--text-muted);
@@ -320,6 +332,9 @@ button.admin-menu-btn {
 }
 .bad {
   color: var(--bad);
+}
+.warn {
+  color: var(--warn);
 }
 
 /* ---------- Admin dashboard ---------- */
@@ -662,6 +677,24 @@ button.admin-menu-btn {
   color: var(--accent);
   font-size: 13px;
 }
+.table-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 7px;
+  min-width: 112px;
+}
+.table-icon-action {
+  width: 31px;
+  height: 31px;
+  justify-content: center;
+  padding: 0;
+  color: var(--text-muted);
+  text-decoration: none;
+}
+.table-icon-action:hover {
+  color: var(--accent);
+}
 
 .status-badge {
   display: inline-block;
@@ -914,6 +947,76 @@ button.admin-menu-btn {
   color: var(--warn);
 }
 
+/* ---------- About ---------- */
+
+.about-fact-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.about-fact {
+  min-width: 0;
+  padding-bottom: 10px;
+  border-bottom: 1px solid var(--border);
+}
+.about-fact:last-child {
+  padding-bottom: 0;
+  border-bottom: 0;
+}
+.about-fact span {
+  display: block;
+  color: var(--text-muted);
+  font-size: 12px;
+}
+.about-fact b {
+  display: block;
+  margin-top: 4px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 15px;
+}
+.about-fact p {
+  margin: 4px 0 0;
+  color: var(--text-muted);
+  font-size: 13px;
+  line-height: 1.4;
+}
+.boundary-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+}
+.boundary-item {
+  display: flex;
+  gap: 11px;
+  min-width: 0;
+  padding: 12px;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+}
+.boundary-item > span {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 34px;
+  height: 34px;
+  border-radius: 9px;
+  color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 12%, transparent);
+}
+.boundary-item b {
+  display: block;
+  font-size: 14px;
+}
+.boundary-item p {
+  margin: 4px 0 0;
+  color: var(--text-muted);
+  font-size: 13px;
+  line-height: 1.4;
+}
+
 /* ---------- Login ---------- */
 
 .login-screen {
@@ -1112,6 +1215,9 @@ button.admin-menu-btn {
   .mini-stat-grid,
   .action-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .boundary-grid {
+    grid-template-columns: 1fr;
   }
   .settings-grid,
   .admin-section-grid {

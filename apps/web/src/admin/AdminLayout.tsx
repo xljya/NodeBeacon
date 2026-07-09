@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { NavLink, Outlet, useNavigate } from "react-router-dom";
 import {
   ExternalLink,
+  Info,
   LayoutDashboard,
   LogOut,
   Menu,
@@ -20,7 +21,8 @@ const NAV = [
   { to: "/admin", labelKey: "admin.nav.overview", icon: LayoutDashboard, end: true },
   { to: "/admin/nodes", labelKey: "admin.nav.nodes", icon: Server, end: false },
   { to: "/admin/users", labelKey: "admin.nav.users", icon: Users, end: false },
-  { to: "/admin/settings", labelKey: "admin.nav.settings", icon: Settings, end: false }
+  { to: "/admin/settings", labelKey: "admin.nav.settings", icon: Settings, end: false },
+  { to: "/admin/about", labelKey: "admin.nav.about", icon: Info, end: false }
 ];
 
 type Theme = "light" | "dark";

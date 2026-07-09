@@ -4,10 +4,13 @@ import {
   CheckCircle2,
   Clock3,
   Copy,
+  ExternalLink,
   Eye,
   EyeOff,
   Filter,
+  Info,
   MapPin,
+  Plus,
   RefreshCw,
   Search,
   Tag,
@@ -70,6 +73,10 @@ export function NodesPage() {
   const online = nodes.filter((node) => node.online).length;
   const hidden = nodes.filter((node) => !node.public).length;
 
+  const copyNodeSelector = async (node: AdminNode) => {
+    await navigator.clipboard?.writeText(formatSelector(node.labels));
+  };
+
   if (loading) return <div className="admin-state">{t("common.loading")}</div>;
   if (error) {
     return (
@@ -86,9 +93,14 @@ export function NodesPage() {
           <h2>{t("admin.nodes.title")}</h2>
           <span className="page-sub">{t("admin.nodes.subtitle", { count: nodes.length })}</span>
         </div>
-        <button className="ghost-btn" onClick={reload}>
-          <RefreshCw size={15} /> {t("admin.actions.refresh")}
-        </button>
+        <div className="page-actions">
+          <button className="ghost-btn" onClick={reload}>
+            <RefreshCw size={15} /> {t("admin.actions.refresh")}
+          </button>
+          <button className="primary-btn" disabled title={t("admin.nodes.addNextTitle")}>
+            <Plus size={15} /> {t("admin.nodes.addNode")}
+          </button>
+        </div>
       </div>
 
       <div className="mini-stat-grid">
@@ -141,7 +153,7 @@ export function NodesPage() {
               <th>{t("admin.nodes.thVisible")}</th>
               <th>{t("admin.nodes.thUpdated")}</th>
               <th>{t("admin.nodes.thOrder")}</th>
-              <th />
+              <th>{t("admin.nodes.thActions")}</th>
             </tr>
           </thead>
           <tbody>
@@ -168,7 +180,53 @@ export function NodesPage() {
                 </td>
                 <td className="mono muted">{new Date(node.updatedAt).toLocaleString()}</td>
                 <td className="mono">{node.displayOrder}</td>
-                <td className="row-action">{t("admin.nodes.view")}</td>
+                <td>
+                  <div className="table-actions">
+                    <button
+                      className="icon-btn table-icon-action"
+                      title={t("admin.nodes.copySelectorTitle")}
+                      aria-label={t("admin.nodes.copySelectorTitle")}
+                      onClick={(event) => {
+                        event.stopPropagation();
+                        void copyNodeSelector(node);
+                      }}
+                    >
+                      <Copy size={14} />
+                    </button>
+                    {node.public ? (
+                      <a
+                        className="icon-btn table-icon-action"
+                        href={`/nodes/${node.id}`}
+                        title={t("admin.nodes.openDetailTitle")}
+                        aria-label={t("admin.nodes.openDetailTitle")}
+                        onClick={(event) => event.stopPropagation()}
+                      >
+                        <ExternalLink size={14} />
+                      </a>
+                    ) : (
+                      <button
+                        className="icon-btn table-icon-action"
+                        disabled
+                        title={t("admin.nodes.openHiddenTitle")}
+                        aria-label={t("admin.nodes.openHiddenTitle")}
+                        onClick={(event) => event.stopPropagation()}
+                      >
+                        <ExternalLink size={14} />
+                      </button>
+                    )}
+                    <button
+                      className="icon-btn table-icon-action"
+                      title={t("admin.nodes.viewDetailsTitle")}
+                      aria-label={t("admin.nodes.viewDetailsTitle")}
+                      onClick={(event) => {
+                        event.stopPropagation();
+                        setSelected(node);
+                      }}
+                    >
+                      <Info size={14} />
+                    </button>
+                  </div>
+                </td>
               </tr>
             ))}
           </tbody>
@@ -250,6 +308,11 @@ function NodeDrawer({ node, onClose }: { node: AdminNode; onClose: () => void })
             <button className="ghost-btn" onClick={copySelector}>
               <Copy size={15} /> {t("admin.nodes.copySelector")}
             </button>
+            {node.public && (
+              <a className="ghost-btn" href={`/nodes/${node.id}`}>
+                <ExternalLink size={15} /> {t("admin.nodes.openDetail")}
+              </a>
+            )}
             <button className="primary-btn" disabled title={t("admin.nodes.saveNextTitle")}>
               {t("admin.nodes.saveNext")}
             </button>

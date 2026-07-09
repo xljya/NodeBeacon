@@ -5,6 +5,7 @@ import {
   Gauge,
   Globe2,
   LockKeyhole,
+  Palette,
   RefreshCw,
   Rocket,
   ShieldCheck,
@@ -90,6 +91,15 @@ export function SettingsPage() {
           </SettingCard>
           <SettingCard title={t("admin.settings.nodeConfigTitle")} desc={t("admin.settings.nodeConfigDesc")}>
             <span className="pill">{t("admin.settings.registryValue")}</span>
+          </SettingCard>
+        </SettingSection>
+
+        <SettingSection icon={<Palette size={18} />} title={t("admin.settings.appearanceSection")} desc={t("admin.settings.appearanceSectionDesc")}>
+          <SettingCard title={t("admin.settings.adminThemeTitle")} desc={t("admin.settings.adminThemeDesc")}>
+            <span className="pill">{t("admin.settings.localPreference")}</span>
+          </SettingCard>
+          <SettingCard title={t("admin.settings.publicThemeTitle")} desc={t("admin.settings.publicThemeDesc")}>
+            <span className="pill">{t("admin.settings.localPreference")}</span>
           </SettingCard>
         </SettingSection>
 
