@@ -51,8 +51,8 @@ external registry is used, so the Deployment uses `imagePullPolicy: Never`.
 
 ```sh
 # From a checkout of this repo on RS1000:
-docker build -t nodebeacon:0.3.1 .
-docker save nodebeacon:0.3.1 | sudo k3s ctr images import -
+docker build -t nodebeacon:0.4.0 .
+docker save nodebeacon:0.4.0 | sudo k3s ctr images import -
 ```
 
 ## Deploy
@@ -94,9 +94,9 @@ curl -i https://monitor.liucf.com/api/admin/summary
 curl -I https://monitor.liucf.com/api/auth/github
 ```
 
-For `0.3.1`, expected production checks are:
+For `0.4.0`, expected production checks are:
 
-- image: `nodebeacon:0.3.1`
+- image: `nodebeacon:0.4.0`
 - `/readyz` and `/healthz`: HTTP 200
 - `/api/status`: `summary.total == 5` and `summary.online == 5`
 - `/api/auth/config`: password and GitHub login both enabled
@@ -105,6 +105,11 @@ For `0.3.1`, expected production checks are:
   header has a working language switcher + theme toggle + `Login` link to `/login`
 - `/`, `/login`, `/admin`: language switcher (en / id / ja / zh-CN / zh-TW) present;
   selecting a language re-renders UI text and persists to `localStorage['nb-lang']`
+- `/api/nodes`: public node metadata (no `labels` field)
+- unauthenticated `/api/nodes/rs1000` and `/api/nodes/rs1000/range?metric=cpu&range=1h`: HTTP 401
+- authenticated `/api/nodes/rs1000/range?metric=cpu&range=1h`: `series[0].points` non-empty
+- `/nodes/rs1000`: detail page renders header + current metrics; trend charts
+  appear after owner sign-in, with a working 1h/4h/24h/7d switch
 
 ## Roll back
 
