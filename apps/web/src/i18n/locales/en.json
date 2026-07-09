@@ -354,6 +354,15 @@
       "noMatchTitle": "No matching servers",
       "noMatchText": "Try another group or clear the search keyword."
     },
+    "probes": {
+      "title": "Service Probes",
+      "target": "Target",
+      "status": "Status",
+      "latency": "Latency",
+      "rate": "24h uptime",
+      "cert": "Cert expiry",
+      "certDays": "{{days}}d"
+    },
     "detail": {
       "back": "Back to overview",
       "notFoundTitle": "Node not found",

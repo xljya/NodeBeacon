@@ -354,6 +354,15 @@
       "noMatchTitle": "没有匹配的服务器",
       "noMatchText": "试试其他分组或清空搜索关键词。"
     },
+    "probes": {
+      "title": "公网探测",
+      "target": "目标",
+      "status": "状态",
+      "latency": "延迟",
+      "rate": "24h 可用率",
+      "cert": "证书到期",
+      "certDays": "{{days}} 天"
+    },
     "detail": {
       "back": "返回总览",
       "notFoundTitle": "未找到该节点",

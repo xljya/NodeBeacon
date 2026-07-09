@@ -13,6 +13,7 @@ import {
   networkDeviceExclude,
   type LabelMatcher
 } from "./metricsService.js";
+import { recordCacheEvent } from "../observability/metrics.js";
 
 /**
  * Each whitelisted range maps to a fixed resolution. `rateWindow` widens with
@@ -111,8 +112,10 @@ export async function getNodeTrend(
   const nowMs = Date.now();
   const cached = trendCache.get(key);
   if (cached && cached.expiresAt > nowMs) {
+    recordCacheEvent("trend", "hit");
     return cached.value;
   }
+  recordCacheEvent("trend", "miss");
 
   const preset = RANGE_PRESETS[range];
   const spec = buildTrendSpec(metricName, node.labels, preset.rateWindow);

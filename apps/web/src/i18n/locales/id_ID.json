@@ -354,6 +354,15 @@
       "noMatchTitle": "Tidak ada server yang cocok",
       "noMatchText": "Coba grup lain atau hapus kata kunci pencarian."
     },
+    "probes": {
+      "title": "Pemantauan Publik",
+      "target": "Target",
+      "status": "Status",
+      "latency": "Latensi",
+      "rate": "Uptime 24 jam",
+      "cert": "Sertifikat",
+      "certDays": "{{days}} hari"
+    },
     "detail": {
       "back": "Kembali ke ringkasan",
       "notFoundTitle": "Node tidak ditemukan",

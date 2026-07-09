@@ -354,6 +354,15 @@
       "noMatchTitle": "一致するサーバーがありません",
       "noMatchText": "別のグループを選ぶか検索キーワードをクリアしてください。"
     },
+    "probes": {
+      "title": "外部監視",
+      "target": "ターゲット",
+      "status": "状態",
+      "latency": "レイテンシ",
+      "rate": "24h 稼働率",
+      "cert": "証明書期限",
+      "certDays": "{{days}} 日"
+    },
     "detail": {
       "back": "一覧に戻る",
       "notFoundTitle": "ノードが見つかりません",

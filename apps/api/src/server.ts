@@ -9,6 +9,9 @@ import { loadEnv } from "./config/env.js";
 import { registerHealthRoutes } from "./routes/health.js";
 import { registerStatusRoutes } from "./routes/status.js";
 import { registerNodeRoutes } from "./routes/nodes.js";
+import { registerLatencyRoutes } from "./routes/latency.js";
+import { registerMetricsRoutes } from "./routes/metrics.js";
+import { httpRequestDurationSeconds, httpRequestsTotal } from "./observability/metrics.js";
 import { registerAuthRoutes } from "./routes/auth.js";
 import { registerAdminRoutes } from "./routes/admin.js";
 import { registerAuthGuard } from "./plugins/authGuard.js";
@@ -37,9 +40,20 @@ export async function createApp() {
   const authService = createAuthService(env);
   registerAuthGuard(app, env, authService);
 
+  // Own observability: request volume + duration by route pattern (bounded
+  // cardinality — the pattern, e.g. "/api/nodes/:id", never the raw URL).
+  app.addHook("onResponse", async (request, reply) => {
+    const route = request.routeOptions?.url ?? "unmatched";
+    const labels = { method: request.method, route };
+    httpRequestsTotal.inc({ ...labels, status: String(reply.statusCode) });
+    httpRequestDurationSeconds.observe(labels, reply.elapsedTime / 1000);
+  });
+
   await registerHealthRoutes(app);
   await registerStatusRoutes(app, env);
   await registerNodeRoutes(app, env);
+  await registerLatencyRoutes(app, env);
+  await registerMetricsRoutes(app);
   await registerAuthRoutes(app, env, authService);
   await registerAdminRoutes(app, env, authService);
 

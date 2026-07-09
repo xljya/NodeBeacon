@@ -135,6 +135,30 @@ export interface ApiNodeRangeResponse {
   series: TrendSeries[];
 }
 
+// --- Blackbox probe latency (public) ---
+
+/** One blackbox-exporter HTTP target, keyed by its probe URL. */
+export interface ProbeResult {
+  /** The probed URL (Prometheus `instance` label). */
+  target: string;
+  success: boolean;
+  latencySeconds: number | null;
+  httpStatusCode: number | null;
+  /** avg_over_time(probe_success[24h]), 0..1. */
+  successRate24h: number | null;
+  /** TLS cert expiry (ISO timestamp) when the target is HTTPS. */
+  sslExpiresAt: string | null;
+}
+
+export interface ApiLatencyResponse {
+  generatedAt: string;
+  cache: {
+    ttlSeconds: number;
+    stale: boolean;
+  };
+  probes: ProbeResult[];
+}
+
 // --- Auth & admin (owner-only, read-only in this iteration) ---
 
 export type UserRole = "owner" | "viewer";

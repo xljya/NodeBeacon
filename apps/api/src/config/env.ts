@@ -9,6 +9,8 @@ export interface ApiEnv {
   prometheusBasicAuthPassword?: string;
   prometheusBearerToken?: string;
   statusCacheTtlSeconds: number;
+  /** Prometheus job label of the blackbox HTTP probes ("" disables /api/latency). */
+  probeJob: string;
   // Auth (owner from env; stateless signed-cookie sessions).
   cookieSecret: string;
   secureCookie: boolean;
@@ -63,6 +65,7 @@ export function loadEnv(): ApiEnv {
     prometheusBasicAuthPassword: prometheusBasicAuthPassword || undefined,
     prometheusBearerToken: prometheusBearerToken || undefined,
     statusCacheTtlSeconds: numberFromEnv("STATUS_CACHE_TTL_SECONDS", 30),
+    probeJob: process.env.PROBE_JOB?.trim() ?? "blackbox-http-public",
     // A dev-only fallback keeps local `pnpm dev` working without a .env; in
     // production COOKIE_SECRET must be set (see the k8s Secret).
     cookieSecret: cookieSecret || "nodebeacon-dev-insecure-cookie-secret-change-me",

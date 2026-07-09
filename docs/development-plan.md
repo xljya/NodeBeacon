@@ -320,14 +320,21 @@ P1 验证记录：2026-07-06 已用浏览器在 `https://monitor.liucf.com/` 端
 | 已完成 | 实现 `GET /api/nodes` 和 `GET /api/nodes/:id` | 节点元数据和单节点详情可查询 | `0.4.0`：`/api/nodes` 公开（仅 public 节点、不含 Prometheus label 映射）；`/api/nodes/:id` 登录后返回完整节点 |
 | 已完成 | 实现趋势查询接口 | `query_range` 支持 CPU、内存、磁盘、网络、负载 | `0.4.0`：`GET /api/nodes/:id/range?metric=&range=`；`metric ∈ cpu/memory/disk/network/load`、`range ∈ 1h/4h/24h/7d` 严格枚举，越界 400；按 range 分级缓存；blackbox 延迟指标另行推进 |
 | 已完成 | 节点详情页 | 展示趋势图、近期状态、基础指标和探测结果 | `0.4.0`：`/nodes/:id` 从卡片和表格节点名进入；探测结果随 Blackbox 任务补 |
-| 待做 | Blackbox 延迟和 HTTP 状态 | 展示公网探测延迟、成功率和 HTTP 状态码 | 用于判断入口和节点健康 |
+| 已完成 | Blackbox 延迟和 HTTP 状态 | 展示公网探测延迟、成功率和 HTTP 状态码 | `0.5.0`：公开 `GET /api/latency` 聚合 `probe_success/duration/http_status_code/ssl_expiry` + 24h 可用率；状态页新增「公网探测」面板；目标由 `PROBE_JOB`（默认 `blackbox-http-public`）从 Prometheus 发现 |
 | 已完成 | 前端组件化 | 公开状态页从 iframe 原型迁移到原生 React 组件 | `0.3.0` 首页主面板迁移；`0.4.0` 补齐节点详情/趋势视图（手写 SVG 折线图，无图表库依赖） |
-| 待做 | NodeBeacon 自身 `/metrics` | 暴露 Prometheus 文本指标：请求量、错误率、Prom 查询耗时、缓存命中率 | 具体化「自身可观测性」；后续接 Grafana/Loki |
-| 待做 | 基础自动化测试 | 引入 vitest；覆盖 `/api/status`、auth、admin 只读接口的关键路径 | 目前只有 typecheck，随 auth/admin 复杂度上升补测试 |
+| 已完成 | NodeBeacon 自身 `/metrics` | 暴露 Prometheus 文本指标：请求量、错误率、Prom 查询耗时、缓存命中率 | `0.5.0`：prom-client；`nodebeacon_http_requests_total/…_duration_seconds`（按路由模式，非原始 URL）、`nodebeacon_prometheus_queries_total/…_query_duration_seconds`、`nodebeacon_cache_events_total{cache=status/trend/probe}` + 进程默认指标；公网 nginx 对 `/metrics` 返回 404，仅供集群内抓取 |
+| 已完成 | 基础自动化测试 | 引入 vitest；覆盖 `/api/status`、auth、admin 只读接口的关键路径 | `0.5.0`：vitest 2（vite 5 兼容），6 个文件 32 个用例：status fixture/摘要、auth（400/401/会话 Cookie/伪造 Cookie/注册关闭）、admin 守卫与只读、nodes/range 参数校验、mock Prometheus 真路径（status/趋势/latency）、`/metrics` 文本与路由模式标签；`pnpm test` 全绿 |
 | 待做（后移） | Alertmanager webhook | 接收 firing/resolved 事件并归一化 | 先落 SQLite；排在节点详情/趋势 + 只读后台之后 |
 | 待做（后移） | Incident 时间线 | 展示故障开始、恢复、持续时间和影响节点 | 登录前后展示粒度可不同；随 SQLite 写入一起做 |
 
 P2 完成判定：用户可以从总览定位问题节点，进入详情页查看最近趋势，并通过 incident 时间线理解故障发生和恢复过程。
+
+P2 进展记录：2026-07-09 `0.5.0` 完成 P2 收尾三件套（Blackbox 探测展示、自身 `/metrics`、vitest 基础测试），P2 仅剩后移的 Alertmanager webhook + incident 时间线（与 SQLite 写入一起做）。
+
+- **Blackbox 探测**：核对线上 Prometheus 后确认探测 job 为 `blackbox-http-public`（3 个 HTTPS 目标，instance 为 URL），可用指标含 `probe_success/probe_duration_seconds/probe_http_status_code/probe_ssl_earliest_cert_expiry`。新增 `services/probeService`（按 job 聚合 5 条白名单查询、短缓存 + stale 降级）与公开 `GET /api/latency`；`PROBE_JOB` 可配置、留空禁用。前端状态页节点列表下方新增「公网探测」面板（目标/状态+HTTP 码/延迟/24h 可用率/证书到期天数，窄屏收起后两列），文案 `status.probes.*` 补齐 5 语言。
+- **自身 `/metrics`**：引入 prom-client，`GET /metrics` 暴露请求量/时延（onResponse 钩子，按路由模式标签防基数爆炸）、上游 Prometheus 查询次数/耗时/错误（包在 `PrometheusClient` 请求层）、`status/trend/probe` 三个缓存的 hit/miss/stale 计数,外加进程默认指标。公网入口 nginx 新增 `location = /metrics { return 404; }`（committed 副本与线上同步），指标仅供集群内抓取。
+- **vitest**：apps/api 引入 vitest 2（workspace 的 vite 5 与 vitest 4 peer 不兼容，故锁 2.x），`test/` 下 6 文件 32 用例，含真实 `createApp` + `inject` 与 mock Prometheus（vector/matrix/probe 合成数据）。根 `pnpm test` 先构建 shared 再递归跑测试。
+- **验证**：`pnpm typecheck`/`build`/`test` 全绿；本机 mock 栈浏览器验证探测面板（在线/离线徽章、延迟、可用率、证书天数、暗色主题）与 `/metrics` 输出；生产部署后复验（见 infra/README.md 0.5.0 检查单）。
 
 P2 进展记录：2026-07-09 `0.4.0` 交付节点详情 + 趋势主线（P2 前三项 + 前端组件化收尾）。
 

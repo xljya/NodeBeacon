@@ -9,6 +9,7 @@ import { loadNodeRegistry } from "../config/nodeRegistry.js";
 import type { ApiEnv } from "../config/env.js";
 import { buildStatusFromPrometheus } from "./metricsService.js";
 import { createPrometheusClient } from "./prometheusClient.js";
+import { recordCacheEvent } from "../observability/metrics.js";
 
 const fixtureById = new Map(statusFixture.nodes.map((node) => [node.id, node]));
 const fallbackOsById = new Map(statusFixture.nodes.map((node) => [node.id, node.os]));
@@ -88,8 +89,10 @@ export async function getStatus(env: ApiEnv, logger?: StatusServiceLogger): Prom
   const key = cacheKey(env);
   const nowMs = Date.now();
   if (cachedStatus && cachedStatus.key === key && cachedStatus.expiresAt > nowMs) {
+    recordCacheEvent("status", "hit");
     return cachedStatus.value;
   }
+  recordCacheEvent("status", "miss");
 
   const registry = await loadNodeRegistry(env.nodeConfigPath);
   const now = new Date(nowMs).toISOString();
@@ -124,6 +127,7 @@ export async function getStatus(env: ApiEnv, logger?: StatusServiceLogger): Prom
         "failed to refresh status from Prometheus; returning stale cache or fixture fallback"
       );
       if (cachedStatus && cachedStatus.key === key) {
+        recordCacheEvent("status", "stale");
         return withStaleCache(cachedStatus.value);
       }
       response = buildFallbackStatus(env, registry, now, true);

@@ -354,6 +354,15 @@
       "noMatchTitle": "沒有符合的伺服器",
       "noMatchText": "試試其他分組或清除搜尋關鍵字。"
     },
+    "probes": {
+      "title": "公網探測",
+      "target": "目標",
+      "status": "狀態",
+      "latency": "延遲",
+      "rate": "24h 可用率",
+      "cert": "憑證到期",
+      "certDays": "{{days}} 天"
+    },
     "detail": {
       "back": "返回總覽",
       "notFoundTitle": "找不到該節點",

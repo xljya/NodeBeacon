@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
-import type { ApiStatusResponse, StatusNode } from "@nodebeacon/shared";
+import type { ApiLatencyResponse, ApiStatusResponse, ProbeResult, StatusNode } from "@nodebeacon/shared";
 import { apiGet } from "../lib/api";
 import { fmtBytes, fmtRate } from "../lib/format";
 import { buildNodeView } from "./nodeView";
@@ -9,6 +9,7 @@ import { StatBar, type StatKey, type StatVisibility } from "./components/StatBar
 import { NodeControls, type ViewMode } from "./components/NodeControls";
 import { NodeCard } from "./components/NodeCard";
 import { NodeTable } from "./components/NodeTable";
+import { ProbePanel } from "./components/ProbePanel";
 import { DataStatusBadge, type DataTone } from "./components/DataStatusBadge";
 import "./status.css";
 
@@ -32,6 +33,7 @@ export function StatusPage() {
   const [data, setData] = useState<ApiStatusResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
+  const [probes, setProbes] = useState<ProbeResult[]>([]);
 
   const [theme, setTheme] = useState<Theme>(() => (localStorage.getItem("nb-theme") as Theme) || "light");
   const [view, setView] = useState<ViewMode>(() => (localStorage.getItem("nb-view") as ViewMode) || "grid");
@@ -54,6 +56,13 @@ export function StatusPage() {
       if (mounted.current) setError(true);
     } finally {
       if (mounted.current) setLoading(false);
+    }
+    // Probes are additive — a failure just hides the panel.
+    try {
+      const latency = await apiGet<ApiLatencyResponse>("/api/latency");
+      if (mounted.current) setProbes(latency.probes);
+    } catch {
+      if (mounted.current) setProbes([]);
     }
   }, []);
 
@@ -175,6 +184,8 @@ export function StatusPage() {
           ) : (
             <NodeTable nodes={views} />
           )}
+
+          <ProbePanel probes={probes} />
 
           <div className="status-footer">
             {t("status.lastUpdated", { time: lastUpdated })} &middot; {t("status.footer")}

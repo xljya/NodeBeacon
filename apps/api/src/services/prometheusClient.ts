@@ -1,4 +1,5 @@
 import type { ApiEnv } from "../config/env.js";
+import { prometheusQueriesTotal, prometheusQueryDurationSeconds } from "../observability/metrics.js";
 
 export interface PrometheusVectorResult {
   metric: Record<string, string>;
@@ -80,6 +81,24 @@ export class PrometheusClient {
   }
 
   async #request(endpoint: URL): Promise<{ resultType: string; result: unknown[] }> {
+    const metricEndpoint = endpoint.pathname.endsWith("/query_range") ? "query_range" : "query";
+    const startedAt = process.hrtime.bigint();
+    try {
+      const data = await this.#fetch(endpoint);
+      prometheusQueriesTotal.inc({ endpoint: metricEndpoint, outcome: "success" });
+      return data;
+    } catch (error) {
+      prometheusQueriesTotal.inc({ endpoint: metricEndpoint, outcome: "error" });
+      throw error;
+    } finally {
+      prometheusQueryDurationSeconds.observe(
+        { endpoint: metricEndpoint },
+        Number(process.hrtime.bigint() - startedAt) / 1e9
+      );
+    }
+  }
+
+  async #fetch(endpoint: URL): Promise<{ resultType: string; result: unknown[] }> {
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), this.#timeoutMs);
 
