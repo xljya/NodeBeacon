@@ -4,6 +4,7 @@ import {
   ExternalLink,
   LayoutDashboard,
   LogOut,
+  Menu,
   Moon,
   Server,
   Settings,
@@ -28,6 +29,7 @@ export function AdminLayout() {
   const { t } = useTranslation();
   const { user, logout } = useAuth();
   const navigate = useNavigate();
+  const [sidebarOpen, setSidebarOpen] = useState(false);
   const [theme, setTheme] = useState<Theme>(
     () => (localStorage.getItem("nb-admin-theme") as Theme) ?? "light"
   );
@@ -43,7 +45,8 @@ export function AdminLayout() {
 
   return (
     <div className="admin-shell" data-theme={theme}>
-      <aside className="admin-sidebar">
+      {sidebarOpen && <button className="admin-scrim" aria-label={t("admin.topbar.closeMenu")} onClick={() => setSidebarOpen(false)} />}
+      <aside className={sidebarOpen ? "admin-sidebar open" : "admin-sidebar"}>
         <div className="admin-brand">
           <span className="admin-logo">◈</span> NodeBeacon
         </div>
@@ -53,6 +56,7 @@ export function AdminLayout() {
               key={to}
               to={to}
               end={end}
+              onClick={() => setSidebarOpen(false)}
               className={({ isActive }) => (isActive ? "admin-nav-item active" : "admin-nav-item")}
             >
               <Icon size={17} />
@@ -68,7 +72,20 @@ export function AdminLayout() {
 
       <div className="admin-main">
         <header className="admin-topbar">
-          <div className="admin-topbar-title">{t("admin.topbar.title")}</div>
+          <div className="admin-topbar-left">
+            <button
+              className="icon-btn admin-menu-btn"
+              title={t("admin.topbar.openMenu")}
+              aria-label={t("admin.topbar.openMenu")}
+              onClick={() => setSidebarOpen(true)}
+            >
+              <Menu size={17} />
+            </button>
+            <div>
+              <div className="admin-topbar-title">{t("admin.topbar.title")}</div>
+              <div className="admin-topbar-sub">{t("admin.topbar.subtitle")}</div>
+            </div>
+          </div>
           <div className="admin-topbar-actions">
             <LanguageSwitch />
             <button
@@ -82,7 +99,8 @@ export function AdminLayout() {
               {user?.email}
             </span>
             <button className="ghost-btn" onClick={handleLogout}>
-              <LogOut size={15} /> {t("admin.topbar.logout")}
+              <LogOut size={15} />
+              <span className="admin-hide-sm">{t("admin.topbar.logout")}</span>
             </button>
           </div>
         </header>

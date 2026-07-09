@@ -33,7 +33,7 @@ NodeBeacon 是给当前五台服务器使用的自托管监控状态页。它不
 - Namespace：`nodebeacon`，和已有 `sre-lab` 学习服务隔离。
 - 入口链路：Cloudflare 橙云代理 -> RS1000 nginx -> RS1000 k3s。
 - 当前源站：Cloudflare `monitor.liucf.com` 的 IPv4 源站指向 RS1000；dmit-uswest 不再承载 monitor 入口。
-- 当前状态（2026-07-06 16:47 CST 起）：NodeBeacon `0.2.3` 已上线。RS1000 nginx 已从 `204 No Content` 切换为反代 k3s Service（NodePort 31003），`https://monitor.liucf.com/` 展示真实五节点总览；`/login`、密码登录、GitHub OAuth 登录和只读 `/admin` 后台已部署。
+- 当前状态（2026-07-09）：NodeBeacon `0.4.1` 主线推进到原生 React 状态页、节点详情/趋势、登录/GitHub OAuth、以及增强版只读 `/admin` 后台。RS1000 nginx 已从 `204 No Content` 切换为反代 k3s Service（NodePort 31003），`https://monitor.liucf.com/` 展示真实五节点总览。
 - 第一版目标（已达成）：替换当前轻量 `monitor-status` 应用，保留现有域名和 Cloudflare 安全边界。
 
 ## 2. 总体架构
@@ -291,6 +291,14 @@ P1 验证记录：2026-07-06 已用浏览器在 `https://monitor.liucf.com/` 端
 - **生产验证**：`0.2.3` 已在 RS1000 k3s 成功 rollout。验证项：Deployment `nodebeacon:0.2.3`、Pod `1/1 Running`、`/readyz` 200、`/api/status` 返回真实五节点 5/5 在线、`/api/auth/config` 显示密码和 GitHub 登录均启用、未登录访问 `/api/admin/summary` 返回 401、错误密码返回 `invalid_credentials`、OAuth 入口 302 到 GitHub 并带签名 state cookie、前端 bundle 包含原型 Login → `/login` 桥接。
 - **下一步**：节点展示配置写回仍未开始；需要引入 SQLite，落地 `PATCH /api/admin/nodes/:id`、CSRF、防误操作 UI 和备份策略。
 
+进展记录：2026-07-09 `0.4.1` 完善只读管理后台，继续参考 Komari 的后台信息密度，但保持 NodeBeacon 的 Space Grotesk / JetBrains Mono、蓝灰浅色与暗色主题风格。API 合同不变，仍只使用 `GET /api/admin/summary|nodes|users`。
+
+- **布局**：`AdminLayout` 增强为桌面侧栏 + 移动端折叠菜单，顶栏保留语言切换、主题切换、当前 owner 和登出；移动端隐藏侧栏并通过菜单按钮打开。
+- **总览**：新增健康 hero、在线率圆环、Prometheus/缓存/认证/覆盖范围/可见性卡片、按分组统计的节点分布、最近上报列表和快捷入口。统计从 `summary` 与 `nodes` 两个只读接口在浏览器端聚合。
+- **节点管理**：节点页改成运维表格：顶部摘要（在线/隐藏/区域/筛选结果）、搜索框、状态/分组/区域/可见性筛选、更新时间列、公开/隐藏徽章；详情抽屉补齐 provider/location/last report/tag count，并支持复制 Prometheus selector。保存仍为写回占位。
+- **用户/设置**：用户页展示 owner/viewer 数、认证来源、环境变量 owner 模型和 SQLite 持久化计划；设置页按数据源、缓存、认证、公开页面、安全边界、版本发布分区展示有效运行配置。
+- **i18n 与验证**：新增管理端文案同步补齐 en/id/ja/zh-CN/zh-TW，脚本校验 5 语言 `admin` key 数一致（169）。本地验证通过 `tsc -b apps/web/tsconfig.json --noEmit`、`vite build`、API 登录和 `/api/admin/*` 只读接口；Chrome DevTools headless 截图验证桌面 `/admin`、`/admin/nodes`、`/admin/settings` 和 390px 移动端节点页无明显重叠。
+
 ### P2：核心增强
 
 | 状态 | 任务 | 交付标准 | 备注 |
@@ -319,9 +327,9 @@ P2 进展记录：2026-07-09 `0.4.0` 交付节点详情 + 趋势主线（P2 前�
 | --- | --- | --- | --- |
 | 已完成（只读版） | 登录和会话 | `owner` 角色可用；cookie 使用 `httpOnly + Secure + SameSite=Lax` | 生产 `0.2.3` 已上线；本轮无状态签名 Cookie，`viewer` 角色和 SQLite 会话延后 |
 | 已完成 | 初始管理员创建方式 | 支持通过环境变量创建初始 `owner` 账号 | 生产 Secret 提供 `INITIAL_OWNER_*`；自由注册保持关闭 |
-| 已完成（只读版） | 管理员后台入口和布局 | `/admin` 仅 `owner` 可访问；包含总览、节点、用户、系统设置入口 | 参考 Komari 布局；手写 React+CSS；节点编辑抽屉仍为只读占位 |
+| 已完成（只读增强版） | 管理员后台入口和布局 | `/admin` 仅 `owner` 可访问；包含总览、节点、用户、系统设置入口 | `0.4.1`：参考 Komari 的后台密度，补齐健康总览、节点筛选/搜索、详情抽屉、用户访问模型、分区设置和移动端侧栏；节点编辑抽屉仍为只读占位 |
 | 待做（下一步·写回） | 节点手动分组管理 | 管理后台可修改服务器展示分组、展示名、区域、标签、排序和可见性 | 修改后影响首页分组筛选和节点列表展示；引入 SQLite 可写存储 |
-| 待做（下一步·写回） | 管理端最小闭环 | 可查看用户、节点配置摘要、系统状态，并能保存节点展示配置 | 不做重型后台，先覆盖日常维护路径 |
+| 部分完成（只读） | 管理端最小闭环 | 可查看用户、节点配置摘要、系统状态，并能保存节点展示配置 | `0.4.1` 已完成查看/筛选/审计路径；保存节点展示配置仍随 SQLite 写回阶段实现 |
 | 待做（下一步·写回） | 管理后台节点配置页 | 表格展示所有节点；详情抽屉或编辑面板修改分组和展示元数据 | 组件布局可参考 Komari：顶部摘要、紧凑表格、分段控件、清晰操作按钮 |
 | 部分完成 | 登录限速与安全响应头 | `/api/auth/login` 限速；CSP/HSTS 等安全响应头 | 登录限速已随 `0.2.3` 上线；CSP/HSTS 在 nginx/Cloudflare 侧补 |
 | 待做（随写回） | CSRF 防护 | 写回类 admin 接口加 CSRF 校验 | 无状态 Cookie + 状态变更接口上线时补 |
@@ -329,7 +337,7 @@ P2 进展记录：2026-07-09 `0.4.0` 交付节点详情 + 趋势主线（P2 前�
 | 待做（随写回·多用户） | 会话/用户持久化升级到 SQLite | users + sessions 落 SQLite，支持可撤销会话与 `viewer` 角色 | 从无状态 Cookie 迁移；接口边界本轮已留好 |
 | 待做 | 镜像构建/发布流水线 | 脚本化 build+import、按 git sha 打 tag；可选 GitHub Actions | 目前在 RS1000 手工 `docker build`+`k3s ctr import` |
 | 待做 | Cloudflare 缓存和 WAF 规则 | `/api/*`、`/auth/*` 不缓存；登录限速 | 和 RS1000 nginx 配置一起记录 |
-| 待做 | UI 细节打磨 | 空状态、骨架屏、键盘可访问性、移动端触控区域 | 保证长期使用舒服；**已知：状态页 `NodeTable` 固定列宽在手机窄屏（~390px）会横向溢出，随移动端触控一并处理** |
+| 部分完成 | UI 细节打磨 | 空状态、骨架屏、键盘可访问性、移动端触控区域 | `0.4.1` 已补管理端移动侧栏、筛选空状态和表格横向滚动；公开状态页窄屏表格细节继续优化 |
 | 待做 | 文档补齐 | README、部署文档、环境变量、故障排查、ADR 更新 | 每个生产决策都能追溯 |
 
 P3 完成判定：NodeBeacon 不只是能上线，还能长期维护、升级、备份，并且登录态和敏感信息展示边界清晰。
