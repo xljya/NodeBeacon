@@ -33,7 +33,7 @@ NodeBeacon 是给当前五台服务器使用的自托管监控状态页。它不
 - Namespace：`nodebeacon`，和已有 `sre-lab` 学习服务隔离。
 - 入口链路：Cloudflare 橙云代理 -> RS1000 nginx -> RS1000 k3s。
 - 当前源站：Cloudflare `monitor.liucf.com` 的 IPv4 源站指向 RS1000；dmit-uswest 不再承载 monitor 入口。
-- 当前状态（2026-07-09）：NodeBeacon `0.4.3` 主线推进到原生 React 状态页、节点详情/趋势、登录/GitHub OAuth、以及增强版只读 `/admin` 后台（含分组侧栏、Activity 实时快照、About 运行信息页、节点行/批量快捷动作和外观偏好分区）。RS1000 nginx 已从 `204 No Content` 切换为反代 k3s Service（NodePort 31003），`https://monitor.liucf.com/` 展示真实五节点总览。
+- 当前状态（2026-07-09）：NodeBeacon `0.6.0` 主线推进到原生 React 状态页、节点详情/趋势、登录/GitHub OAuth、Blackbox 探测、自身 `/metrics`、vitest 基础测试，以及 Komari 风格可写 `/admin` 后台。`/admin` 首屏为 Server / Node list，支持节点展示配置新增、编辑、删除、账单备注、私有备注、Prometheus selector 复制与 YAML 片段导出；RS1000 生产注册表改为 ConfigMap seed + PVC `/data/nodes.yaml` 写回。RS1000 nginx 已反代 k3s Service（NodePort 31003），`https://monitor.liucf.com/` 展示真实五节点总览。
 - 第一版目标（已达成）：替换当前轻量 `monitor-status` 应用，保留现有域名和 Cloudflare 安全边界。
 
 ## 2. 总体架构
@@ -116,7 +116,9 @@ flowchart LR
 | `GET /api/auth/me` | 当前用户 | 登录 |
 | `GET /api/admin/summary` | 管理后台总览：节点配置、用户、系统状态摘要 | `owner` |
 | `GET /api/admin/nodes` | 管理端节点列表，包含展示配置和 Prometheus label 映射 | `owner` |
+| `POST /api/admin/nodes` | 新增节点展示配置和 Prometheus label 映射 | `owner` |
 | `PATCH /api/admin/nodes/:id` | 修改节点展示名、手动分组、区域、标签、排序和可见性 | `owner` |
+| `DELETE /api/admin/nodes/:id` | 删除节点展示配置 | `owner` |
 | `GET /api/admin/users` | 用户和角色列表 | `owner` |
 
 总览接口返回的数据应该接近前端原型的数据结构，但字段改成稳定 JSON：
@@ -271,14 +273,14 @@ P1 进展记录：2026-07-06 已完成单容器构建、k3s 部署和 nginx 上�
 
 P1 验证记录：2026-07-06 已用浏览器在 `https://monitor.liucf.com/` 端到端验证（经 Cloudflare）：状态页渲染真实数据，顶部统计 5/5 在线、Region 3，节点卡片展示真实 CPU/内存/磁盘/流量/uptime，分组筛选、搜索、明暗主题、卡片/表格切换均正常，控制台无报错。
 
-### 当前主线（P1 之后）：管理员登录 + 只读管理后台
+### 当前主线（P1 之后）：管理员登录 + Komari 风格可写管理后台
 
-第一轮（P0+P1）已交付上线。根据实际需要，把原 P3 的**登录会话**、**初始管理员创建**、**管理后台入口与布局**提前为当前主线，先做**只读**版本：
+第一轮（P0+P1）已交付上线。根据实际需要，把原 P3 的**登录会话**、**初始管理员创建**、**管理后台入口与布局**提前为当前主线，并在 `0.6.0` 补齐节点注册表写回：
 
 - 登录/登出真实可用；`owner` 账号由环境变量创建；本轮用**无状态签名 Cookie** 会话，暂不引入 SQLite（符合 P1「先不启用 SQLite 写入」）。
-- `/admin` 仅 `owner` 可访问，完整布局 Overview/Nodes/Users/Settings，展示真实**只读**数据；节点编辑先放占位 UI。
-- 前端引入 react-router：`/` 保持现有状态页，`/login` 与 `/admin` 为手写 React（延续状态页设计语言）。
-- **下一步（写回）**：节点展示配置可编辑并持久化，届时引入 SQLite（见 P3「节点手动分组管理」「管理后台节点配置页」），并同步落地「SQLite 备份策略」。
+- `/admin` 仅 `owner` 可访问，首屏改为 Komari 风格 Server / Node list；侧栏包含 Settings、Notification、Remote Exec、Latency、Sessions、Account、Logs、About、Documentation、Home、Default Theme Settings。
+- 节点展示配置支持写回：新增、编辑、删除、排序、公开/隐藏、标签、区域、分组、私有备注、账单元数据、IP / client version 展示字段和 Prometheus labels。
+- 生产暂不把节点写入 SQLite，而是采用 **ConfigMap seed + PVC YAML**：`/config/nodes.yaml` 作为只读初始配置，运行态写入 `/data/nodes.yaml`，后续 SQLite/审计/CSRF 阶段再迁移。
 
 进展记录：2026-07-06 已完成登录 + GitHub OAuth + 只读后台，并部署到生产 `0.2.3`。公开状态页保持不登录可访问，`/login` 同时显示密码登录和「使用 GitHub 登录」，`/admin/*` 由 `owner` 会话保护。
 
@@ -313,6 +315,14 @@ P1 验证记录：2026-07-06 已用浏览器在 `https://monitor.liucf.com/` 端
 - **节点批量选择**：`/admin/nodes` 新增选择列、选中行高亮、批量栏和“复制所选 selector”。批量编辑按钮仍为写回占位，避免在没有 SQLite/CSRF/审计前暴露写操作。
 - **i18n 与版本**：新增分组导航、Activity、节点批量选择文案，同步补齐 en/id/ja/zh-CN/zh-TW；脚本校验 5 语言 `admin` key 数一致（249）。`APP_VERSION`、k8s 镜像 tag、部署说明和本计划同步到 `0.4.3`。
 
+进展记录：2026-07-09 `0.6.0` 按本机 Komari `https://127.0.0.1:25775/admin` 截图和 `komari-monitor/komari-web` 管理页结构重做 NodeBeacon 管理端，并补齐节点注册表写回。
+
+- **Komari 风格管理壳**：`/admin` 首屏从 Overview 改为 Server / Node list；顶部栏横跨全宽，显示 `NodeBeacon` 与 Snapshot/version，右侧保留主题、配色、语言、登出按钮；左侧菜单对齐 Komari 的 Server、Settings、Notification、Remote Exec、Latency、Sessions、Account、Logs、About、Documentation、Home、Default Theme Settings。
+- **节点表和写回**：节点表列对齐截图（Name、IP address、Client version、Group、Private Notes、Billing 和操作区），支持搜索、选择、复制 selector、导出 YAML 片段、新增、编辑、删除和账单元数据编辑。后端新增 owner-only `POST/PATCH/DELETE /api/admin/nodes`，写入结构化 YAML，并在保存后清空状态缓存。
+- **生产存储调整**：`NODEBEACON_NODE_CONFIG` 从只读 `/config/nodes.yaml` 改为可写 `/data/nodes.yaml`，新增 `NODEBEACON_NODE_CONFIG_SEED=/config/nodes.yaml`；首次没有运行态文件时读取 ConfigMap seed，后台保存后落到 PVC。示例配置和 ConfigMap 增加 owner-only 的 `ipAddress/clientVersion/privateNotes/billing` 字段支持。
+- **范围边界**：Remote Exec 页面和行内终端按钮保留 Komari 的入口位置，但 NodeBeacon 不启用浏览器 shell、agent 命令或远程执行；Latency 使用现有 `GET /api/latency` 展示真实 Blackbox 探测；Logs 给出 RS1000 `kubectl logs` 运维入口。
+- **验证**：`pnpm typecheck` 通过；`pnpm test` 通过（6 个文件，33 个用例，新增 admin 节点 CRUD 临时 YAML 写回测试）。
+
 ### P2：核心增强
 
 | 状态 | 任务 | 交付标准 | 备注 |
@@ -323,7 +333,7 @@ P1 验证记录：2026-07-06 已用浏览器在 `https://monitor.liucf.com/` 端
 | 已完成 | Blackbox 延迟和 HTTP 状态 | 展示公网探测延迟、成功率和 HTTP 状态码 | `0.5.0`：公开 `GET /api/latency` 聚合 `probe_success/duration/http_status_code/ssl_expiry` + 24h 可用率；状态页新增「公网探测」面板；目标由 `PROBE_JOB`（默认 `blackbox-http-public`）从 Prometheus 发现 |
 | 已完成 | 前端组件化 | 公开状态页从 iframe 原型迁移到原生 React 组件 | `0.3.0` 首页主面板迁移；`0.4.0` 补齐节点详情/趋势视图（手写 SVG 折线图，无图表库依赖） |
 | 已完成 | NodeBeacon 自身 `/metrics` | 暴露 Prometheus 文本指标：请求量、错误率、Prom 查询耗时、缓存命中率 | `0.5.0`：prom-client；`nodebeacon_http_requests_total/…_duration_seconds`（按路由模式，非原始 URL）、`nodebeacon_prometheus_queries_total/…_query_duration_seconds`、`nodebeacon_cache_events_total{cache=status/trend/probe}` + 进程默认指标；公网 nginx 对 `/metrics` 返回 404，仅供集群内抓取 |
-| 已完成 | 基础自动化测试 | 引入 vitest；覆盖 `/api/status`、auth、admin 只读接口的关键路径 | `0.5.0`：vitest 2（vite 5 兼容），6 个文件 32 个用例：status fixture/摘要、auth（400/401/会话 Cookie/伪造 Cookie/注册关闭）、admin 守卫与只读、nodes/range 参数校验、mock Prometheus 真路径（status/趋势/latency）、`/metrics` 文本与路由模式标签；`pnpm test` 全绿 |
+| 已完成 | 基础自动化测试 | 引入 vitest；覆盖 `/api/status`、auth、admin 接口的关键路径 | `0.6.0`：vitest 2（vite 5 兼容），6 个文件 33 个用例：status fixture/摘要、auth（400/401/会话 Cookie/伪造 Cookie/注册关闭）、admin 守卫与节点 YAML 写回 CRUD、nodes/range 参数校验、mock Prometheus 真路径（status/趋势/latency）、`/metrics` 文本与路由模式标签；`pnpm test` 全绿 |
 | 待做（后移） | Alertmanager webhook | 接收 firing/resolved 事件并归一化 | 先落 SQLite；排在节点详情/趋势 + 只读后台之后 |
 | 待做（后移） | Incident 时间线 | 展示故障开始、恢复、持续时间和影响节点 | 登录前后展示粒度可不同；随 SQLite 写入一起做 |
 
@@ -348,17 +358,17 @@ P2 进展记录：2026-07-09 `0.4.0` 交付节点详情 + 趋势主线（P2 前�
 | --- | --- | --- | --- |
 | 已完成（只读版） | 登录和会话 | `owner` 角色可用；cookie 使用 `httpOnly + Secure + SameSite=Lax` | 生产 `0.2.3` 已上线；本轮无状态签名 Cookie，`viewer` 角色和 SQLite 会话延后 |
 | 已完成 | 初始管理员创建方式 | 支持通过环境变量创建初始 `owner` 账号 | 生产 Secret 提供 `INITIAL_OWNER_*`；自由注册保持关闭 |
-| 已完成（只读增强版） | 管理员后台入口和布局 | `/admin` 仅 `owner` 可访问；包含总览、节点、用户、系统设置、Activity 和 About 入口 | `0.4.3`：参考 Komari 的后台密度，补齐分组侧栏、健康总览、节点筛选/搜索、详情抽屉、行/批量快捷动作、用户访问模型、分区设置、Activity 快照、About 运行信息页和移动端侧栏；节点编辑抽屉仍为只读占位 |
-| 待做（下一步·写回） | 节点手动分组管理 | 管理后台可修改服务器展示分组、展示名、区域、标签、排序和可见性 | 修改后影响首页分组筛选和节点列表展示；引入 SQLite 可写存储 |
-| 部分完成（只读） | 管理端最小闭环 | 可查看用户、节点配置摘要、系统状态，并能保存节点展示配置 | `0.4.3` 已完成查看/筛选/实时快照/关于页/快捷跳转路径；保存节点展示配置仍随 SQLite 写回阶段实现 |
-| 待做（下一步·写回） | 管理后台节点配置页 | 表格展示所有节点；详情抽屉或编辑面板修改分组和展示元数据 | 组件布局可参考 Komari：顶部摘要、紧凑表格、分段控件、清晰操作按钮 |
+| 已完成 | 管理员后台入口和布局 | `/admin` 仅 `owner` 可访问；首屏为 Komari 风格 Server / Node list，并包含设置、通知、远程入口、延迟、会话、账号、日志、关于、文档、首页和主题入口 | `0.6.0`：顶部栏 + 左侧 Komari 风格菜单 + 紧凑节点表；Remote Exec 入口保留但明确不启用浏览器 shell/agent 命令 |
+| 已完成（YAML 写回） | 节点手动分组管理 | 管理后台可修改服务器展示分组、展示名、区域、标签、排序和可见性 | `0.6.0`：owner-only `POST/PATCH/DELETE /api/admin/nodes` 写入 `/data/nodes.yaml`；修改后影响首页分组筛选和节点列表展示 |
+| 已完成（最小闭环） | 管理端最小闭环 | 可查看用户、节点配置摘要、系统状态，并能保存节点展示配置 | `0.6.0` 已完成节点新增/编辑/删除/账单备注/私有备注/selector 复制/配置导出；用户、会话、通知和日志仍按当前后端能力收敛 |
+| 已完成 | 管理后台节点配置页 | 表格展示所有节点；详情抽屉或编辑面板修改分组和展示元数据 | `0.6.0`：表格列和操作区对齐 Komari 截图；保存走 YAML 注册表写回 |
 | 部分完成 | 登录限速与安全响应头 | `/api/auth/login` 限速；CSP/HSTS 等安全响应头 | 登录限速已随 `0.2.3` 上线；CSP/HSTS 在 nginx/Cloudflare 侧补 |
-| 待做（随写回） | CSRF 防护 | 写回类 admin 接口加 CSRF 校验 | 无状态 Cookie + 状态变更接口上线时补 |
+| 待做（写回加固） | CSRF 防护 | 写回类 admin 接口加 CSRF 校验 | `0.6.0` 已上线 owner-only 写回；下一步补双提交 token 或同源 CSRF token |
 | 待做（绑定首次 SQLite 写入） | SQLite 备份策略 | 有备份路径、恢复步骤、保留周期和恢复演练说明 | 本轮登录不落 SQLite，时机与节点写回/incident 绑定 |
 | 待做（随写回·多用户） | 会话/用户持久化升级到 SQLite | users + sessions 落 SQLite，支持可撤销会话与 `viewer` 角色 | 从无状态 Cookie 迁移；接口边界本轮已留好 |
 | 待做 | 镜像构建/发布流水线 | 脚本化 build+import、按 git sha 打 tag；可选 GitHub Actions | 目前在 RS1000 手工 `docker build`+`k3s ctr import` |
 | 待做 | Cloudflare 缓存和 WAF 规则 | `/api/*`、`/auth/*` 不缓存；登录限速 | 和 RS1000 nginx 配置一起记录 |
-| 部分完成 | UI 细节打磨 | 空状态、骨架屏、键盘可访问性、移动端触控区域 | `0.4.3` 已补管理端移动侧栏、筛选空状态、表格横向滚动、稳定图标动作尺寸、批量选择栏、Activity 双栏响应式和 About 页响应式布局；公开状态页窄屏表格细节继续优化 |
+| 部分完成 | UI 细节打磨 | 空状态、骨架屏、键盘可访问性、移动端触控区域 | `0.6.0` 已补 Komari 风格 Server 表格、横向滚动、移动端侧栏、抽屉表单、批量选择栏和受限远程入口提示；公开状态页窄屏表格细节继续优化 |
 | 待做 | 文档补齐 | README、部署文档、环境变量、故障排查、ADR 更新 | 每个生产决策都能追溯 |
 
 P3 完成判定：NodeBeacon 不只是能上线，还能长期维护、升级、备份，并且登录态和敏感信息展示边界清晰。
@@ -488,7 +498,7 @@ monitor.liucf.com
 | --- | --- | --- | --- |
 | 已完成 | i18n-P1：基础 + 登录/后台本地化 | i18next 初始化 + 5 语言 JSON + 可用的 `LanguageSwitch`；登录页与后台（布局、总览、节点、用户、设置、状态徽章）全量走 `t()` | 我们拥有源码的 React 界面全部本地化；不动 iframe 原型 |
 | 已完成 | i18n-P2：公开状态页多语言 | `0.3.0` 已把首页主面板改为原生 React，文案接入同一套 `translation` 资源与 `LanguageSwitch`，首页的语言/主题下拉真正生效 | 新增 `status.*` 命名空间；`0.4.0` 节点详情/趋势页文案（`status.detail.*`）已随功能补齐 5 语言 |
-| 待做（随功能增长） | i18n 覆盖新增 UI | 后续管理端写回 UI（`PATCH /api/admin/nodes/:id` 等）新增文案一律走 i18n key | 禁止再硬编码中文；新增 key 同步补齐 5 个 JSON |
+| 部分完成（随功能增长） | i18n 覆盖新增 UI | 后续管理端写回 UI（`PATCH /api/admin/nodes/:id` 等）新增文案一律走 i18n key | `0.6.0` 新增管理端写回文案已补 `zh-CN`/`en`，id/ja/zh-TW 暂走 fallback；后续补齐人工翻译 |
 | 待做（可选·低优先） | 语言偏好服务端持久化 | 等 P3「会话/用户持久化升级到 SQLite」落地后，可把语言偏好随账号存储 | 当前 localStorage 已够用 |
 | 待做（可选） | 扩展语言 / 时间格式本地化 | 结构支持随时加语言；后端返回的少量文案与时间格式按需本地化 | 非阻塞 |
 

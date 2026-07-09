@@ -94,7 +94,7 @@ export async function getStatus(env: ApiEnv, logger?: StatusServiceLogger): Prom
   }
   recordCacheEvent("status", "miss");
 
-  const registry = await loadNodeRegistry(env.nodeConfigPath);
+  const registry = await loadNodeRegistry(env.nodeConfigPath, env.nodeConfigSeedPath);
   const now = new Date(nowMs).toISOString();
   const client = createPrometheusClient(env);
   let response: ApiStatusResponse;
@@ -143,4 +143,8 @@ export async function getStatus(env: ApiEnv, logger?: StatusServiceLogger): Prom
   };
 
   return response;
+}
+
+export function clearStatusCache(): void {
+  cachedStatus = null;
 }

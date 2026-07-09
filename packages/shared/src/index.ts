@@ -11,6 +11,19 @@ export interface NodeConfigEntry {
   public: boolean;
   labels: Record<string, string>;
   tags: string[];
+  /** Optional owner-only display metadata used by the admin console. */
+  ipAddress?: string;
+  clientVersion?: string;
+  privateNotes?: string;
+  billing?: NodeBilling;
+}
+
+export interface NodeBilling {
+  price?: number;
+  currency?: string;
+  cycleDays?: number;
+  expiresAt?: string;
+  autoRenewal?: boolean;
 }
 
 export interface StatusMetricSet {
@@ -221,6 +234,10 @@ export interface AdminNode {
   public: boolean;
   labels: Record<string, string>;
   tags: string[];
+  ipAddress?: string;
+  clientVersion?: string;
+  privateNotes?: string;
+  billing?: NodeBilling;
   online: boolean;
   status: NodeHealthStatus;
   updatedAt: string;
@@ -228,6 +245,14 @@ export interface AdminNode {
 
 export interface AdminNodesResponse {
   nodes: AdminNode[];
+}
+
+export type AdminNodeMutation = Partial<Omit<NodeConfigEntry, "id">> & {
+  id?: string;
+};
+
+export interface AdminNodeResponse {
+  node: AdminNode;
 }
 
 export interface AdminUsersResponse {

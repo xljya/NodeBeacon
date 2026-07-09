@@ -3,6 +3,7 @@ export interface ApiEnv {
   port: number;
   webOrigin: string;
   nodeConfigPath?: string;
+  nodeConfigSeedPath?: string;
   prometheusUrl?: string;
   prometheusTimeoutMs: number;
   prometheusBasicAuthUsername?: string;
@@ -59,6 +60,7 @@ export function loadEnv(): ApiEnv {
     port: numberFromEnv("API_PORT", 3001),
     webOrigin: process.env.WEB_ORIGIN ?? "http://localhost:5173",
     nodeConfigPath: process.env.NODEBEACON_NODE_CONFIG,
+    nodeConfigSeedPath: process.env.NODEBEACON_NODE_CONFIG_SEED,
     prometheusUrl: prometheusUrl || undefined,
     prometheusTimeoutMs: numberFromEnv("PROMETHEUS_TIMEOUT_MS", 5000),
     prometheusBasicAuthUsername: prometheusBasicAuthUsername || undefined,

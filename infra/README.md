@@ -19,7 +19,7 @@ monitor.liucf.com
 | File | Purpose |
 | --- | --- |
 | `k8s/namespace.yaml` | `nodebeacon` namespace |
-| `k8s/configmap-nodes.yaml` | Node registry (`/config/nodes.yaml`), Prometheus label mapping |
+| `k8s/configmap-nodes.yaml` | Node registry seed (`/config/nodes.yaml`), Prometheus label mapping |
 | `k8s/secret.example.yaml` | Reserved secrets (P3). Copy + fill privately; never commit real values |
 | `k8s/deployment.yaml` | App Deployment, env, probes, security context |
 | `k8s/service.yaml` | NodePort 31003 |
@@ -51,8 +51,8 @@ external registry is used, so the Deployment uses `imagePullPolicy: Never`.
 
 ```sh
 # From a checkout of this repo on RS1000:
-docker build -t nodebeacon:0.5.0 .
-docker save nodebeacon:0.5.0 | sudo k3s ctr images import -
+docker build -t nodebeacon:0.6.0 .
+docker save nodebeacon:0.6.0 | sudo k3s ctr images import -
 ```
 
 ## Deploy
@@ -94,9 +94,9 @@ curl -i https://monitor.liucf.com/api/admin/summary
 curl -I https://monitor.liucf.com/api/auth/github
 ```
 
-For `0.5.0`, expected production checks are:
+For `0.6.0`, expected production checks are:
 
-- image: `nodebeacon:0.5.0`
+- image: `nodebeacon:0.6.0`
 - `/readyz` and `/healthz`: HTTP 200
 - `/api/status`: `summary.total == 5` and `summary.online == 5`
 - `/api/auth/config`: password and GitHub login both enabled
@@ -115,17 +115,23 @@ For `0.5.0`, expected production checks are:
 - `/metrics` via the public hostname: HTTP 404 (nginx blocks it); via the
   NodePort/cluster: Prometheus text with `nodebeacon_*` metrics
 - `pnpm test` (vitest, apps/api): all green before building the image
-- `/admin`: enhanced read-only console renders the health overview, dense nodes
-  table with search/status/group/region/visibility filters, row actions,
-  grouped sidebar navigation, users access model, grouped settings panels,
-  version chips, and a collapsed mobile sidebar.
+- `/admin`: Komari-inspired Server / Node list is the first screen, with the
+  top bar spanning the viewport, a left sidebar matching the Server/Settings/
+  Notification/Remote Exec/Latency/Sessions/Account/Logs/About/Documentation/
+  Home/Default Theme Settings structure, and a dense nodes table.
 - `/admin/about`: owner-only runtime/about page renders version, delivery,
   Prometheus/cache/auth boundaries, and repo/reference links.
 - `/admin/activity`: owner-only live activity snapshot renders current admin API
   data as an operations timeline without claiming persisted audit logs.
-- `/admin/nodes`: row actions can copy the Prometheus selector, open public
-  detail for visible nodes, open the admin drawer without double-triggering the
-  row click, and copy selectors for selected rows from the bulk bar.
+- `/admin/nodes`: row actions can copy the Prometheus selector, download a YAML
+  snippet, edit node display metadata, edit billing metadata, delete nodes, and
+  copy selectors for selected rows from the bulk bar.
+- node registry write-back: the pod loads `/data/nodes.yaml` and falls back to
+  `/config/nodes.yaml` as a read-only seed. After an owner edit, verify the PVC
+  copy exists with:
+  `kubectl -n nodebeacon exec deploy/nodebeacon -- test -s /data/nodes.yaml`
+- Remote Exec entry points render the NodeBeacon security-boundary notice; this
+  app does not expose browser shell or agent command execution.
 - `/admin/settings`: read-only appearance section shows browser-local theme
   preference boundaries alongside data/cache/auth/security/release sections.
 

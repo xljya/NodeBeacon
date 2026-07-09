@@ -10,6 +10,13 @@ import { UsersPage } from "./admin/pages/UsersPage";
 import { SettingsPage } from "./admin/pages/SettingsPage";
 import { AboutPage } from "./admin/pages/AboutPage";
 import { ActivityPage } from "./admin/pages/ActivityPage";
+import { RemoteExecPage } from "./admin/pages/RemoteExecPage";
+import { LatencyPage } from "./admin/pages/LatencyPage";
+import { AccountPage } from "./admin/pages/AccountPage";
+import { SessionsPage } from "./admin/pages/SessionsPage";
+import { LogsPage } from "./admin/pages/LogsPage";
+import { NotificationPage } from "./admin/pages/NotificationPage";
+import { ThemeSettingsPage } from "./admin/pages/ThemeSettingsPage";
 
 export function App() {
   return (
@@ -23,12 +30,20 @@ export function App() {
       {/* Owner-only admin console. */}
       <Route element={<ProtectedRoute />}>
         <Route path="/admin" element={<AdminLayout />}>
-          <Route index element={<OverviewPage />} />
+          <Route index element={<NodesPage />} />
+          <Route path="overview" element={<OverviewPage />} />
           <Route path="nodes" element={<NodesPage />} />
           <Route path="users" element={<UsersPage />} />
           <Route path="settings" element={<SettingsPage />} />
+          <Route path="notification" element={<NotificationPage />} />
+          <Route path="remote-exec" element={<RemoteExecPage />} />
+          <Route path="latency" element={<LatencyPage />} />
+          <Route path="sessions" element={<SessionsPage />} />
+          <Route path="account" element={<AccountPage />} />
+          <Route path="logs" element={<LogsPage />} />
           <Route path="activity" element={<ActivityPage />} />
           <Route path="about" element={<AboutPage />} />
+          <Route path="theme" element={<ThemeSettingsPage />} />
         </Route>
       </Route>
     </Routes>

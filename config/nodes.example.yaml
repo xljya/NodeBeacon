@@ -23,6 +23,8 @@ nodes:
     location: Germany
     displayOrder: 10
     public: true
+    ipAddress: 10.77.0.1
+    clientVersion: node-exporter
     labels:
       job: node-exporter
     tags:
@@ -37,6 +39,8 @@ nodes:
     location: US West
     displayOrder: 20
     public: true
+    ipAddress: 10.77.0.2:9100
+    clientVersion: node-exporter
     labels:
       job: external-vps-node
       instance: dmit-uswest
@@ -52,6 +56,8 @@ nodes:
     location: Germany
     displayOrder: 30
     public: true
+    ipAddress: 10.77.0.3:9100
+    clientVersion: node-exporter
     labels:
       job: external-vps-node
       instance: hostbrr-4t
@@ -66,6 +72,8 @@ nodes:
     location: Germany
     displayOrder: 40
     public: true
+    ipAddress: 10.77.0.4:9100
+    clientVersion: node-exporter
     labels:
       job: external-vps-node
       instance: netcup-1o
@@ -80,6 +88,8 @@ nodes:
     location: China
     displayOrder: 50
     public: true
+    ipAddress: 10.77.0.5:9100
+    clientVersion: node-exporter
     labels:
       job: external-vps-node
       instance: huawei-2c1g

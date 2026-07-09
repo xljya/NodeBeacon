@@ -31,3 +31,23 @@ export async function apiPost<T>(path: string, body?: unknown): Promise<T> {
   if (!res.ok) throw await toError(res);
   return res.json() as Promise<T>;
 }
+
+export async function apiPatch<T>(path: string, body?: unknown): Promise<T> {
+  const res = await fetch(path, {
+    method: "PATCH",
+    credentials: "include",
+    headers: body === undefined ? undefined : { "content-type": "application/json" },
+    body: body === undefined ? undefined : JSON.stringify(body)
+  });
+  if (!res.ok) throw await toError(res);
+  return res.json() as Promise<T>;
+}
+
+export async function apiDelete<T>(path: string): Promise<T> {
+  const res = await fetch(path, {
+    method: "DELETE",
+    credentials: "include"
+  });
+  if (!res.ok) throw await toError(res);
+  return res.json() as Promise<T>;
+}

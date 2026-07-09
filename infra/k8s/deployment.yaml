@@ -28,7 +28,7 @@ spec:
       containers:
         - name: nodebeacon
           # Built on the node and imported into containerd, so never pull.
-          image: nodebeacon:0.5.0
+          image: nodebeacon:0.6.0
           imagePullPolicy: Never
           ports:
             - name: http
@@ -50,11 +50,13 @@ spec:
             - name: STATUS_CACHE_TTL_SECONDS
               value: "30"
             - name: NODEBEACON_NODE_CONFIG
+              value: "/data/nodes.yaml"
+            - name: NODEBEACON_NODE_CONFIG_SEED
               value: "/config/nodes.yaml"
             - name: ALLOW_REGISTER
               value: "false"
             - name: APP_VERSION
-              value: "0.5.0"
+              value: "0.6.0"
             # Blackbox HTTP probe job shown on /api/latency ("" disables it).
             - name: PROBE_JOB
               value: "blackbox-http-public"
