@@ -369,7 +369,7 @@ P1 验证记录：2026-07-06 已用浏览器在 `https://monitor.liucf.com/` 端
 进展记录：2026-07-11 `0.9.1`「边界说清楚」——补齐 P3 的源站安全响应头和缓存边界，并把 Cloudflare 规则变成可直接执行的运维清单。
 
 - **API 反缓存**：Fastify 对所有 `/api/*` 响应（含 4xx/5xx）统一返回 `Cache-Control: no-store`，避免浏览器、反向代理或 CDN 依赖扩展名和默认策略判断动态/认证数据。
-- **nginx 安全头**：HTTPS 统一发送 CSP、180 天 HSTS（暂不含 `includeSubDomains`/preload）、nosniff、DENY frame、严格 referrer policy、Permissions Policy 和 cross-domain policy；CSP 只允许同源脚本/连接，样式/字体额外白名单限定为现有 Google Fonts 两个域名，并保留 React 动态样式所需的 `style-src 'unsafe-inline'`。
+- **nginx 安全头**：HTTPS 统一发送 CSP、180 天 HSTS（暂不含 `includeSubDomains`/preload）、nosniff、DENY frame、严格 referrer policy、Permissions Policy 和 cross-domain policy；CSP 的外部白名单只包含现有 Google Fonts 样式/字体与 Cloudflare 自动注入的 Web Analytics beacon，API 连接仍严格同源，并保留 React 动态样式所需的 `style-src 'unsafe-inline'`。
 - **缓存分层**：nginx `map` 将 SPA HTML 设为 `no-cache`、API 设为 `no-store`、Vite hash 资源设为一年 `immutable`。新增 `infra/cloudflare.md`，记录 Cache Rule 精确表达式、免费计划兼容的登录突发限速方案、HSTS 边界和验收命令；当前主机与仓库没有 Cloudflare 管理凭据，因此边缘规则保留为显式人工步骤，源站头是已生效的最终安全网。
 - **验证**：新增公开 200 与未登录 401 的 `no-store` 断言；`pnpm typecheck`、56 个 API 测试、生产构建和独立 nginx 配置语法检查通过。
 

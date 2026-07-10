@@ -77,6 +77,14 @@ Do not add `includeSubDomains` or `preload` until every `liucf.com` subdomain is
 known to support HTTPS continuously. Cloudflare proxying, origin TLS and the
 certificate renewal path must remain enabled throughout the max-age window.
 
+## Web Analytics and CSP
+
+Cloudflare currently injects its Web Analytics/RUM beacon automatically. The
+CSP therefore permits scripts from `https://static.cloudflareinsights.com`;
+automatic beacon uploads use the same-origin `/cdn-cgi/rum` endpoint, which is
+already covered by `connect-src 'self'`. No other third-party script origin is
+allowed. If Web Analytics is disabled later, remove this script source as well.
+
 ## Verification
 
 ```sh
@@ -104,3 +112,4 @@ References:
 - [Cloudflare Origin Cache Control](https://developers.cloudflare.com/cache/concepts/cache-control/)
 - [Cloudflare rate limiting rules](https://developers.cloudflare.com/waf/rate-limiting-rules/)
 - [Cloudflare HSTS requirements](https://developers.cloudflare.com/ssl/edge-certificates/additional-options/http-strict-transport-security/)
+- [Cloudflare Web Analytics CSP requirements](https://developers.cloudflare.com/web-analytics/faq/#what-do-i-need-to-add-to-my-content-security-policy-csp)
