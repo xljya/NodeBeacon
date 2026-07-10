@@ -1,6 +1,6 @@
 # NodeBeacon 开发文档
 
-最后更新：2026-07-09
+最后更新：2026-07-10
 
 ## 决策记录
 
@@ -330,6 +330,18 @@ P1 验证记录：2026-07-06 已用浏览器在 `https://monitor.liucf.com/` 端
 - **节点表交互补齐**：新增列可见性菜单、批量 YAML 导出、拖放排序。拖放会通过既有 owner-only `PATCH /api/admin/nodes/:id` 写回每台节点的 `displayOrder`，并在成功后刷新列表；搜索状态下禁止拖放，避免排序目标不明确。原有单节点导出、编辑、账单、删除、选择和 selector 复制继续保留。
 - **验证**：`pnpm typecheck` 通过；本机 Edge DevTools 验证 `/admin` 渲染完整节点表、Settings / Notification 展开入口、主题强调色切换、列控制入口均可见，且未检测到 Vite 错误覆盖层。由于自动化过程中触发了本地登录限速，后续浏览器验证不重复提交登录；正确凭据的 API 登录路径已单独返回 200。
 
+进展记录：2026-07-10 `0.6.2` 管理端与公开页 UI/UX 打磨。保持既有设计基调（浅蓝工作区 `#eef4fc`、白色内容面、蓝色主操作、绿色在线态、Space Grotesk / JetBrains Mono），只调密度、状态与层级，不改功能边界（Remote Exec 仍仅为安全说明入口）。
+
+- **侧栏信息架构修复**：Overview、Users、Activity 三个页面此前有路由但没有任何侧栏入口，完全不可达。侧栏按既有 `admin.nav.groupMonitor/groupManage` 文案分为 Monitor（Server / Overview / Latency / Activity）与 Manage（Settings、Notification、Users、Remote Exec、Sessions、Account、Logs、About、Default Theme Settings）两组，Documentation / Home 固定在侧栏底部；Sessions 图标从与 Users 重复的 `UsersRound` 换为 `KeyRound`。
+- **交互缺陷修复**：节点表列可见性弹层此前点击外部不关闭（补外部点击 + Escape）；行内“远程终端”按钮塞 Terminal + ChevronRight 两个图标、内容超出 32px 按钮宽度被裁切（去掉箭头）；760–900px 区间打开移动侧栏没有遮罩（遮罩样式原本只写在 ≤760px 而 Komari 断点是 900px）；点“刷新”整页闪成加载态造成布局跳动（有数据时保留表格，刷新按钮转圈 + 禁用）；公开状态页 Group 标签在窄屏溢出且不可滚动（`.seg` 改 `overflow-x: auto`）。
+- **交互状态系统**：`admin-shell`/`login-screen`/`status-page` 三个作用域统一 `:focus-visible` 焦点环与 `prefers-reduced-motion` 支持；主按钮补 hover/active，ghost/icon 按钮补 hover 描边与 active，禁用态统一；搜索框 `focus-within` 高亮；抽屉加 0.18s 滑入 + 遮罩淡入，Escape 可关闭；所有图标按钮补齐 `title` + `aria-label`。
+- **信息密度**：顶栏 104→72px（加底部分隔线）、节点表行 66→52px、表头 52→44px、页标题 27→22px、导航项 43→38px、侧栏 264→248px、内容区 padding 48→32px；Add 按钮发光投影收敛为 1px 投影；Overview hero 标题 28→22px、圆环 118→104px；状态页卡片 hover 从上浮 5px + 大投影收敛为上浮 2px + 柔和投影。
+- **表格可读性**：单元格 `white-space: nowrap`（容器内横向滚动，避免 `node-exporter` 折行）；IP 列等宽字体；节点名 hover 下划线、复制按钮 hover 变色；Latency 页状态列改用 `status-badge` 徽章、数值列等宽字体。
+- **状态组件**：新增共享 `admin/components/PageState.tsx`（`PageLoading` 旋转图标 + `PageError`），替换 Nodes/Overview/Users/Latency/Settings/Activity 六页手写加载/错误文本；空状态补图标与“清空搜索”动作。
+- **品牌图标统一**：管理侧栏、登录页、公开状态页头部的手写字符 `◇`/`◈` 统一换成 Lucide `Radar`；新增文案（列配置、拖拽排序提示、清空搜索）补齐 en/id/ja/zh-CN/zh-TW 五语言。
+- **开发配置**：`vite.config.ts` 代理目标支持 `NB_API_PROXY` 环境变量覆盖，便于在 5173 被占用时起第二套隔离实例验证。
+- **验证**：`pnpm typecheck`/`build`/`test`（33 用例）全绿。因本机 5173 被日常 `pnpm dev` 占用且凭据不同，Playwright 套件未直接运行，改为在隔离实例（API 3002 + vite 5174，e2e 同款凭据）手动执行 e2e 覆盖的全部断言：登录→节点表、Settings→Theme Management、Notification→Offline、Default Theme Settings、Server→Node list、登出→登录页；另验证列弹层开合、编辑抽屉 + Escape、明暗主题、拖拽提示、375px 移动端（汉堡菜单/遮罩/侧栏抽屉/无横向溢出）与公开状态页。
+
 ### P2：核心增强
 
 | 状态 | 任务 | 交付标准 | 备注 |
@@ -375,7 +387,7 @@ P2 进展记录：2026-07-09 `0.4.0` 交付节点详情 + 趋势主线（P2 前�
 | 待做（随写回·多用户） | 会话/用户持久化升级到 SQLite | users + sessions 落 SQLite，支持可撤销会话与 `viewer` 角色 | 从无状态 Cookie 迁移；接口边界本轮已留好 |
 | 待做 | 镜像构建/发布流水线 | 脚本化 build+import、按 git sha 打 tag；可选 GitHub Actions | 目前在 RS1000 手工 `docker build`+`k3s ctr import` |
 | 待做 | Cloudflare 缓存和 WAF 规则 | `/api/*`、`/auth/*` 不缓存；登录限速 | 和 RS1000 nginx 配置一起记录 |
-| 部分完成 | UI 细节打磨 | 空状态、骨架屏、键盘可访问性、移动端触控区域 | `0.6.0` 已补 Komari 风格 Server 表格、横向滚动、移动端侧栏、抽屉表单、批量选择栏和受限远程入口提示；公开状态页窄屏表格细节继续优化 |
+| 部分完成 | UI 细节打磨 | 空状态、骨架屏、键盘可访问性、移动端触控区域 | `0.6.2`：全局 focus-visible / hover / active / disabled 状态、共享加载与错误组件、空状态图标与动作、抽屉动画、密度收紧、窄屏 Group 标签可滚动、760–900px 遮罩修复；骨架屏仍待做 |
 | 待做 | 文档补齐 | README、部署文档、环境变量、故障排查、ADR 更新 | 每个生产决策都能追溯 |
 
 P3 完成判定：NodeBeacon 不只是能上线，还能长期维护、升级、备份，并且登录态和敏感信息展示边界清晰。

@@ -123,6 +123,10 @@
       "filterVisibility": "可見性",
       "emptyTitle": "沒有符合的節點",
       "emptyText": "清除搜尋關鍵字或放寬篩選條件。",
+      "configureColumns": "設定欄位顯示",
+      "dragToReorder": "拖曳調整排序",
+      "clearSearchToReorder": "清空搜尋後才能拖曳排序",
+      "clearSearch": "清空搜尋",
       "drawerAria": "節點 {{name}}",
       "close": "關閉",
       "editNote": "節點顯示設定的編輯與寫回將在下一步實作（本版唯讀）。",
@@ -297,7 +301,9 @@
     }
   },
   "status": {
-    "header": { "login": "登入" },
+    "header": {
+      "login": "登入"
+    },
     "stats": {
       "time": "目前時間",
       "online": "目前在線",
@@ -382,7 +388,11 @@
     },
     "lastUpdated": "最後更新 {{time}}",
     "footer": "祝你有美好的一天，朋友。",
-    "units": { "d": "天", "h": "時", "m": "分" },
+    "units": {
+      "d": "天",
+      "h": "時",
+      "m": "分"
+    },
     "theme": "切換主題",
     "language": "語言"
   }

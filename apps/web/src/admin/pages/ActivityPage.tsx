@@ -1,7 +1,6 @@
 import type { ReactNode } from "react";
 import {
   Activity,
-  AlertCircle,
   Clock3,
   Database,
   RefreshCw,
@@ -12,6 +11,7 @@ import {
 import { useTranslation } from "react-i18next";
 import type { AdminNodesResponse, AdminSummaryResponse, AdminUsersResponse } from "@nodebeacon/shared";
 import { useApi } from "../../lib/useApi";
+import { PageError, PageLoading } from "../components/PageState";
 import { StatusBadge } from "../components/StatusBadge";
 
 export function ActivityPage() {
@@ -27,14 +27,8 @@ export function ActivityPage() {
     await Promise.all([summary.reload(), nodes.reload(), users.reload()]);
   };
 
-  if (loading) return <div className="admin-state">{t("common.loading")}</div>;
-  if (error) {
-    return (
-      <div className="admin-state error">
-        <AlertCircle size={16} /> {error}
-      </div>
-    );
-  }
+  if (loading) return <PageLoading />;
+  if (error) return <PageError message={error} />;
   if (!summary.data || !nodes.data || !users.data) return null;
 
   const latestNodes = [...nodes.data.nodes]

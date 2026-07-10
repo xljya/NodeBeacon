@@ -123,6 +123,10 @@
       "filterVisibility": "Visibilitas",
       "emptyTitle": "Tidak ada node yang cocok",
       "emptyText": "Hapus kata kunci pencarian atau longgarkan filter.",
+      "configureColumns": "Atur kolom",
+      "dragToReorder": "Seret untuk mengurutkan",
+      "clearSearchToReorder": "Hapus pencarian untuk mengurutkan node",
+      "clearSearch": "Hapus pencarian",
       "drawerAria": "Node {{name}}",
       "close": "Tutup",
       "editNote": "Pengeditan dan penulisan balik konfigurasi tampilan node akan diterapkan pada langkah berikutnya (versi ini hanya-baca).",
@@ -297,7 +301,9 @@
     }
   },
   "status": {
-    "header": { "login": "Masuk" },
+    "header": {
+      "login": "Masuk"
+    },
     "stats": {
       "time": "Waktu Saat Ini",
       "online": "Online Saat Ini",
@@ -382,7 +388,11 @@
     },
     "lastUpdated": "Terakhir diperbarui {{time}}",
     "footer": "Semoga harimu menyenangkan, teman.",
-    "units": { "d": "h", "h": "j", "m": "mnt" },
+    "units": {
+      "d": "h",
+      "h": "j",
+      "m": "mnt"
+    },
     "theme": "Ganti tema",
     "language": "Bahasa"
   }

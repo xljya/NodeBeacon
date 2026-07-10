@@ -137,6 +137,10 @@
       "filterVisibility": "Visibility",
       "emptyTitle": "No nodes match these filters",
       "emptyText": "Clear the search keyword or relax one of the filters.",
+      "configureColumns": "Configure columns",
+      "dragToReorder": "Drag to reorder",
+      "clearSearchToReorder": "Clear the search to reorder nodes",
+      "clearSearch": "Clear search",
       "drawerAria": "Node {{name}}",
       "close": "Close",
       "editNote": "Editing and writing back node display config is coming next (read-only for now).",
@@ -373,7 +377,9 @@
     }
   },
   "status": {
-    "header": { "login": "Login" },
+    "header": {
+      "login": "Login"
+    },
     "stats": {
       "time": "Current Time",
       "online": "Current Online",
@@ -458,7 +464,11 @@
     },
     "lastUpdated": "Last updated {{time}}",
     "footer": "Have a nice day, my friend.",
-    "units": { "d": "d", "h": "h", "m": "m" },
+    "units": {
+      "d": "d",
+      "h": "h",
+      "m": "m"
+    },
     "theme": "Toggle theme",
     "language": "Language"
   }

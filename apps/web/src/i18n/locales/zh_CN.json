@@ -137,6 +137,10 @@
       "filterVisibility": "可见性",
       "emptyTitle": "没有匹配的节点",
       "emptyText": "清空搜索关键词或放宽筛选条件。",
+      "configureColumns": "配置列显示",
+      "dragToReorder": "拖拽调整排序",
+      "clearSearchToReorder": "清空搜索后才能拖拽排序",
+      "clearSearch": "清空搜索",
       "drawerAria": "节点 {{name}}",
       "close": "关闭",
       "editNote": "节点展示配置的编辑与写回将在下一步实现（本版只读）。",
@@ -373,7 +377,9 @@
     }
   },
   "status": {
-    "header": { "login": "登录" },
+    "header": {
+      "login": "登录"
+    },
     "stats": {
       "time": "当前时间",
       "online": "当前在线",
@@ -458,7 +464,11 @@
     },
     "lastUpdated": "最后更新 {{time}}",
     "footer": "祝你有美好的一天，朋友。",
-    "units": { "d": "天", "h": "时", "m": "分" },
+    "units": {
+      "d": "天",
+      "h": "时",
+      "m": "分"
+    },
     "theme": "切换主题",
     "language": "语言"
   }

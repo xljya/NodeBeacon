@@ -1,8 +1,7 @@
-import { useMemo, useState, type FormEvent, type ReactNode } from "react";
+import { useEffect, useMemo, useRef, useState, type FormEvent, type ReactNode } from "react";
 import {
   AlertCircle,
   Check,
-  ChevronRight,
   CircleDollarSign,
   Columns3,
   Copy,
@@ -12,6 +11,7 @@ import {
   Plus,
   RefreshCw,
   Search,
+  SearchX,
   Terminal,
   Trash2,
   X
@@ -20,6 +20,7 @@ import { useTranslation } from "react-i18next";
 import type { AdminNode, AdminNodeMutation, AdminNodeResponse, AdminNodesResponse } from "@nodebeacon/shared";
 import { apiDelete, apiPatch, apiPost } from "../../lib/api";
 import { useApi } from "../../lib/useApi";
+import { PageError, PageLoading } from "../components/PageState";
 
 type DrawerState =
   | { type: "add" }
@@ -88,6 +89,7 @@ export function NodesPage() {
   const [draggingId, setDraggingId] = useState<string | null>(null);
   const [reordering, setReordering] = useState(false);
   const [columnsOpen, setColumnsOpen] = useState(false);
+  const columnsMenuRef = useRef<HTMLDivElement>(null);
   const [visibleColumns, setVisibleColumns] = useState<Record<OptionalColumn, boolean>>({
     ip: true,
     version: true,
@@ -96,6 +98,23 @@ export function NodesPage() {
     billing: true
   });
   const [actionError, setActionError] = useState<string | null>(null);
+
+  // Close the column-visibility popover on outside click or Escape.
+  useEffect(() => {
+    if (!columnsOpen) return;
+    const onPointer = (event: MouseEvent) => {
+      if (columnsMenuRef.current && !columnsMenuRef.current.contains(event.target as Node)) setColumnsOpen(false);
+    };
+    const onKey = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setColumnsOpen(false);
+    };
+    document.addEventListener("mousedown", onPointer);
+    document.addEventListener("keydown", onKey);
+    return () => {
+      document.removeEventListener("mousedown", onPointer);
+      document.removeEventListener("keydown", onKey);
+    };
+  }, [columnsOpen]);
 
   const nodes = data?.nodes ?? [];
   const filteredNodes = useMemo(() => {
@@ -188,14 +207,8 @@ export function NodesPage() {
     }
   };
 
-  if (loading) return <div className="admin-state">{t("common.loading")}</div>;
-  if (error) {
-    return (
-      <div className="admin-state error">
-        <AlertCircle size={16} /> {error}
-      </div>
-    );
-  }
+  if (loading && !data) return <PageLoading />;
+  if (error) return <PageError message={error} />;
 
   return (
     <div className="komari-page">
@@ -206,11 +219,17 @@ export function NodesPage() {
             <Search size={18} />
             <input value={query} onChange={(event) => setQuery(event.target.value)} placeholder={t("admin.nodes.searchPlaceholder")} />
           </label>
-          <button className="komari-muted-btn" onClick={reload} title={t("admin.actions.refresh")}>
-            <RefreshCw size={18} />
+          <button className="komari-muted-btn" onClick={reload} disabled={loading} title={t("admin.actions.refresh")} aria-label={t("admin.actions.refresh")}>
+            <RefreshCw size={18} className={loading ? "spin" : undefined} />
           </button>
-          <div className="komari-column-menu">
-            <button className="komari-muted-btn" onClick={() => setColumnsOpen((open) => !open)} title="Configure columns" aria-expanded={columnsOpen}>
+          <div className="komari-column-menu" ref={columnsMenuRef}>
+            <button
+              className="komari-muted-btn"
+              onClick={() => setColumnsOpen((open) => !open)}
+              title={t("admin.nodes.configureColumns")}
+              aria-label={t("admin.nodes.configureColumns")}
+              aria-expanded={columnsOpen}
+            >
               <Columns3 size={18} />
             </button>
             {columnsOpen && (
@@ -277,7 +296,7 @@ export function NodesPage() {
                 onDrop={() => void reorderNodes(node.id)}
               >
                 <td className="komari-grip-col">
-                  <span title={query.trim() ? "Clear search to reorder nodes" : "Drag to reorder"}><GripVertical size={18} /></span>
+                  <span title={query.trim() ? t("admin.nodes.clearSearchToReorder") : t("admin.nodes.dragToReorder")}><GripVertical size={18} /></span>
                 </td>
                 <td className="komari-select-col">
                   <input
@@ -300,20 +319,19 @@ export function NodesPage() {
                 {visibleColumns.billing && <td>{formatBilling(node)}</td>}
                 <td>
                   <div className="komari-row-actions">
-                    <button title={t("admin.nodes.downloadConfig")} onClick={() => downloadNode(node)}>
+                    <button title={t("admin.nodes.downloadConfig")} aria-label={t("admin.nodes.downloadConfig")} onClick={() => downloadNode(node)}>
                       <Download size={19} />
                     </button>
-                    <button title={t("admin.nodes.remoteTerminal")} onClick={() => setDrawer({ type: "remote", node })}>
+                    <button title={t("admin.nodes.remoteTerminal")} aria-label={t("admin.nodes.remoteTerminal")} onClick={() => setDrawer({ type: "remote", node })}>
                       <Terminal size={19} />
-                      <ChevronRight size={15} />
                     </button>
-                    <button title={t("admin.nodes.editInfo")} onClick={() => setDrawer({ type: "edit", node })}>
+                    <button title={t("admin.nodes.editInfo")} aria-label={t("admin.nodes.editInfo")} onClick={() => setDrawer({ type: "edit", node })}>
                       <Pencil size={19} />
                     </button>
-                    <button title={t("admin.nodes.billing")} onClick={() => setDrawer({ type: "billing", node })}>
+                    <button title={t("admin.nodes.billing")} aria-label={t("admin.nodes.billing")} onClick={() => setDrawer({ type: "billing", node })}>
                       <CircleDollarSign size={19} />
                     </button>
-                    <button className="danger" title={t("admin.nodes.delete")} onClick={() => void deleteNode(node)}>
+                    <button className="danger" title={t("admin.nodes.delete")} aria-label={t("admin.nodes.delete")} onClick={() => void deleteNode(node)}>
                       <Trash2 size={19} />
                     </button>
                   </div>
@@ -324,8 +342,14 @@ export function NodesPage() {
         </table>
         {filteredNodes.length === 0 && (
           <div className="empty-table">
+            <SearchX size={28} aria-hidden="true" />
             <b>{t("admin.nodes.emptyTitle")}</b>
             <span>{t("admin.nodes.emptyText")}</span>
+            {query.trim() && (
+              <button className="ghost-btn" onClick={() => setQuery("")}>
+                <X size={15} /> {t("admin.nodes.clearSearch")}
+              </button>
+            )}
           </div>
         )}
       </div>
@@ -538,6 +562,15 @@ function RemoteDrawer({ node, onClose }: { node: AdminNode; onClose: () => void 
 }
 
 function AdminDrawer({ title, onClose, children }: { title: string; onClose: () => void; children: ReactNode }) {
+  // Close on Escape, matching the scrim click.
+  useEffect(() => {
+    const onKey = (event: KeyboardEvent) => {
+      if (event.key === "Escape") onClose();
+    };
+    document.addEventListener("keydown", onKey);
+    return () => document.removeEventListener("keydown", onKey);
+  }, [onClose]);
+
   return (
     <>
       <div className="drawer-scrim" onClick={onClose} />

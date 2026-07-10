@@ -1,7 +1,6 @@
 import { useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import {
-  AlertCircle,
   ArrowUpRight,
   Bell,
   Check,
@@ -19,6 +18,7 @@ import { useTranslation } from "react-i18next";
 import type { AdminSummaryResponse } from "@nodebeacon/shared";
 import { AppearanceControls } from "./ThemeSettingsPage";
 import { useApi } from "../../lib/useApi";
+import { PageError, PageLoading } from "../components/PageState";
 
 const SETTINGS_INDEX = [
   { slug: "site", label: "Site", icon: Globe2 },
@@ -36,10 +36,8 @@ export function SettingsPage() {
   const { section = "site" } = useParams();
   const { data, error, loading, reload } = useApi<AdminSummaryResponse>("/api/admin/summary");
 
-  if (loading) return <div className="admin-state">{t("common.loading")}</div>;
-  if (error || !data) {
-    return <div className="admin-state error"><AlertCircle size={16} /> {error ?? t("common.loadFailed")}</div>;
-  }
+  if (loading) return <PageLoading />;
+  if (error || !data) return <PageError message={error ?? t("common.loadFailed")} />;
 
   const current = SETTINGS_INDEX.find((item) => item.slug === section) ?? SETTINGS_INDEX[0];
   const Icon = current.icon;

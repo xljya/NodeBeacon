@@ -1,6 +1,6 @@
 import { useEffect, useState, type FormEvent } from "react";
 import { Navigate, useLocation, useNavigate, useSearchParams } from "react-router-dom";
-import { Github, Loader2, LogIn } from "lucide-react";
+import { Github, Loader2, LogIn, Radar } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import type { AuthConfigResponse } from "@nodebeacon/shared";
 import { useAuth } from "../auth/AuthProvider";
@@ -66,7 +66,9 @@ export function LoginPage() {
     <div className="login-screen" data-theme="light">
       <div className="login-card">
         <div className="login-brand">
-          <span className="login-logo">◈</span>
+          <span className="login-logo" aria-hidden="true">
+            <Radar size={26} strokeWidth={2.25} />
+          </span>
           <div>
             <h1>NodeBeacon</h1>
             <p>{t("login.subtitle")}</p>

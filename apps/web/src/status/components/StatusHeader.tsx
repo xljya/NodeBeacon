@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import { Moon, Sun } from "lucide-react";
+import { Moon, Radar, Sun } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { LanguageSwitch } from "../../components/LanguageSwitch";
 
@@ -16,7 +16,10 @@ export function StatusHeader({
   return (
     <header className="status-header">
       <Link to="/" className="status-brand">
-        <span className="status-brand-main">◈ NodeBeacon</span>
+        <span className="status-brand-main">
+          <Radar size={20} strokeWidth={2.25} aria-hidden="true" />
+          NodeBeacon
+        </span>
         <span className="status-brand-sub">status</span>
       </Link>
       <div className="status-actions">

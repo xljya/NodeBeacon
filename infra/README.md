@@ -51,8 +51,8 @@ external registry is used, so the Deployment uses `imagePullPolicy: Never`.
 
 ```sh
 # From a checkout of this repo on RS1000:
-docker build -t nodebeacon:0.6.1 .
-docker save nodebeacon:0.6.1 | sudo k3s ctr images import -
+docker build -t nodebeacon:0.6.2 .
+docker save nodebeacon:0.6.2 | sudo k3s ctr images import -
 ```
 
 ## Deploy
@@ -94,9 +94,9 @@ curl -i https://monitor.liucf.com/api/admin/summary
 curl -I https://monitor.liucf.com/api/auth/github
 ```
 
-For `0.6.1`, expected production checks are:
+For `0.6.2`, expected production checks are:
 
-- image: `nodebeacon:0.6.1`
+- image: `nodebeacon:0.6.2`
 - `/readyz` and `/healthz`: HTTP 200
 - `/api/status`: `summary.total == 5` and `summary.online == 5`
 - `/api/auth/config`: password and GitHub login both enabled
@@ -115,10 +115,13 @@ For `0.6.1`, expected production checks are:
 - `/metrics` via the public hostname: HTTP 404 (nginx blocks it); via the
   NodePort/cluster: Prometheus text with `nodebeacon_*` metrics
 - `pnpm test` (vitest, apps/api): all green before building the image
-- `/admin`: Komari-inspired Server / Node list is the first screen, with the
-  top bar spanning the viewport, a left sidebar matching the Server/Settings/
-  Notification/Remote Exec/Latency/Sessions/Account/Logs/About/Documentation/
-  Home/Default Theme Settings structure, and a dense nodes table.
+- `pnpm test:e2e` (Playwright, optional local check): login, admin nav and
+  status page flows pass against a dev server started with the e2e env
+- `/admin`: Server / Node list is the first screen; the left sidebar is grouped
+  into Monitor (Server/Overview/Latency/Activity) and Manage (Settings/
+  Notification/Users/Remote Exec/Sessions/Account/Logs/About/Default Theme
+  Settings), with Documentation/Home pinned at the bottom; the nodes table is
+  dense (52px rows) and the column-visibility popover closes on outside click.
 - `/admin/about`: owner-only runtime/about page renders version, delivery,
   Prometheus/cache/auth boundaries, and repo/reference links.
 - `/admin/activity`: owner-only live activity snapshot renders current admin API

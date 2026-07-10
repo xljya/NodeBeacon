@@ -9,11 +9,15 @@ import {
   ChevronUp,
   CircleUserRound,
   Droplet,
+  Gauge,
+  History,
   Home,
+  KeyRound,
   LogOut,
   Menu,
   Moon,
   Palette,
+  Radar,
   ScrollText,
   Server,
   Settings,
@@ -97,38 +101,49 @@ export function AdminLayout() {
 
       <aside className={sidebarOpen ? "admin-sidebar open" : "admin-sidebar"}>
         <nav className="admin-nav komari-nav" aria-label={t("admin.topbar.title")}>
-          <AdminLink to="/admin" end icon={Server} label={t("admin.nav.server")} onNavigate={() => setSidebarOpen(false)} />
-          <NestedNavGroup
-            icon={Settings}
-            label={t("admin.nav.settings")}
-            open={settingsOpen}
-            onToggle={() => setSettingsOpen((open) => !open)}
-            onNavigate={() => setSidebarOpen(false)}
-            items={SETTINGS_ITEMS}
-          />
-          <NestedNavGroup
-            icon={Bell}
-            label={t("admin.nav.notification")}
-            open={notificationOpen}
-            onToggle={() => setNotificationOpen((open) => !open)}
-            onNavigate={() => setSidebarOpen(false)}
-            items={NOTIFICATION_ITEMS}
-          />
-          <AdminLink to="/admin/remote-exec" icon={Terminal} label={t("admin.nav.remoteExec")} onNavigate={() => setSidebarOpen(false)} />
-          <AdminLink to="/admin/latency" icon={Activity} label={t("admin.nav.latency")} onNavigate={() => setSidebarOpen(false)} />
-          <AdminLink to="/admin/sessions" icon={UsersRound} label={t("admin.nav.sessions")} onNavigate={() => setSidebarOpen(false)} />
-          <AdminLink to="/admin/account" icon={CircleUserRound} label={t("admin.nav.account")} onNavigate={() => setSidebarOpen(false)} />
-          <AdminLink to="/admin/logs" icon={ScrollText} label={t("admin.nav.logs")} onNavigate={() => setSidebarOpen(false)} />
-          <AdminLink to="/admin/about" icon={AtSign} label={t("admin.nav.about")} onNavigate={() => setSidebarOpen(false)} />
-          <a className="admin-nav-item" href="https://github.com/xljya/NodeBeacon/blob/main/docs/development-plan.md" target="_blank" rel="noreferrer">
-            <BookOpen size={18} strokeWidth={2} />
-            <span>{t("admin.nav.documentation")}</span>
-          </a>
-          <a className="admin-nav-item" href="/">
-            <Home size={18} strokeWidth={2} />
-            <span>{t("admin.nav.home")}</span>
-          </a>
-          <AdminLink to="/admin/theme" icon={Palette} label={t("admin.nav.defaultTheme")} onNavigate={() => setSidebarOpen(false)} />
+          <div className="admin-nav-section">
+            <div className="admin-nav-heading">{t("admin.nav.groupMonitor")}</div>
+            <AdminLink to="/admin" end icon={Server} label={t("admin.nav.server")} onNavigate={() => setSidebarOpen(false)} />
+            <AdminLink to="/admin/overview" icon={Gauge} label={t("admin.nav.overview")} onNavigate={() => setSidebarOpen(false)} />
+            <AdminLink to="/admin/latency" icon={Activity} label={t("admin.nav.latency")} onNavigate={() => setSidebarOpen(false)} />
+            <AdminLink to="/admin/activity" icon={History} label={t("admin.nav.activity")} onNavigate={() => setSidebarOpen(false)} />
+          </div>
+          <div className="admin-nav-section">
+            <div className="admin-nav-heading">{t("admin.nav.groupManage")}</div>
+            <NestedNavGroup
+              icon={Settings}
+              label={t("admin.nav.settings")}
+              open={settingsOpen}
+              onToggle={() => setSettingsOpen((open) => !open)}
+              onNavigate={() => setSidebarOpen(false)}
+              items={SETTINGS_ITEMS}
+            />
+            <NestedNavGroup
+              icon={Bell}
+              label={t("admin.nav.notification")}
+              open={notificationOpen}
+              onToggle={() => setNotificationOpen((open) => !open)}
+              onNavigate={() => setSidebarOpen(false)}
+              items={NOTIFICATION_ITEMS}
+            />
+            <AdminLink to="/admin/users" icon={UsersRound} label={t("admin.nav.users")} onNavigate={() => setSidebarOpen(false)} />
+            <AdminLink to="/admin/remote-exec" icon={Terminal} label={t("admin.nav.remoteExec")} onNavigate={() => setSidebarOpen(false)} />
+            <AdminLink to="/admin/sessions" icon={KeyRound} label={t("admin.nav.sessions")} onNavigate={() => setSidebarOpen(false)} />
+            <AdminLink to="/admin/account" icon={CircleUserRound} label={t("admin.nav.account")} onNavigate={() => setSidebarOpen(false)} />
+            <AdminLink to="/admin/logs" icon={ScrollText} label={t("admin.nav.logs")} onNavigate={() => setSidebarOpen(false)} />
+            <AdminLink to="/admin/about" icon={AtSign} label={t("admin.nav.about")} onNavigate={() => setSidebarOpen(false)} />
+            <AdminLink to="/admin/theme" icon={Palette} label={t("admin.nav.defaultTheme")} onNavigate={() => setSidebarOpen(false)} />
+          </div>
+          <div className="admin-sidebar-links">
+            <a className="admin-nav-item" href="https://github.com/xljya/NodeBeacon/blob/main/docs/development-plan.md" target="_blank" rel="noreferrer">
+              <BookOpen size={18} strokeWidth={2} />
+              <span>{t("admin.nav.documentation")}</span>
+            </a>
+            <a className="admin-nav-item" href="/">
+              <Home size={18} strokeWidth={2} />
+              <span>{t("admin.nav.home")}</span>
+            </a>
+          </div>
         </nav>
       </aside>
 
@@ -142,7 +157,10 @@ export function AdminLayout() {
               <button className="brand-menu" aria-label={t("admin.topbar.openMenu")} onClick={() => setSidebarOpen(true)}>
                 <Menu size={21} />
               </button>
-              <strong>NodeBeacon</strong>
+              <strong>
+                <Radar size={19} strokeWidth={2.25} aria-hidden="true" />
+                NodeBeacon
+              </strong>
               <span>status / {summary?.version ?? "dev"}</span>
             </div>
           </div>

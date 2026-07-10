@@ -123,6 +123,10 @@
       "filterVisibility": "表示状態",
       "emptyTitle": "条件に一致するノードがありません",
       "emptyText": "検索キーワードを消すか、フィルターを緩めてください。",
+      "configureColumns": "表示列を設定",
+      "dragToReorder": "ドラッグで並べ替え",
+      "clearSearchToReorder": "並べ替えるには検索をクリアしてください",
+      "clearSearch": "検索をクリア",
       "drawerAria": "ノード {{name}}",
       "close": "閉じる",
       "editNote": "ノード表示設定の編集と書き込みは次のステップで実装します（本版は読み取り専用）。",
@@ -297,7 +301,9 @@
     }
   },
   "status": {
-    "header": { "login": "ログイン" },
+    "header": {
+      "login": "ログイン"
+    },
     "stats": {
       "time": "現在時刻",
       "online": "オンライン数",
@@ -382,7 +388,11 @@
     },
     "lastUpdated": "最終更新 {{time}}",
     "footer": "良い一日を、友よ。",
-    "units": { "d": "日", "h": "時", "m": "分" },
+    "units": {
+      "d": "日",
+      "h": "時",
+      "m": "分"
+    },
     "theme": "テーマ切り替え",
     "language": "言語"
   }

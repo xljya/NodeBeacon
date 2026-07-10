@@ -1,21 +1,16 @@
 import type { ReactNode } from "react";
-import { AlertCircle, KeyRound, RefreshCw, ShieldCheck, UserCheck, Users } from "lucide-react";
+import { KeyRound, RefreshCw, ShieldCheck, UserCheck, Users } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import type { AdminUsersResponse } from "@nodebeacon/shared";
 import { useApi } from "../../lib/useApi";
+import { PageError, PageLoading } from "../components/PageState";
 
 export function UsersPage() {
   const { t } = useTranslation();
   const { data, error, loading, reload } = useApi<AdminUsersResponse>("/api/admin/users");
 
-  if (loading) return <div className="admin-state">{t("common.loading")}</div>;
-  if (error) {
-    return (
-      <div className="admin-state error">
-        <AlertCircle size={16} /> {error}
-      </div>
-    );
-  }
+  if (loading) return <PageLoading />;
+  if (error) return <PageError message={error} />;
   const usersList = data?.users ?? [];
   const owners = usersList.filter((user) => user.role === "owner").length;
   const viewers = usersList.filter((user) => user.role === "viewer").length;

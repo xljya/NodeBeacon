@@ -2,7 +2,6 @@ import type { CSSProperties, ReactNode } from "react";
 import { Link } from "react-router-dom";
 import {
   Activity,
-  AlertCircle,
   Clock3,
   Database,
   Eye,
@@ -18,6 +17,7 @@ import {
 import { useTranslation } from "react-i18next";
 import type { AdminNode, AdminNodesResponse, AdminSummaryResponse } from "@nodebeacon/shared";
 import { useApi } from "../../lib/useApi";
+import { PageError, PageLoading } from "../components/PageState";
 import { StatusBadge } from "../components/StatusBadge";
 
 export function OverviewPage() {
@@ -25,13 +25,9 @@ export function OverviewPage() {
   const summary = useApi<AdminSummaryResponse>("/api/admin/summary");
   const nodeResult = useApi<AdminNodesResponse>("/api/admin/nodes");
 
-  if (summary.loading || nodeResult.loading) return <div className="admin-state">{t("common.loading")}</div>;
+  if (summary.loading || nodeResult.loading) return <PageLoading />;
   if (summary.error || nodeResult.error) {
-    return (
-      <div className="admin-state error">
-        <AlertCircle size={16} /> {summary.error ?? nodeResult.error}
-      </div>
-    );
+    return <PageError message={summary.error ?? nodeResult.error ?? ""} />;
   }
   const data = summary.data;
   if (!data) return null;
