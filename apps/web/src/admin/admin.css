@@ -1683,18 +1683,18 @@ button.admin-menu-btn {
 }
 
 .top-lang .icon-btn {
-  width: 43px;
-  height: 43px;
+  width: 38px;
+  height: 38px;
   padding: 0;
-  border: 0;
-  border-radius: 6px;
+  border: 1px solid var(--border);
+  border-radius: 9px;
   background: var(--surface-2);
   color: var(--text-muted);
 }
 
 .top-lang .icon-btn:hover {
   color: var(--text);
-  background: #e9e9e9;
+  background: var(--surface);
 }
 
 .komari-nav {

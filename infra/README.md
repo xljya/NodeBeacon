@@ -105,9 +105,9 @@ curl -i https://monitor.liucf.com/api/admin/summary
 curl -I https://monitor.liucf.com/api/auth/github
 ```
 
-For `0.7.1`, expected production checks are:
+For `0.7.2`, expected production checks are:
 
-- image: `nodebeacon:0.7.1`
+- image: `nodebeacon:0.7.2`
 - `/readyz` and `/healthz`: HTTP 200
 - `/api/status`: `summary.total == 5` and `summary.online == 5`
 - `/api/auth/config`: password and GitHub login both enabled
