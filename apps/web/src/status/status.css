@@ -1,8 +1,7 @@
 /* Public status page — native React rebuild of the prototype's main dashboard.
    Palette + look ported 1:1 from Status Page.dc.html (DARK/LIGHT tokens).
-   The shared <LanguageSwitch> reuses admin.css classes (.icon-btn/.lang-*),
-   so we alias the tokens those classes need (--surface/--surface-2/--accent-fg/
-   --shadow) into this scope as well. */
+   The shared <LanguageSwitch> uses the language-menu tokens below, while its
+   header button is styled locally to stay consistent with the admin control. */
 
 .status-page {
   --page: #eef3f9;
@@ -135,6 +134,20 @@
   transition: 0.15s;
 }
 .status-iconbtn:hover {
+  background: var(--panel);
+  color: var(--text);
+}
+.status-actions .lang-switch .icon-btn {
+  width: 38px;
+  height: 38px;
+  padding: 0;
+  border-radius: 9px;
+  border-color: var(--border);
+  background: var(--panel2);
+  color: var(--text-mute);
+  justify-content: center;
+}
+.status-actions .lang-switch .icon-btn:hover {
   background: var(--panel);
   color: var(--text);
 }

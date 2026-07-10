@@ -105,17 +105,18 @@ curl -i https://monitor.liucf.com/api/admin/summary
 curl -I https://monitor.liucf.com/api/auth/github
 ```
 
-For `0.7.0`, expected production checks are:
+For `0.7.1`, expected production checks are:
 
-- image: `nodebeacon:0.7.0`
+- image: `nodebeacon:0.7.1`
 - `/readyz` and `/healthz`: HTTP 200
 - `/api/status`: `summary.total == 5` and `summary.online == 5`
 - `/api/auth/config`: password and GitHub login both enabled
 - unauthenticated `/api/admin/summary`: HTTP 401
 - home `/`: native React status page (no iframe) rendering the real 5 nodes;
   header has a working language switcher + theme toggle + `Login` link to `/login`
-- `/`, `/login`, `/admin`: language switcher (en / id / ja / zh-CN / zh-TW) present;
-  selecting a language re-renders UI text and persists to `localStorage['nb-lang']`
+- `/`, `/login`, `/admin`: language switcher (zh-CN / zh-TW / en) present in
+  that order; a fresh browser defaults to English, while a selected language
+  re-renders UI text and persists to `localStorage['nb-lang']`
 - `/api/nodes`: public node metadata (no `labels` field)
 - unauthenticated `/api/nodes/rs1000` and `/api/nodes/rs1000/range?metric=cpu&range=1h`: HTTP 401
 - authenticated `/api/nodes/rs1000/range?metric=cpu&range=1h`: `series[0].points` non-empty

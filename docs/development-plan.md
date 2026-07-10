@@ -523,9 +523,9 @@ monitor.liucf.com
 
 | 状态 | 阶段 | 交付标准 | 备注 |
 | --- | --- | --- | --- |
-| 已完成 | i18n-P1：基础 + 登录/后台本地化 | i18next 初始化 + 5 语言 JSON + 可用的 `LanguageSwitch`；登录页与后台（布局、总览、节点、用户、设置、状态徽章）全量走 `t()` | 我们拥有源码的 React 界面全部本地化；不动 iframe 原型 |
-| 已完成 | i18n-P2：公开状态页多语言 | `0.3.0` 已把首页主面板改为原生 React，文案接入同一套 `translation` 资源与 `LanguageSwitch`，首页的语言/主题下拉真正生效 | 新增 `status.*` 命名空间；`0.4.0` 节点详情/趋势页文案（`status.detail.*`）已随功能补齐 5 语言 |
-| 部分完成（随功能增长） | i18n 覆盖新增 UI | 后续管理端写回 UI（`PATCH /api/admin/nodes/:id` 等）新增文案一律走 i18n key | `0.6.0` 新增管理端写回文案已补 `zh-CN`/`en`，id/ja/zh-TW 暂走 fallback；后续补齐人工翻译 |
+| 已完成 | i18n-P1：基础 + 登录/后台本地化 | i18next 初始化 + 可用的 `LanguageSwitch`；登录页与后台（布局、总览、节点、用户、设置、状态徽章）全量走 `t()` | 当前对外提供简体中文、繁體中文、英语；不动 iframe 原型 |
+| 已完成 | i18n-P2：公开状态页多语言 | `0.3.0` 已把首页主面板改为原生 React，文案接入同一套 `translation` 资源与 `LanguageSwitch`，首页的语言/主题下拉真正生效 | 新增 `status.*` 命名空间；`0.4.0` 节点详情/趋势页文案（`status.detail.*`）已随功能补齐当前对外提供的 3 种语言 |
+| 部分完成（随功能增长） | i18n 覆盖新增 UI | 后续管理端写回 UI（`PATCH /api/admin/nodes/:id` 等）新增文案一律走 i18n key | `0.6.0` 新增管理端写回文案已补 `zh-CN`/`en`；繁體中文缺失项可回退至英语，后续补齐人工翻译 |
 | 待做（可选·低优先） | 语言偏好服务端持久化 | 等 P3「会话/用户持久化升级到 SQLite」落地后，可把语言偏好随账号存储 | 当前 localStorage 已够用 |
 | 待做（可选） | 扩展语言 / 时间格式本地化 | 结构支持随时加语言；后端返回的少量文案与时间格式按需本地化 | 非阻塞 |
 
@@ -536,12 +536,12 @@ apps/web/src/
   i18n/
     config.ts                 # i18next 初始化 + LANGUAGES 列表（供 LanguageSwitch 用）
     locales/
-      en.json  zh_CN.json  zh_TW.json  ja_JP.json  id_ID.json
+      en.json  zh_CN.json  zh_TW.json
   components/
-    LanguageSwitch.tsx        # 语言下拉（Globe 图标 + popover），复刻截图交互
+    LanguageSwitch.tsx        # 语言下拉（Languages 图标 + popover）
 ```
 
-`zh_CN.json` 为文案源；缺失 key 自动回退到 `zh-CN`。新增界面文案时先补 `zh_CN` 与 `en`，再补其余三语。
+`zh_CN.json` 为文案源；缺失 key 自动回退到英语。新增界面文案时同步补 `zh_CN`、`zh_TW` 与 `en`。
 
 i18n-P1 上线记录：2026-07-07 已随 `0.2.4` 部署到 RS1000 k3s（`docker build` → `k3s ctr import` → `kubectl apply -k infra/k8s`，滚动更新成功，Pod `1/1 Running`，镜像 `nodebeacon:0.2.4`）。生产验证（经 Cloudflare `https://monitor.liucf.com`）：`/readyz`+`/healthz` 200、`/api/status` 5/5 在线、`/api/auth/config` 密码+GitHub 均启用、未登录 `/api/admin/summary` 401、`/login` 载入新前端 bundle 且日文等 locale 文案已内联在生产 JS 中。当时公开状态页仍为原型 iframe（i18n-P2 见下）。
 

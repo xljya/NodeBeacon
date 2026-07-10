@@ -5,31 +5,22 @@ import LanguageDetector from "i18next-browser-languagedetector";
 import en from "./locales/en.json";
 import zhCN from "./locales/zh_CN.json";
 import zhTW from "./locales/zh_TW.json";
-import jaJP from "./locales/ja_JP.json";
-import idID from "./locales/id_ID.json";
 
 /**
- * Languages shown in the LanguageSwitch menu. `code` is the canonical i18next
- * language; `name` matches the labels used in the status-page prototype.
+ * Languages shown in the LanguageSwitch menu, in the requested display order.
+ * `code` is the canonical i18next language.
  */
 export const LANGUAGES = [
-  { code: "en", name: "English (en)" },
-  { code: "id", name: "Bahasa Indonesia (id)" },
-  { code: "ja", name: "日本語 (ja)" },
   { code: "zh-CN", name: "简体中文 (zh)" },
-  { code: "zh-TW", name: "繁體中文 (zh-tw)" }
+  { code: "zh-TW", name: "繁體中文 (zh-tw)" },
+  { code: "en", name: "English (en)" }
 ] as const;
 
-// Register the 5 canonical languages plus common regional aliases so browser
-// detection (e.g. `zh`, `zh-HK`, `en-US`) resolves to the right resource.
+// Register the supported languages plus common regional aliases.
 const resources = {
   en: { translation: en },
   "en-US": { translation: en },
   "en-GB": { translation: en },
-  id: { translation: idID },
-  "id-ID": { translation: idID },
-  ja: { translation: jaJP },
-  "ja-JP": { translation: jaJP },
   "zh-CN": { translation: zhCN },
   "zh-Hans": { translation: zhCN },
   zh: { translation: zhCN },
@@ -45,11 +36,12 @@ void i18n
   .use(initReactI18next)
   .init({
     resources,
-    fallbackLng: "zh-CN",
+    fallbackLng: "en",
     supportedLngs: Object.keys(resources),
     nonExplicitSupportedLngs: true,
     detection: {
-      order: ["localStorage", "navigator"],
+      // A saved visitor choice takes precedence; otherwise use English.
+      order: ["localStorage"],
       caches: ["localStorage"],
       lookupLocalStorage: "nb-lang"
     },
