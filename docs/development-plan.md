@@ -371,7 +371,7 @@ P1 验证记录：2026-07-06 已用浏览器在 `https://monitor.liucf.com/` 端
 - **API 反缓存**：Fastify 对所有 `/api/*` 响应（含 4xx/5xx）统一返回 `Cache-Control: no-store`，避免浏览器、反向代理或 CDN 依赖扩展名和默认策略判断动态/认证数据。
 - **nginx 安全头**：HTTPS 统一发送 CSP、180 天 HSTS（暂不含 `includeSubDomains`/preload）、nosniff、DENY frame、严格 referrer policy、Permissions Policy 和 cross-domain policy；CSP 的外部白名单只包含现有 Google Fonts 样式/字体与 Cloudflare 自动注入的 Web Analytics beacon，API 连接仍严格同源，并保留 React 动态样式所需的 `style-src 'unsafe-inline'`。
 - **缓存分层**：nginx `map` 将 SPA HTML 设为 `no-cache`、API 设为 `no-store`、Vite hash 资源设为一年 `immutable`。新增 `infra/cloudflare.md`，记录 Cache Rule 精确表达式、免费计划兼容的登录突发限速方案、HSTS 边界和验收命令；当前主机与仓库没有 Cloudflare 管理凭据，因此边缘规则保留为显式人工步骤，源站头是已生效的最终安全网。
-- **验证**：新增公开 200 与未登录 401 的 `no-store` 断言；`pnpm typecheck`、56 个 API 测试、生产构建和独立 nginx 配置语法检查通过。
+- **验证**：新增公开 200 与未登录 401 的 `no-store` 断言；`pnpm typecheck`、56 个 API 测试、生产构建和独立 nginx 配置语法检查通过。生产 `0.9.1` 已验证 Pod 零重启、NodePort API `no-store`、公网 HTML `no-cache`、API/401 `no-store + DYNAMIC`、hash 资源 `EXPIRED → HIT`、完整安全响应头；Playwright 复验节点/事故/Google Fonts 渲染正常，Cloudflare Analytics beacon 200、RUM 上报 204、CSP 违规为 0。
 
 ### P2：核心增强
 
