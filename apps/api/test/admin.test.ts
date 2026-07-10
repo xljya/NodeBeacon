@@ -20,7 +20,9 @@ describe("admin routes (owner-only)", () => {
     "/api/admin/nodes",
     "/api/admin/users",
     "/api/admin/sessions",
-    "/api/admin/audit-events"
+    "/api/admin/audit-events",
+    "/api/admin/alerts",
+    "/api/admin/incidents"
   ])(
     "returns 401 for %s without a session",
     async (url) => {

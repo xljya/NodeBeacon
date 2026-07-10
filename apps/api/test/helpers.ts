@@ -21,6 +21,8 @@ export async function buildTestApp(
     PROMETHEUS_URL: "",
     GITHUB_CLIENT_ID: "",
     GITHUB_CLIENT_SECRET: "",
+    ALERTMANAGER_URL: "",
+    ALERTMANAGER_WEBHOOK_TOKEN: "",
     ...overrides
   };
 

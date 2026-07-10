@@ -4,7 +4,7 @@ import Database from "better-sqlite3";
 
 export type SqliteDatabase = Database.Database;
 
-const CURRENT_SCHEMA_VERSION = 1;
+const CURRENT_SCHEMA_VERSION = 2;
 
 function migrateToV1(db: SqliteDatabase): void {
   db.exec(`
@@ -34,6 +34,33 @@ function migrateToV1(db: SqliteDatabase): void {
   `);
 }
 
+function migrateToV2(db: SqliteDatabase): void {
+  db.exec(`
+    CREATE TABLE incidents (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      fingerprint TEXT NOT NULL,
+      alert_name TEXT NOT NULL,
+      status TEXT NOT NULL CHECK(status IN ('firing', 'resolved')),
+      started_at INTEGER NOT NULL,
+      resolved_at INTEGER,
+      updated_at INTEGER NOT NULL,
+      severity TEXT,
+      node_id TEXT,
+      summary TEXT,
+      description TEXT,
+      labels_json TEXT NOT NULL,
+      annotations_json TEXT NOT NULL,
+      generator_url TEXT,
+      UNIQUE(fingerprint, started_at)
+    );
+    CREATE INDEX incidents_started_at_idx ON incidents(started_at DESC);
+    CREATE INDEX incidents_node_started_idx ON incidents(node_id, started_at DESC);
+    CREATE INDEX incidents_status_idx ON incidents(status, updated_at DESC);
+
+    PRAGMA user_version = 2;
+  `);
+}
+
 export function migrateDatabase(db: SqliteDatabase): void {
   const version = db.pragma("user_version", { simple: true }) as number;
   if (version > CURRENT_SCHEMA_VERSION) {
@@ -42,6 +69,9 @@ export function migrateDatabase(db: SqliteDatabase): void {
 
   if (version < 1) {
     db.transaction(() => migrateToV1(db))();
+  }
+  if (version < 2) {
+    db.transaction(() => migrateToV2(db))();
   }
 }
 

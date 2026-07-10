@@ -8,7 +8,7 @@ NodeBeacon is a lightweight self-hosted node monitoring and uptime dashboard pow
 
 It collects host metrics from `node_exporter`, probes service availability through `blackbox_exporter`, and presents a clean status view for VPS, homelab, small teams, and personal infrastructure.
 
-> Status: early development. This repository currently contains the product design prototype, Prometheus data-mapping notes, deployment decisions, and architecture documentation.
+> Status: `0.9.0` is deployed in production with real Prometheus metrics, an owner dashboard, SQLite-backed sessions/audit/incidents, Alertmanager integration, and off-site backup.
 
 ## Features
 
@@ -23,6 +23,8 @@ It collects host metrics from `node_exporter`, probes service availability throu
 - Grid and table view modes
 - Group filtering by region or provider
 - Server-side metric adapter to avoid exposing Prometheus to browsers
+- Active Alertmanager alerts and SQLite-backed firing/resolved incident history
+- Prometheus rules and ServiceMonitor coverage for NodeBeacon itself
 - Suitable for self-hosted infrastructure and personal SRE dashboards
 
 ## Architecture
@@ -35,13 +37,14 @@ flowchart LR
     am["Alertmanager"]
     nb["NodeBeacon"]
     ui["Browser"]
-    notify["Notifications"]
+    incidents["SQLite incidents"]
 
     ne --> prom
     bb --> prom
     prom --> nb
     prom --> am
-    am --> notify
+    am -->|"firing / resolved webhook"| nb
+    nb --> incidents
     nb --> ui
 ```
 
@@ -59,13 +62,11 @@ Cloudflare
   -> Prometheus / Alertmanager / SQLite
 ```
 
-The backend is planned to run on RS1000 k3s as a Kubernetes Deployment. The first version will ship the web UI and Fastify API in one container.
-
-The public domain is currently reserved and intentionally serves no content until NodeBeacon is ready.
+The backend runs on RS1000 k3s as a Kubernetes Deployment. The web UI and Fastify API ship in one container, with persistent SQLite/YAML state on a PVC.
 
 ## Tech Stack
 
-- Frontend: planned React / TypeScript implementation based on the current HTML prototype
+- Frontend: React / TypeScript
 - Backend: Node.js, TypeScript, Fastify
 - Metrics: Prometheus HTTP API
 - Exporters: node_exporter, blackbox_exporter
@@ -107,7 +108,7 @@ NodeBeacon 是一个基于 Prometheus 的轻量级自托管节点监控与可用
 
 它通过 `node_exporter` 获取服务器主机指标，通过 `blackbox_exporter` 探测服务可用性，并为 VPS、Homelab、小团队和个人基础设施提供清晰的状态展示页面。
 
-> 当前状态：早期开发阶段。本仓库目前包含产品设计原型、Prometheus 指标映射说明、部署决策和架构文档。
+> 当前状态：`0.9.0` 已部署生产，接入真实 Prometheus 指标、owner 管理后台、SQLite 会话/审计/事故流水、Alertmanager 和异地备份。
 
 ## 功能特性
 
@@ -122,6 +123,8 @@ NodeBeacon 是一个基于 Prometheus 的轻量级自托管节点监控与可用
 - 卡片视图和表格视图
 - 按地区或服务商分组过滤
 - 后端统一适配指标，避免浏览器直接暴露 Prometheus
+- Alertmanager 活跃告警与 SQLite firing/resolved 事故历史
+- NodeBeacon 自身 Prometheus 规则和 ServiceMonitor 覆盖
 - 适合自托管基础设施和个人 SRE 状态页
 
 ## 架构
@@ -134,13 +137,14 @@ flowchart LR
     am["Alertmanager"]
     nb["NodeBeacon"]
     ui["浏览器"]
-    notify["通知"]
+    incidents["SQLite 事故流水"]
 
     ne --> prom
     bb --> prom
     prom --> nb
     prom --> am
-    am --> notify
+    am -->|"firing / resolved webhook"| nb
+    nb --> incidents
     nb --> ui
 ```
 
@@ -158,13 +162,11 @@ Cloudflare
   -> Prometheus / Alertmanager / SQLite
 ```
 
-后端计划运行在 RS1000 k3s 中，由 Kubernetes Deployment 管理。第一版 Web UI 和 Fastify API 会放在同一个容器中交付。
-
-当前公开域名已预留，NodeBeacon 完成前会暂时保持无内容响应。
+后端运行在 RS1000 k3s 中，由 Kubernetes Deployment 管理。Web UI 和 Fastify API 使用单容器交付，SQLite/YAML 状态持久化到 PVC。
 
 ## 技术栈
 
-- 前端：计划使用 React / TypeScript，基于当前 HTML 原型实现
+- 前端：React / TypeScript
 - 后端：Node.js、TypeScript、Fastify
 - 指标：Prometheus HTTP API
 - 采集器：node_exporter、blackbox_exporter

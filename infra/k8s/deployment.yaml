@@ -27,7 +27,7 @@ spec:
       containers:
         - name: nodebeacon
           # Built on the node and imported into containerd, so never pull.
-          image: nodebeacon:0.8.0
+          image: nodebeacon:0.9.0
           imagePullPolicy: Never
           ports:
             - name: http
@@ -48,6 +48,10 @@ spec:
               value: "5000"
             - name: STATUS_CACHE_TTL_SECONDS
               value: "30"
+            - name: ALERTMANAGER_URL
+              value: "http://monitoring-kube-prometheus-alertmanager.monitoring.svc.cluster.local:9093"
+            - name: ALERTMANAGER_TIMEOUT_MS
+              value: "5000"
             - name: NODEBEACON_NODE_CONFIG
               value: "/data/nodes.yaml"
             - name: NODEBEACON_NODE_CONFIG_SEED
@@ -67,9 +71,10 @@ spec:
               value: "xljya"
             - name: GITHUB_CALLBACK_URL
               value: "https://monitor.liucf.com/api/auth/github/callback"
-          # Secret supplies COOKIE_SECRET and the owner credentials
-          # (INITIAL_OWNER_EMAIL / INITIAL_OWNER_PASSWORD). optional so the pod
-          # starts before the Secret exists (login stays disabled until then).
+            # Secret supplies COOKIE_SECRET and the owner credentials
+            # (INITIAL_OWNER_EMAIL / INITIAL_OWNER_PASSWORD), OAuth credentials,
+            # and ALERTMANAGER_WEBHOOK_TOKEN. optional so the pod
+            # starts before the Secret exists (login stays disabled until then).
           envFrom:
             - secretRef:
                 name: nodebeacon-secrets

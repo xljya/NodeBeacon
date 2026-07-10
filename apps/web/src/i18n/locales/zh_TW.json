@@ -157,6 +157,24 @@
       "saveNext": "儲存（下一步）",
       "saveNextTitle": "下一步實作"
     },
+    "notification": {
+      "title": "告警",
+      "subtitle": "Alertmanager 即時告警與持久化事件歷史",
+      "firingTitle": "正在觸發的告警",
+      "firingText": "來自叢集內 Alertmanager 的有效告警",
+      "incidentTitle": "事件歷史",
+      "incidentText": "NodeBeacon 持久化的 firing 與 resolved 事件",
+      "unavailable": "Alertmanager 暫時無法使用",
+      "noFiring": "此分類目前沒有觸發中的告警",
+      "watchdogHidden": "持續觸發的 Watchdog 心跳已隱藏。",
+      "noDescription": "無描述",
+      "started": "開始於 {{time}}",
+      "noIncidents": "尚無事件記錄",
+      "noIncidentsText": "Alertmanager webhook 接入後會填入此時間線。",
+      "firing": "觸發中",
+      "resolved": "已恢復",
+      "settings": "告警設定"
+    },
     "sessions": {
       "title": "工作階段",
       "subtitle": "{{count}} 個基於 SQLite 的有效工作階段",
@@ -404,7 +422,11 @@
       "metricNetwork": "網路速率",
       "metricLoad": "負載（1 分鐘）",
       "legendRx": "下行",
-      "legendTx": "上行"
+      "legendTx": "上行",
+      "recentIncidents": "最近事件",
+      "recentIncidentsHint": "Alertmanager 歷史",
+      "incident_firing": "觸發中",
+      "incident_resolved": "已恢復"
     },
     "lastUpdated": "最後更新 {{time}}",
     "footer": "祝你有美好的一天，朋友。",

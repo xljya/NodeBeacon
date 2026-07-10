@@ -26,6 +26,21 @@ interface StatusServiceLogger {
 }
 
 let cachedStatus: CachedStatus | null = null;
+const prometheusReachability = new Map<string, boolean>();
+
+const UNKNOWN_METRICS: StatusNode["metrics"] = {
+  cpuPercent: 0,
+  memoryPercent: 0,
+  memoryUsedBytes: 0,
+  memoryTotalBytes: 0,
+  diskPercent: 0,
+  diskUsedBytes: 0,
+  diskTotalBytes: 0,
+  load1: 0,
+  uptimeSeconds: 0,
+  networkRxBytesPerSecond: 0,
+  networkTxBytesPerSecond: 0
+};
 
 function cacheKey(env: ApiEnv): string {
   return [
@@ -35,13 +50,18 @@ function cacheKey(env: ApiEnv): string {
   ].join("|");
 }
 
-function withRegistryMetadata(node: NodeConfigEntry, fallbackIndex: number, now: string): StatusNode {
+function withRegistryMetadata(
+  node: NodeConfigEntry,
+  fallbackIndex: number,
+  now: string,
+  unknownMetrics: boolean
+): StatusNode {
   const fixture = fixtureById.get(node.id) ?? statusFixture.nodes[fallbackIndex % statusFixture.nodes.length];
   if (!fixture) {
     throw new Error("Status fixture is empty.");
   }
 
-  return {
+  const result: StatusNode = {
     ...fixture,
     id: node.id,
     name: node.name,
@@ -55,6 +75,12 @@ function withRegistryMetadata(node: NodeConfigEntry, fallbackIndex: number, now:
     tags: node.tags,
     updatedAt: now
   };
+  if (unknownMetrics) {
+    result.online = false;
+    result.status = "unknown";
+    result.metrics = UNKNOWN_METRICS;
+  }
+  return result;
 }
 
 function buildFallbackStatus(
@@ -63,7 +89,10 @@ function buildFallbackStatus(
   now: string,
   stale: boolean
 ): ApiStatusResponse {
-  const nodes = registry.map((node, index) => withRegistryMetadata(node, index, now));
+  // Fixtures are a local-development convenience only. If a real Prometheus
+  // target is configured but unavailable at cold start, report unknown/zero
+  // instead of presenting believable fake production metrics.
+  const nodes = registry.map((node, index) => withRegistryMetadata(node, index, now, Boolean(env.prometheusUrl)));
 
   return {
     generatedAt: now,
@@ -112,6 +141,7 @@ export async function getStatus(env: ApiEnv, logger?: StatusServiceLogger): Prom
           "some Prometheus status queries failed; returning degraded node data"
         );
       }
+      prometheusReachability.set(key, true);
 
       response = {
         generatedAt: now,
@@ -123,9 +153,10 @@ export async function getStatus(env: ApiEnv, logger?: StatusServiceLogger): Prom
         nodes: result.nodes
       };
     } catch (error) {
+      prometheusReachability.set(key, false);
       logger?.warn(
         { error },
-        "failed to refresh status from Prometheus; returning stale cache or fixture fallback"
+        "failed to refresh status from Prometheus; returning stale cache or unknown node data"
       );
       if (cachedStatus && cachedStatus.key === key) {
         recordCacheEvent("status", "stale");
@@ -148,4 +179,10 @@ export async function getStatus(env: ApiEnv, logger?: StatusServiceLogger): Prom
 
 export function clearStatusCache(): void {
   cachedStatus = null;
+  prometheusReachability.clear();
+}
+
+export function getPrometheusReachability(env: ApiEnv): boolean {
+  if (!env.prometheusUrl) return false;
+  return prometheusReachability.get(cacheKey(env)) ?? false;
 }

@@ -231,10 +231,22 @@
       "runtimeText": "浏览器不会直接读取 Pod 日志；在 RS1000 上使用下面命令查看。"
     },
     "notification": {
-      "title": "Notification",
-      "subtitle": "告警通知配置",
-      "currentTitle": "等待 Alertmanager 写回阶段",
-      "currentText": "当前公开页和管理页已展示状态与公网探测；通知规则会在 incident/Alertmanager 持久化阶段接入。"
+      "title": "告警",
+      "subtitle": "Alertmanager 实时告警与持久化事件历史",
+      "firingTitle": "正在触发的告警",
+      "firingText": "来自集群内 Alertmanager 的活跃告警",
+      "incidentTitle": "事件历史",
+      "incidentText": "NodeBeacon 持久化的 firing 与 resolved 事件",
+      "unavailable": "Alertmanager 暂不可用",
+      "noFiring": "此分类当前没有触发中的告警",
+      "watchdogHidden": "持续触发的 Watchdog 心跳已隐藏。",
+      "noDescription": "无描述",
+      "started": "开始于 {{time}}",
+      "noIncidents": "尚无事件记录",
+      "noIncidentsText": "Alertmanager webhook 接入后会填充此时间线。",
+      "firing": "触发中",
+      "resolved": "已恢复",
+      "settings": "告警设置"
     },
     "theme": {
       "title": "Default Theme Settings",
@@ -472,7 +484,11 @@
       "metricNetwork": "网络速率",
       "metricLoad": "负载（1 分钟）",
       "legendRx": "下行",
-      "legendTx": "上行"
+      "legendTx": "上行",
+      "recentIncidents": "最近事件",
+      "recentIncidentsHint": "Alertmanager 历史",
+      "incident_firing": "触发中",
+      "incident_resolved": "已恢复"
     },
     "lastUpdated": "最后更新 {{time}}",
     "footer": "祝你有美好的一天，朋友。",

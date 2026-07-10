@@ -43,13 +43,13 @@ describe("SQLite sessions and audit events", () => {
   it("applies the schema migration idempotently", async () => {
     const { databasePath } = await paths();
     const first = openDatabase(databasePath);
-    expect(first.pragma("user_version", { simple: true })).toBe(1);
+    expect(first.pragma("user_version", { simple: true })).toBe(2);
     first.close();
 
     const second = openDatabase(databasePath);
-    expect(second.pragma("user_version", { simple: true })).toBe(1);
+    expect(second.pragma("user_version", { simple: true })).toBe(2);
     const tables = second.prepare("SELECT name FROM sqlite_master WHERE type = 'table'").all() as Array<{ name: string }>;
-    expect(tables.map((table) => table.name)).toEqual(expect.arrayContaining(["sessions", "audit_events"]));
+    expect(tables.map((table) => table.name)).toEqual(expect.arrayContaining(["sessions", "audit_events", "incidents"]));
     second.close();
   });
 

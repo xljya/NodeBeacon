@@ -1,0 +1,30 @@
+apiVersion: monitoring.coreos.com/v1alpha1
+kind: AlertmanagerConfig
+metadata:
+  name: nodebeacon-incidents
+spec:
+  route:
+    receiver: nodebeacon-incidents
+    groupBy:
+      - alertname
+      - node_id
+    groupWait: 10s
+    groupInterval: 1m
+    repeatInterval: 30m
+    matchers:
+      - name: alertname
+        matchType: "!="
+        value: Watchdog
+    continue: true
+  receivers:
+    - name: nodebeacon-incidents
+      webhookConfigs:
+        - url: http://nodebeacon.nodebeacon.svc.cluster.local/api/webhooks/alertmanager
+          sendResolved: true
+          timeout: 10s
+          httpConfig:
+            authorization:
+              type: Bearer
+              credentials:
+                name: nodebeacon-secrets
+                key: ALERTMANAGER_WEBHOOK_TOKEN

@@ -19,6 +19,9 @@ import { createAuthService } from "./services/authService.js";
 import { openDatabase } from "./services/database.js";
 import { createSessionService } from "./services/sessionService.js";
 import { createAuditService } from "./services/auditService.js";
+import { createAlertmanagerService } from "./services/alertmanagerService.js";
+import { createIncidentService } from "./services/incidentService.js";
+import { registerAlertRoutes } from "./routes/alerts.js";
 
 const webDistPath = fileURLToPath(new URL("../../web/dist/", import.meta.url));
 
@@ -44,6 +47,8 @@ export async function createApp() {
   const authService = createAuthService(env);
   const sessionService = createSessionService(database);
   const auditService = createAuditService(database);
+  const alertmanagerService = createAlertmanagerService(env);
+  const incidentService = createIncidentService(database);
   registerAuthGuard(app, env, authService, sessionService);
   app.addHook("onClose", async () => database.close());
 
@@ -63,6 +68,7 @@ export async function createApp() {
   await registerMetricsRoutes(app);
   await registerAuthRoutes(app, env, authService, sessionService, auditService);
   await registerAdminRoutes(app, env, authService, sessionService, auditService);
+  await registerAlertRoutes(app, env, alertmanagerService, incidentService);
 
   if (existsSync(webDistPath)) {
     await app.register(fastifyStatic, {

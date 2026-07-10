@@ -1,7 +1,7 @@
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import type { FastifyInstance } from "fastify";
 import type { ApiStatusResponse } from "@nodebeacon/shared";
-import { buildTestApp } from "./helpers.js";
+import { buildTestApp, loginOwner } from "./helpers.js";
 
 describe("GET /api/status (fixture fallback, no Prometheus)", () => {
   let app: FastifyInstance;
@@ -38,5 +38,33 @@ describe("GET /api/status (fixture fallback, no Prometheus)", () => {
     const body = (await app.inject({ method: "GET", url: "/api/status" })).json() as ApiStatusResponse;
     const groupTotals = body.summary.groups.reduce((sum, group) => sum + group.total, 0);
     expect(groupTotals).toBe(body.nodes.length);
+  });
+
+  it("returns unknown zero metrics when a configured Prometheus is unreachable at cold start", async () => {
+    const failingApp = await buildTestApp({
+      PROMETHEUS_URL: "http://127.0.0.1:1",
+      PROMETHEUS_TIMEOUT_MS: "100"
+    });
+    try {
+      const body = (await failingApp.inject({ method: "GET", url: "/api/status" })).json() as ApiStatusResponse;
+      expect(body.cache.stale).toBe(true);
+      expect(body.nodes).toHaveLength(5);
+      for (const node of body.nodes) {
+        expect(node.status).toBe("unknown");
+        expect(node.online).toBe(false);
+        expect(node.metrics).toMatchObject({
+          cpuPercent: 0,
+          memoryTotalBytes: 0,
+          diskTotalBytes: 0,
+          uptimeSeconds: 0
+        });
+      }
+      const cookies = await loginOwner(failingApp);
+      const summary = await failingApp.inject({ method: "GET", url: "/api/admin/summary", cookies });
+      expect(summary.statusCode).toBe(200);
+      expect(summary.json().prometheus.reachable).toBe(false);
+    } finally {
+      await failingApp.close();
+    }
   });
 });

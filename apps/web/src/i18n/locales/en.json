@@ -232,9 +232,21 @@
     },
     "notification": {
       "title": "Notification",
-      "subtitle": "Alert notification settings",
-      "currentTitle": "Waiting for the Alertmanager write-back phase",
-      "currentText": "The public and admin pages already show status and public probes. Notification rules will land with the incident/Alertmanager persistence phase."
+      "subtitle": "Live Alertmanager alerts and persisted incident history",
+      "firingTitle": "Firing alerts",
+      "firingText": "Active alerts from the in-cluster Alertmanager",
+      "incidentTitle": "Incident history",
+      "incidentText": "Firing and resolved events persisted by NodeBeacon",
+      "unavailable": "Alertmanager unavailable",
+      "noFiring": "No firing alerts in this category",
+      "watchdogHidden": "The always-firing Watchdog heartbeat is hidden.",
+      "noDescription": "No description",
+      "started": "Started {{time}}",
+      "noIncidents": "No incidents recorded yet",
+      "noIncidentsText": "The Alertmanager webhook will populate this timeline.",
+      "firing": "Firing",
+      "resolved": "Resolved",
+      "settings": "Notification settings"
     },
     "theme": {
       "title": "Default Theme Settings",
@@ -472,7 +484,11 @@
       "metricNetwork": "Network speed",
       "metricLoad": "Load (1m)",
       "legendRx": "Down",
-      "legendTx": "Up"
+      "legendTx": "Up",
+      "recentIncidents": "Recent incidents",
+      "recentIncidentsHint": "Alertmanager history",
+      "incident_firing": "Firing",
+      "incident_resolved": "Resolved"
     },
     "lastUpdated": "Last updated {{time}}",
     "footer": "Have a nice day, my friend.",

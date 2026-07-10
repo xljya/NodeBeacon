@@ -7,7 +7,7 @@ export interface ApiEnv {
   webOrigin: string;
   /** Release version: APP_VERSION env override, else the root package.json version. */
   appVersion: string;
-  /** SQLite state database (sessions and audit events; node registry stays YAML). */
+  /** SQLite state database (sessions, audit events, incidents; node registry stays YAML). */
   databasePath: string;
   nodeConfigPath?: string;
   nodeConfigSeedPath?: string;
@@ -17,6 +17,9 @@ export interface ApiEnv {
   prometheusBasicAuthPassword?: string;
   prometheusBearerToken?: string;
   statusCacheTtlSeconds: number;
+  alertmanagerUrl?: string;
+  alertmanagerTimeoutMs: number;
+  alertmanagerWebhookToken?: string;
   /** Prometheus job label of the blackbox HTTP probes ("" disables /api/latency). */
   probeJob: string;
   // Auth (owner from env; revocable SQLite-backed signed-cookie sessions).
@@ -71,6 +74,8 @@ export function loadEnv(): ApiEnv {
   const prometheusBasicAuthUsername = process.env.PROMETHEUS_BASIC_AUTH_USERNAME?.trim();
   const prometheusBasicAuthPassword = process.env.PROMETHEUS_BASIC_AUTH_PASSWORD?.trim();
   const prometheusBearerToken = process.env.PROMETHEUS_BEARER_TOKEN?.trim();
+  const alertmanagerUrl = process.env.ALERTMANAGER_URL?.trim();
+  const alertmanagerWebhookToken = process.env.ALERTMANAGER_WEBHOOK_TOKEN?.trim();
   const cookieSecret = process.env.COOKIE_SECRET?.trim();
   const initialOwnerEmail = process.env.INITIAL_OWNER_EMAIL?.trim();
   const initialOwnerPassword = process.env.INITIAL_OWNER_PASSWORD;
@@ -96,6 +101,9 @@ export function loadEnv(): ApiEnv {
     prometheusBasicAuthPassword: prometheusBasicAuthPassword || undefined,
     prometheusBearerToken: prometheusBearerToken || undefined,
     statusCacheTtlSeconds: numberFromEnv("STATUS_CACHE_TTL_SECONDS", 30),
+    alertmanagerUrl: alertmanagerUrl || undefined,
+    alertmanagerTimeoutMs: numberFromEnv("ALERTMANAGER_TIMEOUT_MS", 5000),
+    alertmanagerWebhookToken: alertmanagerWebhookToken || undefined,
     probeJob: process.env.PROBE_JOB?.trim() ?? "blackbox-http-public",
     // A dev-only fallback keeps local `pnpm dev` working without a .env; in
     // production COOKIE_SECRET must be set (see the k8s Secret).

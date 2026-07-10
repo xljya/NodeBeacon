@@ -109,7 +109,7 @@ flowchart LR
 | `GET /api/nodes/:id` | 单台服务器详情 | 登录 |
 | `GET /api/nodes/:id/range?metric=cpu&range=4h` | 单指标趋势图（`metric ∈ cpu/memory/disk/network/load`，`range ∈ 1h/4h/24h/7d`） | 登录 |
 | `GET /api/latency` | blackbox 公网探测结果 | 公开 |
-| `GET /api/incidents` | 故障事件时间线 | 登录 |
+| `GET /api/incidents` | 脱敏故障事件时间线 | 公开 |
 | `POST /api/auth/register` | 注册 | 关闭 |
 | `POST /api/auth/login` | 登录 | 公开 |
 | `POST /api/auth/logout` | 退出 | 登录 |
@@ -245,7 +245,7 @@ P0 验证记录：2026-07-03 已通过 `pnpm install`、`pnpm typecheck`、`pnpm
 | --- | --- | --- | --- |
 | 已完成 | 实现 Prometheus client | 只封装白名单查询；支持超时、错误分类和基础日志 | 不开放任意 PromQL；支持可选 Basic Auth / Bearer Token |
 | 已完成 | 实现 `metricsService` | 聚合在线状态、CPU、内存、磁盘、uptime、load、网络速率 | 第一版只服务 `/api/status`；节点指标缺失时降级为 degraded 或 unknown |
-| 已完成 | 实现 `/api/status` | 返回五台节点真实数据；单节点失败不拖垮整页 | 配置 `PROMETHEUS_URL` 时走真实 Prometheus；不可用时返回 stale 缓存或 fixture fallback |
+| 已完成 | 实现 `/api/status` | 返回五台节点真实数据；单节点失败不拖垮整页 | 配置 `PROMETHEUS_URL` 时走真实 Prometheus；不可用时优先 stale 缓存，冷失败返回 `unknown` + 零指标；fixture 仅供未配置 Prometheus 的本地开发 |
 | 已完成 | 增加短缓存 | 总览接口缓存 15-30 秒；返回 `generatedAt` | 防止刷新页面打爆 Prometheus；过期缓存可作为 stale 降级返回 |
 | 已完成 | 复刻状态页主界面 | 卡片视图、表格视图、分组筛选、明暗主题可用 | 当前通过高保真原型 iframe 保持 1:1 外观；后续再做组件化收敛 |
 | 已完成 | 分组筛选接入节点配置 | 首页分组选项从节点手动分组生成；支持 `All` 和自定义分组 | 已通过 `/api/status` + `config/nodes.example.yaml` 驱动原型分组；Prometheus 真指标接入仍单独推进 |
@@ -258,7 +258,7 @@ P1 完成判定：`monitor.liucf.com` 可以展示真实五台节点总览；Pro
 
 P1 进展记录：2026-07-03 已将 `Status Page.dc.html` 原型副本接入 `/api/status`，节点卡片、在线数、更新时间、流量/速率摘要和分组筛选可以从 API 合同数据渲染；浏览器验证可见节点为 `config/nodes.example.yaml` 中的 5 台服务器，旧原型假节点不再显示。
 
-P1 进展记录：2026-07-03 已完成 Prometheus client、`metricsService`、`/api/status` 真实指标适配和短缓存。后端只在服务端生成白名单 PromQL，覆盖 `up`、CPU、内存、根分区磁盘、load、uptime 和网络速率；单节点指标缺失会降级为 `degraded` 或 `unknown`，Prometheus 整体不可用时返回过期缓存或 fixture fallback，并通过 `cache.stale=true` 标记。已通过本地 mock Prometheus 和无 Prometheus fallback 路径验证；生产联调时只需要配置真实 `PROMETHEUS_URL` 和节点 label。
+P1 进展记录：2026-07-03 已完成 Prometheus client、`metricsService`、`/api/status` 真实指标适配和短缓存。后端只在服务端生成白名单 PromQL，覆盖 `up`、CPU、内存、根分区磁盘、load、uptime 和网络速率；单节点指标缺失会降级为 `degraded` 或 `unknown`。`0.9.0` 起 Prometheus 整体不可用时优先返回过期缓存；没有缓存则把注册表节点标为 `unknown` 并将指标归零，不再向生产返回 fixture。fixture 只保留给未配置 Prometheus 的本地开发。
 
 P1 进展记录：2026-07-04 已补齐前端 API 状态反馈。状态页在 `/api/status` 加载中、请求失败并使用 fallback、后端返回 `cache.stale=true`、API 返回空节点列表、分组或搜索无结果时都会显示对应状态；正常数据路径显示 `Live data`。同时将运行页 iframe 版本号升级，避免浏览器继续使用旧原型缓存。
 
@@ -358,6 +358,14 @@ P1 验证记录：2026-07-06 已用浏览器在 `https://monitor.liucf.com/` 端
 - **备份恢复**：新增在线 SQLite backup CLI（完成后自动跑 `integrity_check`）、`scripts/backup.sh`（打包数据库 + `nodes.yaml` 并通过 scp 送异地 VPS）、host cron 示例、恢复 Pod 模板和逐步恢复演练手册。`0.8.0` 发布时已配置 RS1000 专用密钥 → netcup 低权限备份账号、每日 03:17 cron，并从首份真实异地归档启动隔离恢复容器完成 `integrity_check` + 5/5 节点验收。
 - **验证**：新增迁移幂等、在线备份完整性、重启后会话存续、单条吊销互不影响、登出后旧 Cookie 401、节点写操作审计和新管理 API 未登录 401 测试；API 测试增至 50 个用例。生产 `0.8.0` 已验证 5/5 节点、SQLite `user_version=1`/WAL/`integrity_check=ok`、真实会话跨 Recreate 重启存续、伪造 Origin 403、登出后 Cookie 重放 401。
 
+进展记录：2026-07-11 `0.9.0`「看得见故障」——让 NodeBeacon 自身进入 Prometheus / Alertmanager 闭环，并把告警从瞬时状态沉淀为可追溯事故流水。
+
+- **Alertmanager 只读视图**：新增 owner-only `GET /api/admin/alerts`，服务端读取 Alertmanager v2 活跃告警并做 15 秒短缓存；`/admin/notification` 展示非 Watchdog 活跃告警和分类筛选。读取失败只影响实时告警区，不遮蔽 SQLite 历史。
+- **Webhook 与 Incident**：SQLite schema v2 新增 `incidents`，以 `fingerprint + startsAt` 幂等合并 firing/resolved；新增 Bearer token 保护的集群内 `POST /api/webhooks/alertmanager`、owner-only 完整历史和脱敏公开时间线。节点详情显示该节点最近事故，管理通知页显示完整流水。
+- **自身监控清单**：新增 ServiceMonitor、PrometheusRule 和 AlertmanagerConfig；规则覆盖 NodeBeacon 不可用、Prometheus 查询错误率与 p95 查询延迟，Alertmanager 仅把 `namespace=nodebeacon` 且非 Watchdog 的告警回送 NodeBeacon，避免改变现有全局告警路由。公网 nginx 对 webhook 精确返回 404。
+- **诚实降级**：配置真实 Prometheus 时，冷失败从 fixture 改为注册表节点 `unknown` + 零指标；管理摘要的可达性来自最近一次真实查询结果，不再用缓存新鲜度代替上游连通性。
+- **验证**：覆盖 Alertmanager 读取、错误 token、firing 幂等、resolved 合并、公开字段脱敏、schema v2 迁移和 Prometheus 冷失败；API 测试增至 9 个文件 56 个用例，部署 CRD 已通过 Kubernetes 服务端 dry-run。
+
 ### P2：核心增强
 
 | 状态 | 任务 | 交付标准 | 备注 |
@@ -369,12 +377,12 @@ P1 验证记录：2026-07-06 已用浏览器在 `https://monitor.liucf.com/` 端
 | 已完成 | 前端组件化 | 公开状态页从 iframe 原型迁移到原生 React 组件 | `0.3.0` 首页主面板迁移；`0.4.0` 补齐节点详情/趋势视图（手写 SVG 折线图，无图表库依赖） |
 | 已完成 | NodeBeacon 自身 `/metrics` | 暴露 Prometheus 文本指标：请求量、错误率、Prom 查询耗时、缓存命中率 | `0.5.0`：prom-client；`nodebeacon_http_requests_total/…_duration_seconds`（按路由模式，非原始 URL）、`nodebeacon_prometheus_queries_total/…_query_duration_seconds`、`nodebeacon_cache_events_total{cache=status/trend/probe}` + 进程默认指标；公网 nginx 对 `/metrics` 返回 404，仅供集群内抓取 |
 | 已完成 | 基础自动化测试 | 引入 vitest；覆盖 `/api/status`、auth、admin 接口的关键路径 | `0.6.0`：vitest 2（vite 5 兼容），6 个文件 33 个用例：status fixture/摘要、auth（400/401/会话 Cookie/伪造 Cookie/注册关闭）、admin 守卫与节点 YAML 写回 CRUD、nodes/range 参数校验、mock Prometheus 真路径（status/趋势/latency）、`/metrics` 文本与路由模式标签；`pnpm test` 全绿 |
-| 待做（后移） | Alertmanager webhook | 接收 firing/resolved 事件并归一化 | 先落 SQLite；排在节点详情/趋势 + 只读后台之后 |
-| 待做（后移） | Incident 时间线 | 展示故障开始、恢复、持续时间和影响节点 | 登录前后展示粒度可不同；随 SQLite 写入一起做 |
+| 已完成 | Alertmanager webhook | 接收 firing/resolved 事件并归一化 | `0.9.0`：Bearer token 集群内 webhook；按 `fingerprint + startsAt` 幂等写入 SQLite schema v2；公网 nginx 精确 404 |
+| 已完成 | Incident 时间线 | 展示故障开始、恢复、持续时间和影响节点 | `0.9.0`：公开 API 返回脱敏摘要，owner API 返回 labels/annotations/generator URL；节点详情和管理通知页均已接入 |
 
 P2 完成判定：用户可以从总览定位问题节点，进入详情页查看最近趋势，并通过 incident 时间线理解故障发生和恢复过程。
 
-P2 进展记录：2026-07-09 `0.5.0` 完成 P2 收尾三件套（Blackbox 探测展示、自身 `/metrics`、vitest 基础测试），P2 仅剩后移的 Alertmanager webhook + incident 时间线（与 SQLite 写入一起做）。
+P2 进展记录：2026-07-11 `0.9.0` 完成 Alertmanager webhook + incident 时间线，P2 全部交付。
 
 - **Blackbox 探测**：核对线上 Prometheus 后确认探测 job 为 `blackbox-http-public`（3 个 HTTPS 目标，instance 为 URL），可用指标含 `probe_success/probe_duration_seconds/probe_http_status_code/probe_ssl_earliest_cert_expiry`。新增 `services/probeService`（按 job 聚合 5 条白名单查询、短缓存 + stale 降级）与公开 `GET /api/latency`；`PROBE_JOB` 可配置、留空禁用。前端状态页节点列表下方新增「公网探测」面板（目标/状态+HTTP 码/延迟/24h 可用率/证书到期天数，窄屏收起后两列），文案 `status.probes.*` 补齐 5 语言。
 - **自身 `/metrics`**：引入 prom-client，`GET /metrics` 暴露请求量/时延（onResponse 钩子，按路由模式标签防基数爆炸）、上游 Prometheus 查询次数/耗时/错误（包在 `PrometheusClient` 请求层）、`status/trend/probe` 三个缓存的 hit/miss/stale 计数,外加进程默认指标。公网入口 nginx 新增 `location = /metrics { return 404; }`（committed 副本与线上同步），指标仅供集群内抓取。

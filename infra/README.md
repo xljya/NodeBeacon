@@ -63,8 +63,8 @@ single-sourced from the root `package.json`; the script refuses to run if
 Manual fallback (what the script automates):
 
 ```sh
-docker build -t nodebeacon:0.8.0 .
-docker save nodebeacon:0.8.0 | sudo k3s ctr images import -
+docker build -t nodebeacon:0.9.0 .
+docker save nodebeacon:0.9.0 | sudo k3s ctr images import -
 ```
 
 ## Deploy
@@ -81,6 +81,7 @@ kubectl -n nodebeacon create secret generic nodebeacon-secrets \
   --from-literal=INITIAL_OWNER_PASSWORD="a-strong-password" \
   --from-literal=GITHUB_CLIENT_ID="..." \
   --from-literal=GITHUB_CLIENT_SECRET="..." \
+  --from-literal=ALERTMANAGER_WEBHOOK_TOKEN="$(openssl rand -hex 32)" \
   --dry-run=client -o yaml | kubectl apply -f -
 
 # The pod reads the Secret via envFrom; restart to pick up changes:
@@ -106,9 +107,9 @@ curl -i https://monitor.liucf.com/api/admin/summary
 curl -I https://monitor.liucf.com/api/auth/github
 ```
 
-For `0.8.0`, expected production checks are:
+For `0.9.0`, expected production checks are:
 
-- image: `nodebeacon:0.8.0`
+- image: `nodebeacon:0.9.0`
 - `/readyz` and `/healthz`: HTTP 200
 - `/api/status`: `summary.total == 5` and `summary.online == 5`
 - `/api/auth/config`: password and GitHub login both enabled
@@ -127,6 +128,18 @@ For `0.8.0`, expected production checks are:
   24h success rate and cert expiry; the status page shows the probe panel
 - `/metrics` via the public hostname: HTTP 404 (nginx blocks it); via the
   NodePort/cluster: Prometheus text with `nodebeacon_*` metrics
+- Prometheus discovers the `nodebeacon` ServiceMonitor target and the
+  `NodeBeaconUnavailable`, query-error-rate and query-latency rules are loaded
+- unauthenticated `/api/admin/alerts` and `/api/admin/incidents`: HTTP 401;
+  authenticated `/api/admin/alerts` reads active Alertmanager alerts
+- `/admin/notification`: active non-Watchdog alerts and persisted incident
+  history render independently, so an Alertmanager read failure does not hide
+  the SQLite timeline
+- an authenticated Alertmanager webhook can write firing and resolved states to
+  the same incident row; the public hostname returns HTTP 404 for the webhook
+- when the configured Prometheus is unavailable without stale cache,
+  `/api/status` returns registry nodes as `unknown` with zero metrics rather than
+  fixture values, and `/api/admin/summary` reports Prometheus unreachable
 - `pnpm test` (vitest, apps/api): all green before building the image
 - `pnpm test:e2e` (Playwright, optional local check): login, admin nav and
   status page flows pass against a dev server started with the e2e env
@@ -164,7 +177,7 @@ For `0.8.0`, expected production checks are:
   the shared SQLite/YAML PVC at the same time.
 - `scripts/backup.sh` succeeds from host cron, the archive is visible on the
   configured off-site VPS, and the restore-drill table below records a verified
-  recovery before 0.8.0 is considered fully accepted.
+  recovery before the release is considered fully accepted.
 - Remote Exec entry points render the NodeBeacon security-boundary notice; this
   app does not expose browser shell or agent command execution.
 - `/admin/settings`: read-only appearance section shows browser-local theme

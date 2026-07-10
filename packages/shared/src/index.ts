@@ -291,6 +291,53 @@ export interface AdminAuditEventsResponse {
   events: AdminAuditEvent[];
 }
 
+export interface AdminAlert {
+  fingerprint: string;
+  state: string;
+  labels: Record<string, string>;
+  annotations: Record<string, string>;
+  startsAt: string;
+  endsAt: string;
+  updatedAt?: string;
+  generatorUrl?: string;
+}
+
+export interface AdminAlertsResponse {
+  configured: boolean;
+  generatedAt: string;
+  alerts: AdminAlert[];
+}
+
+export type IncidentStatus = "firing" | "resolved";
+
+export interface IncidentSummary {
+  id: number;
+  fingerprint: string;
+  alertName: string;
+  status: IncidentStatus;
+  startedAt: string;
+  resolvedAt?: string;
+  updatedAt: string;
+  severity?: string;
+  nodeId?: string;
+  summary?: string;
+  description?: string;
+}
+
+export interface AdminIncident extends IncidentSummary {
+  labels: Record<string, string>;
+  annotations: Record<string, string>;
+  generatorUrl?: string;
+}
+
+export interface ApiIncidentsResponse {
+  incidents: IncidentSummary[];
+}
+
+export interface AdminIncidentsResponse {
+  incidents: AdminIncident[];
+}
+
 const gib = 1024 ** 3;
 
 export const statusFixture: ApiStatusResponse = {

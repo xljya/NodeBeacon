@@ -19,7 +19,7 @@ import { loadNodeRegistry, saveNodeRegistry, withRegistryLock } from "../config/
 import type { AuthService } from "../services/authService.js";
 import type { AuditService } from "../services/auditService.js";
 import type { SessionService } from "../services/sessionService.js";
-import { clearStatusCache, getStatus } from "../services/statusService.js";
+import { clearStatusCache, getPrometheusReachability, getStatus } from "../services/statusService.js";
 
 const NODE_ID_PATTERN = /^[a-zA-Z0-9][a-zA-Z0-9._-]{0,63}$/;
 
@@ -231,8 +231,9 @@ export async function registerAdminRoutes(
       prometheus: {
         configured: Boolean(env.prometheusUrl),
         host: env.prometheusUrl ? safeHost(env.prometheusUrl) : undefined,
-        // If configured and the data isn't a stale fallback, treat it as reachable.
-        reachable: Boolean(env.prometheusUrl) && !status.cache.stale
+        // Based on the latest real upstream attempt, not inferred from whether
+        // a cached response happens to be marked stale.
+        reachable: getPrometheusReachability(env)
       },
       cache: status.cache,
       nodes: {

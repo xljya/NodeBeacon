@@ -804,6 +804,63 @@
   color: var(--text-dim);
 }
 
+.public-incident-panel {
+  margin-bottom: 22px;
+  padding: 16px;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  background: var(--panel);
+}
+.public-incident-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 8px;
+}
+.public-incident-head > span {
+  font-weight: 750;
+}
+.public-incident-head small {
+  color: var(--text-dim);
+}
+.public-incident-row {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 11px;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--border);
+}
+.public-incident-row:last-child {
+  border-bottom: 0;
+}
+.public-incident-row > div {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 3px;
+}
+.public-incident-row b {
+  overflow: hidden;
+  font-size: 13px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.public-incident-row > div > span {
+  color: var(--text-dim);
+  font-size: 11px;
+}
+.incident-dot {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: var(--crit);
+}
+.incident-dot.resolved {
+  background: var(--ok);
+}
+
 .detail-trends-head {
   display: flex;
   align-items: center;

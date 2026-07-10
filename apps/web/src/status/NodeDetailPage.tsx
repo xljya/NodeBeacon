@@ -3,6 +3,7 @@ import { Link, useParams } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import {
   TREND_RANGES,
+  type ApiIncidentsResponse,
   type ApiNodeRangeResponse,
   type ApiStatusResponse,
   type StatusNode,
@@ -61,6 +62,7 @@ export function NodeDetailPage() {
   useEffect(() => localStorage.setItem("nb-trend-range", range), [range]);
 
   const [trends, setTrends] = useState<TrendState>({});
+  const [incidents, setIncidents] = useState<ApiIncidentsResponse["incidents"]>([]);
 
   const mounted = useRef(true);
   useEffect(() => {
@@ -88,6 +90,29 @@ export function NodeDetailPage() {
     }, SNAPSHOT_REFRESH_MS);
     return () => window.clearInterval(timer);
   }, [loadStatus]);
+
+  useEffect(() => {
+    if (!id) return;
+    let active = true;
+    const loadIncidents = async () => {
+      try {
+        const response = await apiGet<ApiIncidentsResponse>(
+          `/api/incidents?nodeId=${encodeURIComponent(id)}&limit=5`
+        );
+        if (active) setIncidents(response.incidents);
+      } catch {
+        /* incident history is supplemental; keep the node page available */
+      }
+    };
+    void loadIncidents();
+    const timer = window.setInterval(() => {
+      if (!document.hidden) void loadIncidents();
+    }, TREND_REFRESH_MS);
+    return () => {
+      active = false;
+      window.clearInterval(timer);
+    };
+  }, [id]);
 
   const loadTrends = useCallback(async () => {
     if (!id) return;
@@ -213,6 +238,29 @@ export function NodeDetailPage() {
                   </div>
                 </div>
               </div>
+
+              {incidents.length > 0 && (
+                <section className="public-incident-panel">
+                  <div className="public-incident-head">
+                    <span>{t("status.detail.recentIncidents")}</span>
+                    <small>{t("status.detail.recentIncidentsHint")}</small>
+                  </div>
+                  <div className="public-incident-list">
+                    {incidents.map((incident) => (
+                      <div className="public-incident-row" key={incident.id}>
+                        <span className={`incident-dot ${incident.status}`}></span>
+                        <div>
+                          <b>{incident.summary ?? incident.alertName}</b>
+                          <span>{new Date(incident.startedAt).toLocaleString()}</span>
+                        </div>
+                        <span className={`status-pill ${incident.status === "resolved" ? "online" : "offline"}`}>
+                          {t(`status.detail.incident_${incident.status}`)}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                </section>
+              )}
 
               <div className="detail-trends-head">
                 <span className="detail-trends-title">{t("status.detail.trendsTitle")}</span>

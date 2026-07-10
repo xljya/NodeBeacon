@@ -1,0 +1,48 @@
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: nodebeacon
+  labels:
+    release: monitoring
+spec:
+  groups:
+    - name: nodebeacon.rules
+      rules:
+        - alert: NodeBeaconUnavailable
+          expr: absent(up{job="nodebeacon"} == 1) or max(up{job="nodebeacon"}) == 0
+          for: 2m
+          labels:
+            severity: critical
+            namespace: nodebeacon
+            node_id: rs1000
+          annotations:
+            summary: NodeBeacon is unavailable
+            description: Prometheus cannot scrape the NodeBeacon service for two minutes.
+        - alert: NodeBeaconPrometheusQueryErrors
+          expr: |
+            sum(rate(nodebeacon_prometheus_queries_total{outcome="error"}[5m]))
+              /
+            clamp_min(sum(rate(nodebeacon_prometheus_queries_total[5m])), 0.001)
+              > 0.10
+          for: 5m
+          labels:
+            severity: warning
+            namespace: nodebeacon
+            node_id: rs1000
+          annotations:
+            summary: NodeBeacon Prometheus query error rate is high
+            description: More than 10% of NodeBeacon Prometheus API calls failed over five minutes.
+        - alert: NodeBeaconPrometheusQueryLatencyHigh
+          expr: |
+            histogram_quantile(
+              0.95,
+              sum by (le) (rate(nodebeacon_prometheus_query_duration_seconds_bucket[5m]))
+            ) > 2
+          for: 5m
+          labels:
+            severity: warning
+            namespace: nodebeacon
+            node_id: rs1000
+          annotations:
+            summary: NodeBeacon Prometheus query latency is high
+            description: The p95 Prometheus API latency observed by NodeBeacon exceeds two seconds.

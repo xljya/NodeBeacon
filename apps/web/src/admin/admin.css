@@ -2644,6 +2644,72 @@ button.admin-menu-btn {
   text-decoration: none;
 }
 
+.notification-live-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+  margin-top: 16px;
+}
+.notification-alert-list,
+.notification-incident-list {
+  display: flex;
+  flex-direction: column;
+}
+.notification-alert-row,
+.notification-incident-row {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 0;
+  border-bottom: 1px solid var(--border);
+}
+.notification-alert-row:last-child,
+.notification-incident-row:last-child {
+  border-bottom: 0;
+}
+.notification-alert-row b,
+.notification-incident-row b {
+  font-size: 13px;
+}
+.notification-alert-row p,
+.notification-incident-row p {
+  margin: 3px 0;
+  color: var(--text);
+  font-size: 12px;
+}
+.notification-alert-row div > span,
+.notification-incident-row div > span {
+  color: var(--text-muted);
+  font-size: 11px;
+}
+.notification-alert-icon {
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 9px;
+  color: var(--bad);
+  background: color-mix(in srgb, var(--bad) 10%, transparent);
+}
+.incident-state {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: var(--bad);
+  box-shadow: 0 0 0 4px color-mix(in srgb, var(--bad) 10%, transparent);
+}
+.incident-state.resolved {
+  background: var(--ok);
+  box-shadow: 0 0 0 4px color-mix(in srgb, var(--ok) 10%, transparent);
+}
+.compact-empty {
+  padding: 30px 14px;
+}
+.warning-notice {
+  border-color: color-mix(in srgb, var(--warn) 35%, var(--border));
+}
+
 .appearance-controls {
   display: flex;
   flex-direction: column;
@@ -2765,6 +2831,10 @@ button.admin-menu-btn {
   .settings-index,
   .notification-rule-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .notification-live-grid {
+    grid-template-columns: 1fr;
   }
 
   .komari-list-actions {
