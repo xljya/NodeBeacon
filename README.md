@@ -8,7 +8,7 @@ NodeBeacon is a lightweight self-hosted node monitoring and uptime dashboard pow
 
 It collects host metrics from `node_exporter`, probes service availability through `blackbox_exporter`, and presents a clean status view for VPS, homelab, small teams, and personal infrastructure.
 
-> Status: `0.9.0` is deployed in production with real Prometheus metrics, an owner dashboard, SQLite-backed sessions/audit/incidents, Alertmanager integration, and off-site backup.
+> Status: `0.9.1` is deployed in production with real Prometheus metrics, an owner dashboard, SQLite-backed sessions/audit/incidents, Alertmanager integration, explicit edge security/cache policy, and off-site backup.
 
 ## Features
 
@@ -77,6 +77,7 @@ The backend runs on RS1000 k3s as a Kubernetes Deployment. The web UI and Fastif
 
 - [`Status Page.dc.html`](Status%20Page.dc.html): high-fidelity HTML prototype
 - [`monitoring-setup.md`](monitoring-setup.md): Prometheus metric mapping and data-plumbing notes
+- [`infra/cloudflare.md`](infra/cloudflare.md): production cache, security-header, HSTS, and login rate-limit policy
 - [`docs/development-plan.md`](docs/development-plan.md): current development plan
 - [`docs/adr/`](docs/adr): architecture decision records
 - [`docs/reference/legacy-monitor-status/`](docs/reference/legacy-monitor-status): reference copy of the previous lightweight monitor page
@@ -108,7 +109,7 @@ NodeBeacon 是一个基于 Prometheus 的轻量级自托管节点监控与可用
 
 它通过 `node_exporter` 获取服务器主机指标，通过 `blackbox_exporter` 探测服务可用性，并为 VPS、Homelab、小团队和个人基础设施提供清晰的状态展示页面。
 
-> 当前状态：`0.9.0` 已部署生产，接入真实 Prometheus 指标、owner 管理后台、SQLite 会话/审计/事故流水、Alertmanager 和异地备份。
+> 当前状态：`0.9.1` 已部署生产，接入真实 Prometheus 指标、owner 管理后台、SQLite 会话/审计/事故流水、Alertmanager、明确的边缘安全/缓存策略和异地备份。
 
 ## 功能特性
 
@@ -177,6 +178,7 @@ Cloudflare
 
 - [`Status Page.dc.html`](Status%20Page.dc.html)：高保真 HTML 原型
 - [`monitoring-setup.md`](monitoring-setup.md)：Prometheus 指标映射和数据接入说明
+- [`infra/cloudflare.md`](infra/cloudflare.md)：生产缓存、安全响应头、HSTS 与登录限速策略
 - [`docs/development-plan.md`](docs/development-plan.md)：当前开发计划
 - [`docs/adr/`](docs/adr)：架构决策记录
 - [`docs/reference/legacy-monitor-status/`](docs/reference/legacy-monitor-status)：旧轻量状态页的参考副本

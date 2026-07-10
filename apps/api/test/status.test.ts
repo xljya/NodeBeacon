@@ -14,6 +14,7 @@ describe("GET /api/status (fixture fallback, no Prometheus)", () => {
   it("returns the 5 configured nodes with a consistent summary", async () => {
     const res = await app.inject({ method: "GET", url: "/api/status" });
     expect(res.statusCode).toBe(200);
+    expect(res.headers["cache-control"]).toBe("no-store");
 
     const body = res.json() as ApiStatusResponse;
     expect(body.nodes).toHaveLength(5);

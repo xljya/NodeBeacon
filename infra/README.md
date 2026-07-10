@@ -63,8 +63,8 @@ Deployment or restore Pod template references a different image tag:
 Manual fallback (what the script automates):
 
 ```sh
-docker build -t nodebeacon:0.9.0 .
-docker save nodebeacon:0.9.0 | sudo k3s ctr images import -
+docker build -t nodebeacon:0.9.1 .
+docker save nodebeacon:0.9.1 | sudo k3s ctr images import -
 ```
 
 ## Deploy
@@ -107,9 +107,9 @@ curl -i https://monitor.liucf.com/api/admin/summary
 curl -I https://monitor.liucf.com/api/auth/github
 ```
 
-For `0.9.0`, expected production checks are:
+For `0.9.1`, expected production checks are:
 
-- image: `nodebeacon:0.9.0`
+- image: `nodebeacon:0.9.1`
 - `/readyz` and `/healthz`: HTTP 200
 - `/api/status`: `summary.total == 5` and `summary.online == 5`
 - `/api/auth/config`: password and GitHub login both enabled
@@ -128,6 +128,10 @@ For `0.9.0`, expected production checks are:
   24h success rate and cert expiry; the status page shows the probe panel
 - `/metrics` via the public hostname: HTTP 404 (nginx blocks it); via the
   NodePort/cluster: Prometheus text with `nodebeacon_*` metrics
+- `/`, `/api/status` and `/assets/*.js` expose the cache/security policy from
+  `infra/cloudflare.md`: HTML `no-cache`, API `no-store`, hashed assets one-year
+  immutable, and HTTPS responses include CSP/HSTS/nosniff/frame/referrer/
+  permissions headers
 - Prometheus discovers the `nodebeacon` ServiceMonitor target and the
   `NodeBeaconUnavailable`, query-error-rate and query-latency rules are loaded
 - unauthenticated `/api/admin/alerts` and `/api/admin/incidents`: HTTP 401;

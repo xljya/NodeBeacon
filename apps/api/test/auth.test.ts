@@ -58,6 +58,7 @@ describe("auth routes (env-provisioned owner, persisted cookie session)", () => 
   it("returns 401 from /me without a session", async () => {
     const res = await app.inject({ method: "GET", url: "/api/auth/me" });
     expect(res.statusCode).toBe(401);
+    expect(res.headers["cache-control"]).toBe("no-store");
   });
 
   it("rejects a tampered session cookie", async () => {

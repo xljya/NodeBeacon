@@ -43,6 +43,16 @@ export async function createApp() {
   // global:false => only routes that opt in (login) are rate limited.
   await app.register(rateLimit, { global: false });
 
+  // API responses contain live operational or authenticated state. Make the
+  // no-store boundary explicit at the origin so browsers, reverse proxies and
+  // CDNs do not depend on extension/default-cache heuristics.
+  app.addHook("onSend", async (request, reply, payload) => {
+    if ((request.raw.url ?? "").startsWith("/api/")) {
+      reply.header("cache-control", "no-store");
+    }
+    return payload;
+  });
+
   const database = openDatabase(env.databasePath);
   const authService = createAuthService(env);
   const sessionService = createSessionService(database);

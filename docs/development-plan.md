@@ -366,6 +366,13 @@ P1 验证记录：2026-07-06 已用浏览器在 `https://monitor.liucf.com/` 端
 - **诚实降级**：配置真实 Prometheus 时，冷失败从 fixture 改为注册表节点 `unknown` + 零指标；管理摘要的可达性来自最近一次真实查询结果，不再用缓存新鲜度代替上游连通性。
 - **验证**：覆盖 Alertmanager 读取、错误 token、firing 幂等、resolved 合并、公开字段脱敏、schema v2 迁移和 Prometheus 冷失败；API 测试增至 9 个文件 56 个用例。生产 `0.9.0` 已验证 5/5 节点、Pod 零重启、SQLite schema v2 / `integrity_check=ok`、ServiceMonitor 抓取 `up=1`、三条规则 `health=ok`、owner Alertmanager API、真实验收告警 firing→resolved 原位合并、公网 webhook/metrics 404，以及 schema v2 异地归档隔离恢复。
 
+进展记录：2026-07-11 `0.9.1`「边界说清楚」——补齐 P3 的源站安全响应头和缓存边界，并把 Cloudflare 规则变成可直接执行的运维清单。
+
+- **API 反缓存**：Fastify 对所有 `/api/*` 响应（含 4xx/5xx）统一返回 `Cache-Control: no-store`，避免浏览器、反向代理或 CDN 依赖扩展名和默认策略判断动态/认证数据。
+- **nginx 安全头**：HTTPS 统一发送 CSP、180 天 HSTS（暂不含 `includeSubDomains`/preload）、nosniff、DENY frame、严格 referrer policy、Permissions Policy 和 cross-domain policy；CSP 只允许同源脚本/连接，样式/字体额外白名单限定为现有 Google Fonts 两个域名，并保留 React 动态样式所需的 `style-src 'unsafe-inline'`。
+- **缓存分层**：nginx `map` 将 SPA HTML 设为 `no-cache`、API 设为 `no-store`、Vite hash 资源设为一年 `immutable`。新增 `infra/cloudflare.md`，记录 Cache Rule 精确表达式、免费计划兼容的登录突发限速方案、HSTS 边界和验收命令；当前主机与仓库没有 Cloudflare 管理凭据，因此边缘规则保留为显式人工步骤，源站头是已生效的最终安全网。
+- **验证**：新增公开 200 与未登录 401 的 `no-store` 断言；`pnpm typecheck`、56 个 API 测试、生产构建和独立 nginx 配置语法检查通过。
+
 ### P2：核心增强
 
 | 状态 | 任务 | 交付标准 | 备注 |
@@ -405,14 +412,14 @@ P2 进展记录：2026-07-09 `0.4.0` 交付节点详情 + 趋势主线（P2 前�
 | 已完成（YAML 写回） | 节点手动分组管理 | 管理后台可修改服务器展示分组、展示名、区域、标签、排序和可见性 | `0.6.0`：owner-only `POST/PATCH/DELETE /api/admin/nodes` 写入 `/data/nodes.yaml`；修改后影响首页分组筛选和节点列表展示 |
 | 已完成（最小闭环） | 管理端最小闭环 | 可查看用户、节点配置摘要、系统状态，并能保存节点展示配置 | `0.6.0` 已完成节点新增/编辑/删除/账单备注/私有备注/selector 复制/配置导出；用户、会话、通知和日志仍按当前后端能力收敛 |
 | 已完成 | 管理后台节点配置页 | 表格展示所有节点；详情抽屉或编辑面板修改分组和展示元数据 | `0.6.0`：表格列和操作区对齐 Komari 截图；保存走 YAML 注册表写回 |
-| 部分完成 | 登录限速与安全响应头 | `/api/auth/login` 限速；CSP/HSTS 等安全响应头 | 登录限速已随 `0.2.3` 上线；CSP/HSTS 在 nginx/Cloudflare 侧补 |
+| 已完成 | 登录限速与安全响应头 | `/api/auth/login` 限速；CSP/HSTS 等安全响应头 | 登录限速随 `0.2.3` 上线；`0.9.1` 在 nginx 补齐 CSP、HSTS、nosniff、frame/referrer/permissions policy |
 | 已完成（重新定性） | CSRF 防护 | 写回类 admin 接口不可被跨站伪造 | 读码结论：`SameSite=Lax` Cookie + CORS 锁定 `WEB_ORIGIN` + JSON-only body 解析已封死经典 CSRF 路径；`0.7.0` 补 Origin 头兜底校验（携带会话的写请求 Origin 不匹配即 403），double-submit token 不再需要 |
 | 已完成 | SQLite 备份策略 | 有备份路径、恢复步骤、保留周期和恢复演练说明 | `0.8.0`：在线备份 + 7 天本地保留 + netcup 异地归档 + 每日 cron；首份归档已完成隔离恢复演练并回填记录 |
 | 已完成（会话） | 会话持久化升级到 SQLite | sessions 落 SQLite，支持可撤销会话 | `0.8.0` 完成；users 表、`viewer` 与账号 CRUD 明确等第二个真实用户出现再做 |
 | 部分完成 | 镜像构建/发布流水线 | 脚本化 build+import、按 git sha 打 tag；可选 GitHub Actions | `0.7.0`：`scripts/deploy.sh`（版本一致性校验 + build/import/apply/rollout/冒烟断言）+ GitHub Actions CI（typecheck/test/build）；按 git sha 打 tag 未做，发版仍按语义版本 |
-| 待做 | Cloudflare 缓存和 WAF 规则 | `/api/*`、`/auth/*` 不缓存；登录限速 | 和 RS1000 nginx 配置一起记录 |
+| 部分完成（源站完成） | Cloudflare 缓存和 WAF 规则 | `/api/*`、`/auth/*` 不缓存；登录限速 | `0.9.1`：源站 API `no-store` + HTML/assets 分层已上线，`infra/cloudflare.md` 给出精确 Cache Rule/WAF 表达式；账户侧规则待有 scoped token 或控制台操作时应用 |
 | 部分完成 | UI 细节打磨 | 空状态、骨架屏、键盘可访问性、移动端触控区域 | `0.6.2`：全局 focus-visible / hover / active / disabled 状态、共享加载与错误组件、空状态图标与动作、抽屉动画、密度收紧、窄屏 Group 标签可滚动、760–900px 遮罩修复；骨架屏仍待做 |
-| 待做 | 文档补齐 | README、部署文档、环境变量、故障排查、ADR 更新 | 每个生产决策都能追溯 |
+| 部分完成 | 文档补齐 | README、部署文档、环境变量、故障排查、ADR 更新 | README/部署/备份恢复/Cloudflare 边界已可追溯；独立故障排查手册与 ADR 增量仍待补 |
 
 P3 完成判定：NodeBeacon 不只是能上线，还能长期维护、升级、备份，并且登录态和敏感信息展示边界清晰。
 
