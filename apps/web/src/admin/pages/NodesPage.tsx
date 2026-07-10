@@ -4,6 +4,7 @@ import {
   Check,
   ChevronRight,
   CircleDollarSign,
+  Columns3,
   Copy,
   Download,
   GripVertical,
@@ -52,6 +53,16 @@ interface BillingFormState {
   autoRenewal: boolean;
 }
 
+type OptionalColumn = "ip" | "version" | "group" | "notes" | "billing";
+
+const OPTIONAL_COLUMNS: { id: OptionalColumn; labelKey: string }[] = [
+  { id: "ip", labelKey: "admin.nodes.thIp" },
+  { id: "version", labelKey: "admin.nodes.thClientVersion" },
+  { id: "group", labelKey: "admin.nodes.thGroup" },
+  { id: "notes", labelKey: "admin.nodes.thPrivateNotes" },
+  { id: "billing", labelKey: "admin.nodes.thBilling" }
+];
+
 const EMPTY_FORM: NodeFormState = {
   id: "",
   name: "",
@@ -74,6 +85,17 @@ export function NodesPage() {
   const [query, setQuery] = useState("");
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [drawer, setDrawer] = useState<DrawerState>(null);
+  const [draggingId, setDraggingId] = useState<string | null>(null);
+  const [reordering, setReordering] = useState(false);
+  const [columnsOpen, setColumnsOpen] = useState(false);
+  const [visibleColumns, setVisibleColumns] = useState<Record<OptionalColumn, boolean>>({
+    ip: true,
+    version: true,
+    group: true,
+    notes: true,
+    billing: true
+  });
+  const [actionError, setActionError] = useState<string | null>(null);
 
   const nodes = data?.nodes ?? [];
   const filteredNodes = useMemo(() => {
@@ -118,22 +140,52 @@ export function NodesPage() {
     await copyText(selectedNodes.map((node) => `${node.name} ${formatSelector(node.labels)}`).join("\n"));
   };
 
+  const downloadSelected = () => {
+    if (selectedNodes.length === 0) return;
+    downloadText(selectedNodes.map(toNodeConfigSnippet).join("\n"), "nodebeacon-nodes.yaml");
+  };
+
   const deleteNode = async (node: AdminNode) => {
     if (!window.confirm(t("admin.nodes.confirmDelete", { name: node.name }))) return;
-    await apiDelete<{ ok: true }>(`/api/admin/nodes/${encodeURIComponent(node.id)}`);
-    setSelectedIds((prev) => prev.filter((id) => id !== node.id));
-    await reload();
+    try {
+      setActionError(null);
+      await apiDelete<{ ok: true }>(`/api/admin/nodes/${encodeURIComponent(node.id)}`);
+      setSelectedIds((prev) => prev.filter((id) => id !== node.id));
+      await reload();
+    } catch (err) {
+      setActionError(err instanceof Error ? err.message : t("common.requestFailed", { status: 0 }));
+    }
   };
 
   const downloadNode = (node: AdminNode) => {
-    const text = toNodeConfigSnippet(node);
-    const blob = new Blob([text], { type: "text/yaml;charset=utf-8" });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement("a");
-    link.href = url;
-    link.download = `${node.id}.nodebeacon.yaml`;
-    link.click();
-    URL.revokeObjectURL(url);
+    downloadText(toNodeConfigSnippet(node), `${node.id}.nodebeacon.yaml`);
+  };
+
+  const reorderNodes = async (targetId: string) => {
+    if (!draggingId || draggingId === targetId || query.trim()) return;
+    const from = nodes.findIndex((node) => node.id === draggingId);
+    const to = nodes.findIndex((node) => node.id === targetId);
+    if (from < 0 || to < 0) return;
+
+    const reordered = [...nodes];
+    const [moved] = reordered.splice(from, 1);
+    if (!moved) return;
+    reordered.splice(to, 0, moved);
+    setDraggingId(null);
+    setReordering(true);
+    setActionError(null);
+    try {
+      await Promise.all(
+        reordered.map((node, index) =>
+          apiPatch<AdminNodeResponse>(`/api/admin/nodes/${encodeURIComponent(node.id)}`, { displayOrder: (index + 1) * 10 })
+        )
+      );
+      await reload();
+    } catch (err) {
+      setActionError(err instanceof Error ? err.message : t("common.requestFailed", { status: 0 }));
+    } finally {
+      setReordering(false);
+    }
   };
 
   if (loading) return <div className="admin-state">{t("common.loading")}</div>;
@@ -157,6 +209,21 @@ export function NodesPage() {
           <button className="komari-muted-btn" onClick={reload} title={t("admin.actions.refresh")}>
             <RefreshCw size={18} />
           </button>
+          <div className="komari-column-menu">
+            <button className="komari-muted-btn" onClick={() => setColumnsOpen((open) => !open)} title="Configure columns" aria-expanded={columnsOpen}>
+              <Columns3 size={18} />
+            </button>
+            {columnsOpen && (
+              <div className="komari-column-popover">
+                {OPTIONAL_COLUMNS.map(({ id, labelKey }) => (
+                  <label key={id}>
+                    <input type="checkbox" checked={visibleColumns[id]} onChange={() => setVisibleColumns((columns) => ({ ...columns, [id]: !columns[id] }))} />
+                    {t(labelKey)}
+                  </label>
+                ))}
+              </div>
+            )}
+          </div>
           <button className="komari-add-btn" onClick={() => setDrawer({ type: "add" })}>
             <Plus size={19} />
             <span>{t("admin.nodes.addNode")}</span>
@@ -170,11 +237,16 @@ export function NodesPage() {
           <button className="ghost-btn" onClick={copySelectedSelectors}>
             <Copy size={15} /> {t("admin.nodes.copySelectedSelectors")}
           </button>
+          <button className="ghost-btn" onClick={downloadSelected}>
+            <Download size={15} /> {t("admin.nodes.downloadConfig")}
+          </button>
           <button className="icon-btn" onClick={() => setSelectedIds([])} title={t("admin.nodes.clearSelection")}>
             <X size={15} />
           </button>
         </div>
       )}
+
+      {actionError && <div className="admin-state error table-action-error"><AlertCircle size={16} /> {actionError}</div>}
 
       <div className="komari-table-wrap">
         <table className="komari-table">
@@ -185,19 +257,27 @@ export function NodesPage() {
                 <input type="checkbox" checked={allFilteredSelected} onChange={toggleFilteredSelection} aria-label={t("admin.nodes.selectAll")} />
               </th>
               <th>{t("admin.nodes.thName")}</th>
-              <th>{t("admin.nodes.thIp")}</th>
-              <th>{t("admin.nodes.thClientVersion")}</th>
-              <th>{t("admin.nodes.thGroup")}</th>
-              <th>{t("admin.nodes.thPrivateNotes")}</th>
-              <th>{t("admin.nodes.thBilling")}</th>
+              {visibleColumns.ip && <th>{t("admin.nodes.thIp")}</th>}
+              {visibleColumns.version && <th>{t("admin.nodes.thClientVersion")}</th>}
+              {visibleColumns.group && <th>{t("admin.nodes.thGroup")}</th>}
+              {visibleColumns.notes && <th>{t("admin.nodes.thPrivateNotes")}</th>}
+              {visibleColumns.billing && <th>{t("admin.nodes.thBilling")}</th>}
               <th className="komari-action-col">{t("admin.nodes.thActions")}</th>
             </tr>
           </thead>
           <tbody>
             {filteredNodes.map((node) => (
-              <tr key={node.id}>
+              <tr
+                key={node.id}
+                className={draggingId === node.id ? "node-row-dragging" : undefined}
+                draggable={!query.trim() && !reordering}
+                onDragStart={() => setDraggingId(node.id)}
+                onDragEnd={() => setDraggingId(null)}
+                onDragOver={(event) => event.preventDefault()}
+                onDrop={() => void reorderNodes(node.id)}
+              >
                 <td className="komari-grip-col">
-                  <GripVertical size={18} />
+                  <span title={query.trim() ? "Clear search to reorder nodes" : "Drag to reorder"}><GripVertical size={18} /></span>
                 </td>
                 <td className="komari-select-col">
                   <input
@@ -213,16 +293,11 @@ export function NodesPage() {
                     {node.name}
                   </button>
                 </td>
-                <td>
-                  <button className="inline-copy" onClick={() => copyText(displayIp(node))} title={t("admin.nodes.copyIp")}>
-                    {displayIp(node)}
-                    <Copy size={16} />
-                  </button>
-                </td>
-                <td>{node.clientVersion || t("admin.nodes.defaultClientVersion")}</td>
-                <td>{node.group || "-"}</td>
-                <td className="notes-cell">{node.privateNotes || "-"}</td>
-                <td>{formatBilling(node)}</td>
+                {visibleColumns.ip && <td><button className="inline-copy" onClick={() => void copyText(displayIp(node))} title={t("admin.nodes.copyIp")}>{displayIp(node)}<Copy size={16} /></button></td>}
+                {visibleColumns.version && <td>{node.clientVersion || t("admin.nodes.defaultClientVersion")}</td>}
+                {visibleColumns.group && <td>{node.group || "-"}</td>}
+                {visibleColumns.notes && <td className="notes-cell">{node.privateNotes || "-"}</td>}
+                {visibleColumns.billing && <td>{formatBilling(node)}</td>}
                 <td>
                   <div className="komari-row-actions">
                     <button title={t("admin.nodes.downloadConfig")} onClick={() => downloadNode(node)}>
@@ -582,6 +657,16 @@ function toNodeConfigSnippet(node: AdminNode): string {
     for (const tag of node.tags) lines.push(`    - ${tag}`);
   }
   return `${lines.join("\n")}\n`;
+}
+
+function downloadText(text: string, filename: string): void {
+  const blob = new Blob([text], { type: "text/yaml;charset=utf-8" });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = filename;
+  link.click();
+  URL.revokeObjectURL(url);
 }
 
 async function copyText(text: string): Promise<void> {

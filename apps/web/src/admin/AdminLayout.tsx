@@ -1,11 +1,12 @@
 import { useEffect, useState, type CSSProperties } from "react";
-import { NavLink, Outlet, useNavigate } from "react-router-dom";
+import { NavLink, Outlet, useLocation, useNavigate } from "react-router-dom";
 import {
   Activity,
   AtSign,
   Bell,
   BookOpen,
   ChevronDown,
+  ChevronUp,
   CircleUserRound,
   Droplet,
   Home,
@@ -24,53 +25,65 @@ import { useTranslation } from "react-i18next";
 import type { AdminSummaryResponse } from "@nodebeacon/shared";
 import { useAuth } from "../auth/AuthProvider";
 import { LanguageSwitch } from "../components/LanguageSwitch";
+import {
+  ADMIN_ACCENTS,
+  ADMIN_APPEARANCE_EVENT,
+  getAdminAppearance,
+  saveAdminAppearance,
+  type AdminAppearance
+} from "../lib/adminAppearance";
 import { useApi } from "../lib/useApi";
 import "./admin.css";
 
-const NAV_ITEMS = [
-  { to: "/admin", labelKey: "admin.nav.server", icon: Server, end: true },
-  { to: "/admin/settings", labelKey: "admin.nav.settings", icon: Settings, end: false, expandable: true },
-  { to: "/admin/notification", labelKey: "admin.nav.notification", icon: Bell, end: false, expandable: true },
-  { to: "/admin/remote-exec", labelKey: "admin.nav.remoteExec", icon: Terminal, end: false },
-  { to: "/admin/latency", labelKey: "admin.nav.latency", icon: Activity, end: false },
-  { to: "/admin/sessions", labelKey: "admin.nav.sessions", icon: UsersRound, end: false },
-  { to: "/admin/account", labelKey: "admin.nav.account", icon: CircleUserRound, end: false },
-  { to: "/admin/logs", labelKey: "admin.nav.logs", icon: ScrollText, end: false },
-  { to: "/admin/about", labelKey: "admin.nav.about", icon: AtSign, end: false },
-  {
-    href: "https://github.com/xljya/NodeBeacon/blob/main/docs/development-plan.md",
-    labelKey: "admin.nav.documentation",
-    icon: BookOpen
-  },
-  { href: "/", labelKey: "admin.nav.home", icon: Home },
-  { to: "/admin/theme", labelKey: "admin.nav.defaultTheme", icon: Palette, end: false }
+interface NestedNavItem {
+  to: string;
+  label: string;
+  icon: typeof Settings;
+}
+
+const SETTINGS_ITEMS: NestedNavItem[] = [
+  { to: "/admin/settings/site", label: "Site", icon: Home },
+  { to: "/admin/settings/theme", label: "Theme Management", icon: Palette },
+  { to: "/admin/settings/sign-on", label: "Sign-On", icon: CircleUserRound },
+  { to: "/admin/settings/notifications", label: "Notifications", icon: Bell },
+  { to: "/admin/settings/general", label: "General", icon: Settings },
+  { to: "/admin/settings/xtermjs", label: "XtermJS", icon: Terminal },
+  { to: "/admin/settings/reverse-proxy", label: "Reverse Proxy", icon: Activity },
+  { to: "/admin/settings/metrics", label: "Metrics Database", icon: Server }
 ];
 
-type Theme = "light" | "dark";
-const DEFAULT_ACCENT = "#2f6bff";
-const ACCENTS = [DEFAULT_ACCENT, "#1f9d63", "#c67a12"] as const;
+const NOTIFICATION_ITEMS: NestedNavItem[] = [
+  { to: "/admin/notification/offline", label: "Offline", icon: Bell },
+  { to: "/admin/notification/load", label: "Load", icon: Activity },
+  { to: "/admin/notification/traffic-report", label: "Traffic Report", icon: Activity },
+  { to: "/admin/notification/general", label: "General", icon: Settings }
+];
 
 export function AdminLayout() {
   const { t } = useTranslation();
   const { logout } = useAuth();
   const { data: summary } = useApi<AdminSummaryResponse>("/api/admin/summary");
   const navigate = useNavigate();
+  const location = useLocation();
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [theme, setTheme] = useState<Theme>(
-    () => (localStorage.getItem("nb-admin-theme") as Theme) ?? "light"
-  );
-  const [accent, setAccent] = useState(() => localStorage.getItem("nb-admin-accent") ?? DEFAULT_ACCENT);
+  const [appearance, setAppearance] = useState<AdminAppearance>(getAdminAppearance);
+  const [settingsOpen, setSettingsOpen] = useState(() => location.pathname.startsWith("/admin/settings"));
+  const [notificationOpen, setNotificationOpen] = useState(() => location.pathname.startsWith("/admin/notification"));
 
   useEffect(() => {
-    localStorage.setItem("nb-admin-theme", theme);
-  }, [theme]);
+    const syncAppearance = () => setAppearance(getAdminAppearance());
+    window.addEventListener(ADMIN_APPEARANCE_EVENT, syncAppearance);
+    return () => window.removeEventListener(ADMIN_APPEARANCE_EVENT, syncAppearance);
+  }, []);
 
   useEffect(() => {
-    localStorage.setItem("nb-admin-accent", accent);
-  }, [accent]);
+    if (location.pathname.startsWith("/admin/settings")) setSettingsOpen(true);
+    if (location.pathname.startsWith("/admin/notification")) setNotificationOpen(true);
+  }, [location.pathname]);
 
   const cycleAccent = () => {
-    setAccent((current) => ACCENTS[(Math.max(0, ACCENTS.indexOf(current as (typeof ACCENTS)[number])) + 1) % ACCENTS.length] ?? DEFAULT_ACCENT);
+    const index = ADMIN_ACCENTS.indexOf(appearance.accent as (typeof ADMIN_ACCENTS)[number]);
+    saveAdminAppearance({ accent: ADMIN_ACCENTS[(index + 1) % ADMIN_ACCENTS.length] ?? ADMIN_ACCENTS[0] });
   };
 
   const handleLogout = async () => {
@@ -79,70 +92,58 @@ export function AdminLayout() {
   };
 
   return (
-    <div className="admin-shell komari-admin" data-theme={theme} style={{ "--accent": accent } as CSSProperties}>
+    <div className="admin-shell komari-admin" data-theme={appearance.theme} style={{ "--accent": appearance.accent } as CSSProperties}>
       {sidebarOpen && <button className="admin-scrim" aria-label={t("admin.topbar.closeMenu")} onClick={() => setSidebarOpen(false)} />}
 
       <aside className={sidebarOpen ? "admin-sidebar open" : "admin-sidebar"}>
         <nav className="admin-nav komari-nav" aria-label={t("admin.topbar.title")}>
-          {NAV_ITEMS.map(({ to, href, labelKey, icon: Icon, end, expandable }) => {
-            const content = (
-              <>
-                <Icon size={19} strokeWidth={2} />
-                <span>{t(labelKey)}</span>
-                {expandable && <ChevronDown className="nav-chevron" size={16} />}
-              </>
-            );
-
-            if (href) {
-              return (
-                <a
-                  key={labelKey}
-                  className="admin-nav-item"
-                  href={href}
-                  target={href.startsWith("http") ? "_blank" : undefined}
-                  rel={href.startsWith("http") ? "noreferrer" : undefined}
-                >
-                  {content}
-                </a>
-              );
-            }
-
-            return (
-              <NavLink
-                key={to}
-                to={to ?? "/admin"}
-                end={end}
-                onClick={() => setSidebarOpen(false)}
-                className={({ isActive }) => (isActive ? "admin-nav-item active" : "admin-nav-item")}
-              >
-                {content}
-              </NavLink>
-            );
-          })}
+          <AdminLink to="/admin" end icon={Server} label={t("admin.nav.server")} onNavigate={() => setSidebarOpen(false)} />
+          <NestedNavGroup
+            icon={Settings}
+            label={t("admin.nav.settings")}
+            open={settingsOpen}
+            onToggle={() => setSettingsOpen((open) => !open)}
+            onNavigate={() => setSidebarOpen(false)}
+            items={SETTINGS_ITEMS}
+          />
+          <NestedNavGroup
+            icon={Bell}
+            label={t("admin.nav.notification")}
+            open={notificationOpen}
+            onToggle={() => setNotificationOpen((open) => !open)}
+            onNavigate={() => setSidebarOpen(false)}
+            items={NOTIFICATION_ITEMS}
+          />
+          <AdminLink to="/admin/remote-exec" icon={Terminal} label={t("admin.nav.remoteExec")} onNavigate={() => setSidebarOpen(false)} />
+          <AdminLink to="/admin/latency" icon={Activity} label={t("admin.nav.latency")} onNavigate={() => setSidebarOpen(false)} />
+          <AdminLink to="/admin/sessions" icon={UsersRound} label={t("admin.nav.sessions")} onNavigate={() => setSidebarOpen(false)} />
+          <AdminLink to="/admin/account" icon={CircleUserRound} label={t("admin.nav.account")} onNavigate={() => setSidebarOpen(false)} />
+          <AdminLink to="/admin/logs" icon={ScrollText} label={t("admin.nav.logs")} onNavigate={() => setSidebarOpen(false)} />
+          <AdminLink to="/admin/about" icon={AtSign} label={t("admin.nav.about")} onNavigate={() => setSidebarOpen(false)} />
+          <a className="admin-nav-item" href="https://github.com/xljya/NodeBeacon/blob/main/docs/development-plan.md" target="_blank" rel="noreferrer">
+            <BookOpen size={18} strokeWidth={2} />
+            <span>{t("admin.nav.documentation")}</span>
+          </a>
+          <a className="admin-nav-item" href="/">
+            <Home size={18} strokeWidth={2} />
+            <span>{t("admin.nav.home")}</span>
+          </a>
+          <AdminLink to="/admin/theme" icon={Palette} label={t("admin.nav.defaultTheme")} onNavigate={() => setSidebarOpen(false)} />
         </nav>
       </aside>
 
       <div className="admin-main">
         <header className="admin-topbar">
           <div className="admin-topbar-left">
-            <button
-              className="top-icon admin-menu-btn"
-              title={t("admin.topbar.openMenu")}
-              aria-label={t("admin.topbar.openMenu")}
-              onClick={() => setSidebarOpen(true)}
-            >
+            <button className="top-icon admin-menu-btn" title={t("admin.topbar.openMenu")} aria-label={t("admin.topbar.openMenu")} onClick={() => setSidebarOpen(true)}>
               <Menu size={20} />
             </button>
             <div className="admin-brand">
-              <button
-                className="brand-menu"
-                aria-label={t("admin.topbar.openMenu")}
-                onClick={() => setSidebarOpen(true)}
-              >
+              <button className="brand-menu" aria-label={t("admin.topbar.openMenu")} onClick={() => setSidebarOpen(true)}>
                 <Menu size={21} />
               </button>
               <strong>NodeBeacon</strong>
-              <span>Snapshot-{new Date(summary?.generatedAt ?? Date.now()).toLocaleString()} ({summary?.version ?? "dev"})</span>
+              <span>status / {summary?.version ?? "dev"}</span>
             </div>
           </div>
 
@@ -151,9 +152,9 @@ export function AdminLayout() {
               className="top-icon"
               title={t("admin.topbar.toggleTheme")}
               aria-label={t("admin.topbar.toggleTheme")}
-              onClick={() => setTheme((prev) => (prev === "light" ? "dark" : "light"))}
+              onClick={() => saveAdminAppearance({ theme: appearance.theme === "light" ? "dark" : "light" })}
             >
-              {theme === "light" ? <Sun size={18} /> : <Moon size={18} />}
+              {appearance.theme === "light" ? <Moon size={18} /> : <Sun size={18} />}
             </button>
             <button className="top-icon" title={t("admin.topbar.color")} aria-label={t("admin.topbar.color")} onClick={cycleAccent}>
               <Droplet size={18} />
@@ -171,5 +172,36 @@ export function AdminLayout() {
         </main>
       </div>
     </div>
+  );
+}
+
+function AdminLink({ to, icon: Icon, label, end = false, onNavigate }: { to: string; icon: typeof Settings; label: string; end?: boolean; onNavigate: () => void }) {
+  return (
+    <NavLink to={to} end={end} onClick={onNavigate} className={({ isActive }) => (isActive ? "admin-nav-item active" : "admin-nav-item")}>
+      <Icon size={18} strokeWidth={2} />
+      <span>{label}</span>
+    </NavLink>
+  );
+}
+
+function NestedNavGroup({ icon: Icon, label, open, onToggle, onNavigate, items }: { icon: typeof Settings; label: string; open: boolean; onToggle: () => void; onNavigate: () => void; items: NestedNavItem[] }) {
+  return (
+    <section className="admin-nav-group">
+      <button type="button" className={open ? "admin-nav-item nav-group-toggle active" : "admin-nav-item nav-group-toggle"} aria-expanded={open} onClick={onToggle}>
+        <Icon size={18} strokeWidth={2} />
+        <span>{label}</span>
+        {open ? <ChevronUp className="nav-chevron" size={16} /> : <ChevronDown className="nav-chevron" size={16} />}
+      </button>
+      {open && (
+        <div className="admin-nav-nested">
+          {items.map(({ to, label: childLabel, icon: ChildIcon }) => (
+            <NavLink key={to} to={to} onClick={onNavigate} className={({ isActive }) => (isActive ? "admin-nav-item admin-nav-child active" : "admin-nav-item admin-nav-child")}>
+              <ChildIcon size={17} strokeWidth={2} />
+              <span>{childLabel}</span>
+            </NavLink>
+          ))}
+        </div>
+      )}
+    </section>
   );
 }

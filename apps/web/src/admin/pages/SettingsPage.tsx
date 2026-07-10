@@ -1,153 +1,177 @@
-import type { ReactNode } from "react";
+import { useState } from "react";
+import { Link, useParams } from "react-router-dom";
 import {
   AlertCircle,
+  ArrowUpRight,
+  Bell,
+  Check,
+  Copy,
   Database,
-  Gauge,
   Globe2,
   LockKeyhole,
   Palette,
   RefreshCw,
-  Rocket,
-  ShieldCheck,
-  SlidersHorizontal
+  Server,
+  Settings2,
+  Terminal
 } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import type { AdminSummaryResponse } from "@nodebeacon/shared";
+import { AppearanceControls } from "./ThemeSettingsPage";
 import { useApi } from "../../lib/useApi";
+
+const SETTINGS_INDEX = [
+  { slug: "site", label: "Site", icon: Globe2 },
+  { slug: "theme", label: "Theme Management", icon: Palette },
+  { slug: "sign-on", label: "Sign-On", icon: LockKeyhole },
+  { slug: "notifications", label: "Notifications", icon: Bell },
+  { slug: "general", label: "General", icon: Settings2 },
+  { slug: "xtermjs", label: "XtermJS", icon: Terminal },
+  { slug: "reverse-proxy", label: "Reverse Proxy", icon: ArrowUpRight },
+  { slug: "metrics", label: "Metrics Database", icon: Database }
+] as const;
 
 export function SettingsPage() {
   const { t } = useTranslation();
+  const { section = "site" } = useParams();
   const { data, error, loading, reload } = useApi<AdminSummaryResponse>("/api/admin/summary");
 
   if (loading) return <div className="admin-state">{t("common.loading")}</div>;
-  if (error) {
-    return (
-      <div className="admin-state error">
-        <AlertCircle size={16} /> {error}
-      </div>
-    );
+  if (error || !data) {
+    return <div className="admin-state error"><AlertCircle size={16} /> {error ?? t("common.loadFailed")}</div>;
   }
-  if (!data) return null;
+
+  const current = SETTINGS_INDEX.find((item) => item.slug === section) ?? SETTINGS_INDEX[0];
+  const Icon = current.icon;
 
   return (
-    <div className="page page-wide">
+    <div className="page settings-workspace">
       <div className="page-head page-head-spread">
         <div>
-          <h2>{t("admin.settings.title")}</h2>
-          <span className="page-sub">{t("admin.settings.subtitle")}</span>
+          <h2>{current.label}</h2>
+          <span className="page-sub">NodeBeacon administration settings</span>
         </div>
-        <button className="ghost-btn" onClick={reload}>
+        <button className="ghost-btn" onClick={() => void reload()}>
           <RefreshCw size={15} /> {t("admin.actions.refresh")}
         </button>
       </div>
 
-      <section className="admin-notice">
-        <SlidersHorizontal size={18} />
-        <div>
-          <b>{t("admin.settings.readOnlyTitle")}</b>
-          <p>{t("admin.settings.readOnlyText")}</p>
+      <section className="section-panel settings-focus-panel">
+        <div className="section-head">
+          <div>
+            <h3>{current.label}</h3>
+            <p>{descriptionFor(section)}</p>
+          </div>
+          <Icon size={20} />
         </div>
+        <SettingsContent section={section} summary={data} />
       </section>
 
-      <div className="settings-grid">
-        <SettingSection icon={<Database size={18} />} title={t("admin.settings.dataSection")} desc={t("admin.settings.dataSectionDesc")}>
-          <SettingCard title={t("admin.settings.prometheusTitle")} desc={t("admin.settings.prometheusDesc")}>
-            <span className="pill mono">{data.prometheus.host ?? t("common.notConfigured")}</span>
-          </SettingCard>
-          <SettingCard title={t("admin.settings.prometheusReachableTitle")} desc={t("admin.settings.prometheusReachableDesc")}>
-            <span className={`pill ${data.prometheus.reachable ? "pill-ok" : "pill-warn"}`}>
-              {data.prometheus.reachable ? t("admin.overview.reachable") : t("admin.overview.unreachable")}
-            </span>
-          </SettingCard>
-        </SettingSection>
+      <section className="settings-index" aria-label="Settings sections">
+        {SETTINGS_INDEX.map(({ slug, label, icon: ItemIcon }) => (
+          <Link key={slug} to={`/admin/settings/${slug}`} className={slug === current.slug ? "settings-index-link active" : "settings-index-link"}>
+            <ItemIcon size={17} />
+            <span>{label}</span>
+            <ArrowUpRight size={15} />
+          </Link>
+        ))}
+      </section>
+    </div>
+  );
+}
 
-        <SettingSection icon={<Gauge size={18} />} title={t("admin.settings.cacheSection")} desc={t("admin.settings.cacheSectionDesc")}>
-          <SettingCard title={t("admin.settings.ttlTitle")} desc={t("admin.settings.ttlDesc")}>
-            <span className="pill mono">{data.cache.ttlSeconds}s</span>
-          </SettingCard>
-          <SettingCard title={t("admin.settings.cacheFreshTitle")} desc={t("admin.settings.cacheFreshDesc")}>
-            <span className={`pill ${data.cache.stale ? "pill-warn" : "pill-ok"}`}>
-              {data.cache.stale ? t("admin.overview.stale") : t("admin.overview.realtime")}
-            </span>
-          </SettingCard>
-        </SettingSection>
+function SettingsContent({ section, summary }: { section: string; summary: AdminSummaryResponse }) {
+  switch (section) {
+    case "theme":
+      return <AppearanceControls compact />;
+    case "sign-on":
+      return (
+        <div className="setting-list">
+          <SettingRow label="Owner authentication" value={summary.auth.ownerConfigured ? "Configured" : "Not configured"} ok={summary.auth.ownerConfigured} />
+          <SettingRow label="Open registration" value={summary.auth.allowRegister ? "Enabled" : "Disabled"} ok={!summary.auth.allowRegister} />
+          <Link className="primary-btn settings-link-button" to="/admin/account">Open Account <ArrowUpRight size={15} /></Link>
+        </div>
+      );
+    case "notifications":
+      return <SettingsLink target="/admin/notification/general" text="Open notification rules" />;
+    case "general":
+      return (
+        <div className="setting-list">
+          <SettingRow label="Application version" value={`v${summary.version}`} />
+          <SettingRow label="Status cache" value={`${summary.cache.ttlSeconds}s TTL`} ok={!summary.cache.stale} />
+          <SettingRow label="Node registry" value="Writable YAML registry" ok />
+        </div>
+      );
+    case "xtermjs":
+      return <SettingsLink target="/admin/remote-exec" text="Review remote-execution boundary" />;
+    case "reverse-proxy":
+      return <CopyOrigin />;
+    case "metrics":
+      return (
+        <div className="setting-list">
+          <SettingRow label="Prometheus host" value={summary.prometheus.host ?? "Not configured"} />
+          <SettingRow label="Connection status" value={summary.prometheus.reachable ? "Reachable" : "Unavailable / fallback"} ok={summary.prometheus.reachable} />
+        </div>
+      );
+    case "site":
+    default:
+      return <SiteSettings />;
+  }
+}
 
-        <SettingSection icon={<LockKeyhole size={18} />} title={t("admin.settings.authSection")} desc={t("admin.settings.authSectionDesc")}>
-          <SettingCard title={t("admin.settings.ownerTitle")} desc={t("admin.settings.ownerDesc")}>
-            <span className={`pill ${data.auth.ownerConfigured ? "pill-ok" : "pill-warn"}`}>
-              {data.auth.ownerConfigured ? t("admin.overview.configured") : t("common.notConfigured")}
-            </span>
-          </SettingCard>
-          <SettingCard title={t("admin.settings.allowRegisterTitle")} desc={t("admin.settings.allowRegisterDesc")}>
-            <span className={`pill ${data.auth.allowRegister ? "pill-warn" : "pill-ok"}`}>
-              {data.auth.allowRegister ? t("admin.settings.on") : t("admin.settings.off")}
-            </span>
-          </SettingCard>
-        </SettingSection>
-
-        <SettingSection icon={<Globe2 size={18} />} title={t("admin.settings.publicSection")} desc={t("admin.settings.publicSectionDesc")}>
-          <SettingCard title={t("admin.settings.publicPolicyTitle")} desc={t("admin.settings.publicPolicyDesc")}>
-            <span className="pill">{t("admin.settings.publicPolicyValue")}</span>
-          </SettingCard>
-          <SettingCard title={t("admin.settings.nodeConfigTitle")} desc={t("admin.settings.nodeConfigDesc")}>
-            <span className="pill">{t("admin.settings.registryValue")}</span>
-          </SettingCard>
-        </SettingSection>
-
-        <SettingSection icon={<Palette size={18} />} title={t("admin.settings.appearanceSection")} desc={t("admin.settings.appearanceSectionDesc")}>
-          <SettingCard title={t("admin.settings.adminThemeTitle")} desc={t("admin.settings.adminThemeDesc")}>
-            <span className="pill">{t("admin.settings.localPreference")}</span>
-          </SettingCard>
-          <SettingCard title={t("admin.settings.publicThemeTitle")} desc={t("admin.settings.publicThemeDesc")}>
-            <span className="pill">{t("admin.settings.localPreference")}</span>
-          </SettingCard>
-        </SettingSection>
-
-        <SettingSection icon={<ShieldCheck size={18} />} title={t("admin.settings.securitySection")} desc={t("admin.settings.securitySectionDesc")}>
-          <SettingCard title={t("admin.settings.prometheusBoundaryTitle")} desc={t("admin.settings.prometheusBoundaryDesc")}>
-            <span className="pill pill-ok">{t("admin.settings.enforced")}</span>
-          </SettingCard>
-          <SettingCard title={t("admin.settings.adminGuardTitle")} desc={t("admin.settings.adminGuardDesc")}>
-            <span className="pill pill-ok">{t("admin.settings.ownerOnly")}</span>
-          </SettingCard>
-        </SettingSection>
-
-        <SettingSection icon={<Rocket size={18} />} title={t("admin.settings.releaseSection")} desc={t("admin.settings.releaseSectionDesc")}>
-          <SettingCard title={t("admin.settings.versionTitle")} desc={t("admin.settings.versionDesc")}>
-            <span className="pill mono">v{data.version}</span>
-          </SettingCard>
-          <SettingCard title={t("admin.settings.deliveryTitle")} desc={t("admin.settings.deliveryDesc")}>
-            <span className="pill">{t("admin.settings.singleContainer")}</span>
-          </SettingCard>
-        </SettingSection>
+function SiteSettings() {
+  return (
+    <div className="setting-list">
+      <SettingRow label="Public status page" value="Available to visitors" ok />
+      <div className="settings-action-row">
+        <a className="primary-btn settings-link-button" href="/">Open public status <ArrowUpRight size={15} /></a>
+        <CopyOrigin />
       </div>
     </div>
   );
 }
 
-function SettingSection({ icon, title, desc, children }: { icon: ReactNode; title: string; desc: string; children: ReactNode }) {
+function CopyOrigin() {
+  const [copied, setCopied] = useState(false);
+  const origin = window.location.origin;
+  const copy = async () => {
+    await navigator.clipboard?.writeText(origin);
+    setCopied(true);
+  };
+
   return (
-    <section className="settings-section">
-      <div className="section-head">
-        <div>
-          <h3>{title}</h3>
-          <p>{desc}</p>
-        </div>
-        {icon}
-      </div>
-      <div className="setting-list compact">{children}</div>
-    </section>
+    <div className="settings-action-row">
+      <code className="selector">{origin}</code>
+      <button className="ghost-btn" onClick={() => void copy()}>
+        {copied ? <Check size={15} /> : <Copy size={15} />} {copied ? "Copied" : "Copy URL"}
+      </button>
+    </div>
   );
 }
 
-function SettingCard({ title, desc, children }: { title: string; desc: string; children: ReactNode }) {
+function SettingsLink({ target, text }: { target: string; text: string }) {
+  return <Link className="primary-btn settings-link-button" to={target}>{text} <ArrowUpRight size={15} /></Link>;
+}
+
+function SettingRow({ label, value, ok }: { label: string; value: string; ok?: boolean }) {
   return (
-    <section className="setting-card flat">
-      <div className="setting-text">
-        <h3>{title}</h3>
-        <p>{desc}</p>
-      </div>
-      <div className="setting-control">{children}</div>
-    </section>
+    <div className="setting-card flat">
+      <div className="setting-text"><h3>{label}</h3></div>
+      <span className={ok === undefined ? "pill" : ok ? "pill pill-ok" : "pill pill-warn"}>{value}</span>
+    </div>
   );
+}
+
+function descriptionFor(section: string): string {
+  const descriptions: Record<string, string> = {
+    site: "Public status entry and the canonical service URL.",
+    theme: "Appearance controls stored in this browser.",
+    "sign-on": "Effective owner-authentication information.",
+    notifications: "Rule categories and notification readiness.",
+    general: "Runtime values that are safe to inspect from the console.",
+    xtermjs: "Remote terminal compatibility and its security boundary.",
+    "reverse-proxy": "The public URL that a reverse proxy should forward.",
+    metrics: "The server-side Prometheus integration."
+  };
+  return descriptions[section] ?? descriptions.site ?? "";
 }

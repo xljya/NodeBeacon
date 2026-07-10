@@ -323,6 +323,13 @@ P1 验证记录：2026-07-06 已用浏览器在 `https://monitor.liucf.com/` 端
 - **范围边界**：Remote Exec 页面和行内终端按钮保留 Komari 的入口位置，但 NodeBeacon 不启用浏览器 shell、agent 命令或远程执行；Latency 使用现有 `GET /api/latency` 展示真实 Blackbox 探测；Logs 给出 RS1000 `kubectl logs` 运维入口。
 - **验证**：`pnpm typecheck` 通过；`pnpm test` 通过（6 个文件，33 个用例，新增 admin 节点 CRUD 临时 YAML 写回测试）。
 
+进展记录：2026-07-10 `0.6.1` 继续参考 `komari-monitor/komari-web` 的信息架构和节点表行为，但将视觉系统恢复为 NodeBeacon 的 Space Grotesk / JetBrains Mono、浅蓝工作区、白色工具面和蓝绿状态色。
+
+- **两级导航**：Settings 和 Notification 从单行占位变为可展开的侧栏分组。Settings 下提供 Site、Theme Management、Sign-On、Notifications、General、XtermJS、Reverse Proxy、Metrics Database；Notification 下提供 Offline、Load、Traffic Report、General。每个子项都有路由和对应页面，安全边界仍明确保留，不把 Remote Exec 伪装成可用能力。
+- **可操作页面**：Theme Management / Default Theme Settings 统一为共享的本地外观控制，可切换明暗模式、三种强调色并重置，顶栏立即同步；Site 与 Reverse Proxy 可打开或复制当前公共 URL；Sign-On、General、Metrics 页面显示来自 `/api/admin/summary` 的实际运行值，并可刷新；通知子项按规则类型提供可导航的准备状态。
+- **节点表交互补齐**：新增列可见性菜单、批量 YAML 导出、拖放排序。拖放会通过既有 owner-only `PATCH /api/admin/nodes/:id` 写回每台节点的 `displayOrder`，并在成功后刷新列表；搜索状态下禁止拖放，避免排序目标不明确。原有单节点导出、编辑、账单、删除、选择和 selector 复制继续保留。
+- **验证**：`pnpm typecheck` 通过；本机 Edge DevTools 验证 `/admin` 渲染完整节点表、Settings / Notification 展开入口、主题强调色切换、列控制入口均可见，且未检测到 Vite 错误覆盖层。由于自动化过程中触发了本地登录限速，后续浏览器验证不重复提交登录；正确凭据的 API 登录路径已单独返回 200。
+
 ### P2：核心增强
 
 | 状态 | 任务 | 交付标准 | 备注 |

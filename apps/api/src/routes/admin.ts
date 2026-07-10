@@ -16,7 +16,7 @@ import { loadNodeRegistry, saveNodeRegistry } from "../config/nodeRegistry.js";
 import type { AuthService } from "../services/authService.js";
 import { clearStatusCache, getStatus } from "../services/statusService.js";
 
-const APP_VERSION = process.env.APP_VERSION ?? "0.4.3";
+const APP_VERSION = process.env.APP_VERSION ?? "0.6.1";
 const NODE_ID_PATTERN = /^[a-zA-Z0-9][a-zA-Z0-9._-]{0,63}$/;
 
 function safeHost(url: string): string | undefined {

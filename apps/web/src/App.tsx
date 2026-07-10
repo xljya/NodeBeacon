@@ -35,7 +35,9 @@ export function App() {
           <Route path="nodes" element={<NodesPage />} />
           <Route path="users" element={<UsersPage />} />
           <Route path="settings" element={<SettingsPage />} />
+          <Route path="settings/:section" element={<SettingsPage />} />
           <Route path="notification" element={<NotificationPage />} />
+          <Route path="notification/:kind" element={<NotificationPage />} />
           <Route path="remote-exec" element={<RemoteExecPage />} />
           <Route path="latency" element={<LatencyPage />} />
           <Route path="sessions" element={<SessionsPage />} />
