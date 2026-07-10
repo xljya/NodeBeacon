@@ -2,7 +2,7 @@ import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import type { FastifyInstance } from "fastify";
 import { buildTestApp, OWNER_EMAIL, OWNER_PASSWORD } from "./helpers.js";
 
-describe("auth routes (env-provisioned owner, stateless cookie session)", () => {
+describe("auth routes (env-provisioned owner, persisted cookie session)", () => {
   let app: FastifyInstance;
 
   beforeAll(async () => {
@@ -67,6 +67,29 @@ describe("auth routes (env-provisioned owner, stateless cookie session)", () => 
       cookies: { nb_session: "forged-value.forged-signature" }
     });
     expect(res.statusCode).toBe(401);
+  });
+
+  it("revokes the server-side session on logout", async () => {
+    const login = await app.inject({
+      method: "POST",
+      url: "/api/auth/login",
+      payload: { email: OWNER_EMAIL, password: OWNER_PASSWORD }
+    });
+    const session = login.cookies.find((cookie) => cookie.name === "nb_session")!;
+
+    const logout = await app.inject({
+      method: "POST",
+      url: "/api/auth/logout",
+      cookies: { nb_session: session.value }
+    });
+    expect(logout.statusCode).toBe(200);
+
+    const replay = await app.inject({
+      method: "GET",
+      url: "/api/auth/me",
+      cookies: { nb_session: session.value }
+    });
+    expect(replay.statusCode).toBe(401);
   });
 
   it("keeps registration closed", async () => {

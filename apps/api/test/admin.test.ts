@@ -15,7 +15,13 @@ describe("admin routes (owner-only)", () => {
   });
   afterAll(() => app.close());
 
-  it.each(["/api/admin/summary", "/api/admin/nodes", "/api/admin/users"])(
+  it.each([
+    "/api/admin/summary",
+    "/api/admin/nodes",
+    "/api/admin/users",
+    "/api/admin/sessions",
+    "/api/admin/audit-events"
+  ])(
     "returns 401 for %s without a session",
     async (url) => {
       const res = await app.inject({ method: "GET", url });

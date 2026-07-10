@@ -12,6 +12,13 @@ RUN corepack enable && corepack prepare pnpm@10.15.0 --activate
 
 WORKDIR /app
 
+# better-sqlite3 normally installs a prebuilt binary; keep the native toolchain
+# available in the builder so a supported Node/platform can compile from source
+# when a prebuild is temporarily unavailable.
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    python3 make g++ \
+  && rm -rf /var/lib/apt/lists/*
+
 # Install against the committed lockfile. The .dockerignore keeps node_modules
 # and build output out of the context so this is a clean, reproducible install.
 COPY . .

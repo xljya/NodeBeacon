@@ -11,10 +11,9 @@ spec:
     matchLabels:
       app.kubernetes.io/name: nodebeacon
   strategy:
-    type: RollingUpdate
-    rollingUpdate:
-      maxUnavailable: 0
-      maxSurge: 1
+    # The SQLite database and YAML registry are single-writer state on one PVC.
+    # A short Recreate deployment avoids overlapping old/new writers.
+    type: Recreate
   template:
     metadata:
       labels:
@@ -28,7 +27,7 @@ spec:
       containers:
         - name: nodebeacon
           # Built on the node and imported into containerd, so never pull.
-          image: nodebeacon:0.7.3
+          image: nodebeacon:0.8.0
           imagePullPolicy: Never
           ports:
             - name: http
@@ -53,6 +52,8 @@ spec:
               value: "/data/nodes.yaml"
             - name: NODEBEACON_NODE_CONFIG_SEED
               value: "/config/nodes.yaml"
+            - name: NODEBEACON_DATABASE_PATH
+              value: "/data/nodebeacon.db"
             - name: ALLOW_REGISTER
               value: "false"
             # APP_VERSION is intentionally not set: the app reads the release
@@ -105,8 +106,7 @@ spec:
             - name: node-config
               mountPath: /config
               readOnly: true
-            # Runtime node registry (/data/nodes.yaml, written by the admin
-            # console since 0.6.0) and the future SQLite database.
+            # Runtime YAML registry plus SQLite sessions and audit events.
             - name: data
               mountPath: /data
             # Fastify/pino need a writable tmp with readOnlyRootFilesystem.

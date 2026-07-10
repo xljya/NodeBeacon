@@ -8,6 +8,8 @@ import {
 } from "@nodebeacon/shared";
 import type { ApiEnv } from "../config/env.js";
 import type { AuthService } from "../services/authService.js";
+import type { SessionService } from "../services/sessionService.js";
+import type { AuditService } from "../services/auditService.js";
 import { buildAuthorizeUrl, exchangeCodeForIdentity } from "../services/githubOAuth.js";
 
 const OAUTH_STATE_COOKIE = "nb_oauth_state";
@@ -24,7 +26,9 @@ function computeRedirectUri(env: ApiEnv, request: FastifyRequest): string {
 export async function registerAuthRoutes(
   app: FastifyInstance,
   env: ApiEnv,
-  authService: AuthService
+  authService: AuthService,
+  sessionService: SessionService,
+  auditService: AuditService
 ): Promise<void> {
   // Public: lets the login page decide which sign-in methods to show.
   app.get("/api/auth/config", async (): Promise<AuthConfigResponse> => ({
@@ -54,12 +58,19 @@ export async function registerAuthRoutes(
       }
 
       app.setSession(reply, user);
+      auditService.record({ actor: user.id, action: "auth.login", payload: { method: "password" } });
       const response: AuthResponse = { user };
       return reply.send(response);
     }
   );
 
-  app.post("/api/auth/logout", async (_request, reply) => {
+  app.post("/api/auth/logout", async (request, reply) => {
+    if (request.sessionId) {
+      sessionService.revoke(request.sessionId);
+      if (request.user) {
+        auditService.record({ actor: request.user.id, action: "auth.logout" });
+      }
+    }
     app.clearSession(reply);
     return reply.send({ status: "ok" });
   });
@@ -126,6 +137,7 @@ export async function registerAuthRoutes(
         return reply.redirect("/login?error=github_unbound");
       }
       app.setSession(reply, owner);
+      auditService.record({ actor: owner.id, action: "auth.login", payload: { method: "github" } });
       return reply.redirect("/admin");
     } catch (error) {
       request.log.error({ error }, "github oauth callback failed");

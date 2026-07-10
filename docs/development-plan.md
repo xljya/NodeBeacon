@@ -350,6 +350,14 @@ P1 验证记录：2026-07-06 已用浏览器在 `https://monitor.liucf.com/` 端
 - **版本单源 + 发布流水线**：根 `package.json.version` 成为唯一版本源（升至 0.7.0），API 启动时读取（`APP_VERSION` env 仅作覆盖，deployment.yaml 已删除该 env）；新增 `scripts/deploy.sh`（RS1000 上执行：校验 deployment.yaml 镜像 tag 与版本一致→build→ctr import→apply→rollout→冒烟断言，不一致直接拒绝，git 始终是清单事实源）；新增 GitHub Actions CI（push/PR 跑 shared build → typecheck → vitest → build，e2e 保留在本地）。
 - **验证**：`pnpm typecheck`/`test` 全绿（42 用例，新增 9：并发 PATCH 双写保留、`.bak.1` 轮转、排序排列成功/非排列 400、损坏文件降级 seed 后 `/api/status` 仍 200、异源 Origin 403、合法 Origin/无 Origin 放行）。
 
+进展记录：2026-07-11 `0.8.0`「有据可查」——SQLite 只承载会话与审计，节点注册表继续保留 YAML 的可读、可导出和 ConfigMap seed 运维价值。
+
+- **SQLite 基础设施**：引入 `better-sqlite3`，生产库固定为 `/data/nodebeacon.db`；启动时按 `PRAGMA user_version` 顺序迁移，启用 WAL、`busy_timeout` 与 `synchronous=NORMAL`。Deployment 改为 `Recreate`，避免滚动窗口出现两个进程同时写一个 PVC。
+- **可吊销会话**：Cookie 只携带随机 token，SQLite 只保存其 SHA-256 摘要、owner id、创建/过期时间、IP 和 User-Agent；请求必须命中未过期、未吊销记录。登出变成服务端真吊销，`/admin/sessions` 可列出并单条吊销活跃会话，Pod 重启后会话仍可解析；原 `0.7.x` 无状态 Cookie 在升级后会要求重新登录一次。
+- **审计流水**：新增 `audit_events`，记录 owner 登录/登出、节点新增/修改/删除/排序和会话吊销；`/admin/activity` 从运行快照升级为持久化时间线，并可展开事件 payload。会话管理 API 返回的是 token 摘要而非 Cookie 凭据，不破坏 `httpOnly` 边界。
+- **备份恢复**：新增在线 SQLite backup CLI（完成后自动跑 `integrity_check`）、`scripts/backup.sh`（打包数据库 + `nodes.yaml` 并通过 scp 送异地 VPS）、host cron 示例、恢复 Pod 模板和逐步恢复演练手册。`0.8.0` 发布时已配置 RS1000 专用密钥 → netcup 低权限备份账号、每日 03:17 cron，并从首份真实异地归档启动隔离恢复容器完成 `integrity_check` + 5/5 节点验收。
+- **验证**：新增迁移幂等、在线备份完整性、重启后会话存续、单条吊销互不影响、登出后旧 Cookie 401、节点写操作审计和新管理 API 未登录 401 测试；API 测试增至 50 个用例。生产 `0.8.0` 已验证 5/5 节点、SQLite `user_version=1`/WAL/`integrity_check=ok`、真实会话跨 Recreate 重启存续、伪造 Origin 403、登出后 Cookie 重放 401。
+
 ### P2：核心增强
 
 | 状态 | 任务 | 交付标准 | 备注 |
@@ -383,7 +391,7 @@ P2 进展记录：2026-07-09 `0.4.0` 交付节点详情 + 趋势主线（P2 前�
 
 | 状态 | 任务 | 交付标准 | 备注 |
 | --- | --- | --- | --- |
-| 已完成（只读版） | 登录和会话 | `owner` 角色可用；cookie 使用 `httpOnly + Secure + SameSite=Lax` | 生产 `0.2.3` 已上线；本轮无状态签名 Cookie，`viewer` 角色和 SQLite 会话延后 |
+| 已完成 | 登录和会话 | `owner` 角色可用；cookie 使用 `httpOnly + Secure + SameSite=Lax` 且服务端可吊销 | `0.8.0`：SQLite 会话、token 摘要存储、登出/单条吊销、重启存续；`viewer` 等真实第二用户出现再做 |
 | 已完成 | 初始管理员创建方式 | 支持通过环境变量创建初始 `owner` 账号 | 生产 Secret 提供 `INITIAL_OWNER_*`；自由注册保持关闭 |
 | 已完成 | 管理员后台入口和布局 | `/admin` 仅 `owner` 可访问；首屏为 Komari 风格 Server / Node list，并包含设置、通知、远程入口、延迟、会话、账号、日志、关于、文档、首页和主题入口 | `0.6.0`：顶部栏 + 左侧 Komari 风格菜单 + 紧凑节点表；Remote Exec 入口保留但明确不启用浏览器 shell/agent 命令 |
 | 已完成（YAML 写回） | 节点手动分组管理 | 管理后台可修改服务器展示分组、展示名、区域、标签、排序和可见性 | `0.6.0`：owner-only `POST/PATCH/DELETE /api/admin/nodes` 写入 `/data/nodes.yaml`；修改后影响首页分组筛选和节点列表展示 |
@@ -391,8 +399,8 @@ P2 进展记录：2026-07-09 `0.4.0` 交付节点详情 + 趋势主线（P2 前�
 | 已完成 | 管理后台节点配置页 | 表格展示所有节点；详情抽屉或编辑面板修改分组和展示元数据 | `0.6.0`：表格列和操作区对齐 Komari 截图；保存走 YAML 注册表写回 |
 | 部分完成 | 登录限速与安全响应头 | `/api/auth/login` 限速；CSP/HSTS 等安全响应头 | 登录限速已随 `0.2.3` 上线；CSP/HSTS 在 nginx/Cloudflare 侧补 |
 | 已完成（重新定性） | CSRF 防护 | 写回类 admin 接口不可被跨站伪造 | 读码结论：`SameSite=Lax` Cookie + CORS 锁定 `WEB_ORIGIN` + JSON-only body 解析已封死经典 CSRF 路径；`0.7.0` 补 Origin 头兜底校验（携带会话的写请求 Origin 不匹配即 403），double-submit token 不再需要 |
-| 待做（绑定首次 SQLite 写入） | SQLite 备份策略 | 有备份路径、恢复步骤、保留周期和恢复演练说明 | 本轮登录不落 SQLite，时机与节点写回/incident 绑定 |
-| 待做（随写回·多用户） | 会话/用户持久化升级到 SQLite | users + sessions 落 SQLite，支持可撤销会话与 `viewer` 角色 | 从无状态 Cookie 迁移；接口边界本轮已留好 |
+| 已完成 | SQLite 备份策略 | 有备份路径、恢复步骤、保留周期和恢复演练说明 | `0.8.0`：在线备份 + 7 天本地保留 + netcup 异地归档 + 每日 cron；首份归档已完成隔离恢复演练并回填记录 |
+| 已完成（会话） | 会话持久化升级到 SQLite | sessions 落 SQLite，支持可撤销会话 | `0.8.0` 完成；users 表、`viewer` 与账号 CRUD 明确等第二个真实用户出现再做 |
 | 部分完成 | 镜像构建/发布流水线 | 脚本化 build+import、按 git sha 打 tag；可选 GitHub Actions | `0.7.0`：`scripts/deploy.sh`（版本一致性校验 + build/import/apply/rollout/冒烟断言）+ GitHub Actions CI（typecheck/test/build）；按 git sha 打 tag 未做，发版仍按语义版本 |
 | 待做 | Cloudflare 缓存和 WAF 规则 | `/api/*`、`/auth/*` 不缓存；登录限速 | 和 RS1000 nginx 配置一起记录 |
 | 部分完成 | UI 细节打磨 | 空状态、骨架屏、键盘可访问性、移动端触控区域 | `0.6.2`：全局 focus-visible / hover / active / disabled 状态、共享加载与错误组件、空状态图标与动作、抽屉动画、密度收紧、窄屏 Group 标签可滚动、760–900px 遮罩修复；骨架屏仍待做 |
@@ -406,7 +414,7 @@ P3 完成判定：NodeBeacon 不只是能上线，还能长期维护、升级、
 - `/admin/nodes`：服务器列表、手动分组、标签、区域、排序、是否公开展示。
 - `/admin/users`：用户列表、角色、最近登录时间、禁用账号。
 - `/admin/settings`：注册开关、缓存 TTL、公开页展示策略和安全提示。
-- `/admin/activity`：实时运行快照、数据源状态、最近节点上报；持久化审计日志随 SQLite 写回阶段加入。
+- `/admin/activity`：SQLite 持久化的 owner 认证、节点写操作与会话吊销审计时间线。
 - `/admin/about`：版本、运行时配置摘要、安全边界、源码/参考链接。
 
 后台视觉延续状态页的设计语言：浅色和深色主题一致、顶部摘要 + 紧凑表格 + 右侧抽屉/面板编辑；组件密度和操作路径可以参考 Komari 的监控后台风格，但 NodeBeacon 只保留当前项目需要的节点展示配置、用户和系统状态管理。

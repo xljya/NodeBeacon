@@ -1231,6 +1231,107 @@ button.admin-menu-btn {
   min-width: 0;
 }
 
+.audit-timeline {
+  gap: 8px;
+}
+.audit-item {
+  align-items: flex-start;
+}
+.audit-event-body {
+  min-width: 0;
+  flex: 1;
+}
+.audit-event-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+.audit-event-head time {
+  flex: none;
+  color: var(--text-muted);
+  font-size: 12px;
+}
+.audit-payload summary {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  color: var(--accent);
+  font-size: 12px;
+  cursor: pointer;
+}
+.audit-payload[open] summary svg {
+  transform: rotate(180deg);
+}
+.audit-payload pre {
+  max-height: 280px;
+  margin: 10px 0 0;
+  padding: 12px;
+  overflow: auto;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface);
+  color: var(--text-muted);
+  font-size: 11px;
+  white-space: pre-wrap;
+}
+
+/* ---------- Sessions ---------- */
+
+.session-list {
+  gap: 0;
+}
+.session-row {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) minmax(230px, auto) auto;
+  align-items: center;
+  gap: 14px;
+  padding: 14px 0;
+  border-bottom: 1px solid var(--border);
+}
+.session-row:last-child {
+  border-bottom: 0;
+}
+.session-device {
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 10%, transparent);
+}
+.session-main,
+.session-times {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 4px;
+}
+.session-main > div {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.session-main b {
+  font-size: 14px;
+}
+.session-main span,
+.session-times span {
+  overflow: hidden;
+  color: var(--text-muted);
+  font-size: 12px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.ghost-btn.danger {
+  color: var(--bad);
+}
+.ghost-btn.danger:hover {
+  border-color: color-mix(in srgb, var(--bad) 35%, var(--border));
+  background: color-mix(in srgb, var(--bad) 8%, var(--surface));
+}
+
 /* ---------- Login ---------- */
 
 .login-screen {
@@ -1538,6 +1639,12 @@ button.admin-menu-btn {
   }
   .activity-node-row > .mono {
     grid-column: 1 / -1;
+  }
+  .session-row {
+    grid-template-columns: auto minmax(0, 1fr) auto;
+  }
+  .session-times {
+    grid-column: 2 / -1;
   }
   .list-row {
     grid-template-columns: minmax(0, 1fr) auto;

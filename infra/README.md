@@ -20,10 +20,11 @@ monitor.liucf.com
 | --- | --- |
 | `k8s/namespace.yaml` | `nodebeacon` namespace |
 | `k8s/configmap-nodes.yaml` | Node registry seed (`/config/nodes.yaml`), Prometheus label mapping |
-| `k8s/secret.example.yaml` | Reserved secrets (P3). Copy + fill privately; never commit real values |
+| `k8s/secret.example.yaml` | Auth/OAuth secret template. Copy + fill privately; never commit real values |
 | `k8s/deployment.yaml` | App Deployment, env, probes, security context |
 | `k8s/service.yaml` | NodePort 31003 |
-| `k8s/pvc.yaml` | Placeholder PVC for P3 SQLite (`/data`) |
+| `k8s/pvc.yaml` | Runtime YAML registry and SQLite state (`/data`) |
+| `k8s/restore-pod.example.yaml` | One-shot PVC mount used only during a restore drill |
 | `k8s/kustomization.yaml` | `kubectl apply -k k8s` (Secret excluded on purpose) |
 | `nginx/monitor.liucf.com.conf` | Committed copy of the live RS1000 nginx entry |
 
@@ -62,8 +63,8 @@ single-sourced from the root `package.json`; the script refuses to run if
 Manual fallback (what the script automates):
 
 ```sh
-docker build -t nodebeacon:0.7.0 .
-docker save nodebeacon:0.7.0 | sudo k3s ctr images import -
+docker build -t nodebeacon:0.8.0 .
+docker save nodebeacon:0.8.0 | sudo k3s ctr images import -
 ```
 
 ## Deploy
@@ -105,9 +106,9 @@ curl -i https://monitor.liucf.com/api/admin/summary
 curl -I https://monitor.liucf.com/api/auth/github
 ```
 
-For `0.7.3`, expected production checks are:
+For `0.8.0`, expected production checks are:
 
-- image: `nodebeacon:0.7.3`
+- image: `nodebeacon:0.8.0`
 - `/readyz` and `/healthz`: HTTP 200
 - `/api/status`: `summary.total == 5` and `summary.online == 5`
 - `/api/auth/config`: password and GitHub login both enabled
@@ -136,8 +137,10 @@ For `0.7.3`, expected production checks are:
   dense (52px rows) and the column-visibility popover closes on outside click.
 - `/admin/about`: owner-only runtime/about page renders version, delivery,
   Prometheus/cache/auth boundaries, and repo/reference links.
-- `/admin/activity`: owner-only live activity snapshot renders current admin API
-  data as an operations timeline without claiming persisted audit logs.
+- `/admin/activity`: owner-only persisted audit timeline shows authentication,
+  node registry mutations, and session revocations from SQLite.
+- `/admin/sessions`: lists active SQLite-backed sessions; revoking one makes its
+  previously issued Cookie return HTTP 401 without affecting other sessions.
 - `/admin/nodes`: row actions can copy the Prometheus selector, download a YAML
   snippet, edit node display metadata, edit billing metadata, delete nodes, and
   copy selectors for selected rows from the bulk bar. Drag-reorder issues a
@@ -154,10 +157,92 @@ For `0.7.3`, expected production checks are:
   (expect `nodes.yaml` plus `nodes.yaml.bak.1..3` after repeated saves; writes
   are atomic tmp+rename, and a corrupt runtime file degrades to the seed
   instead of failing `/api/status`)
+- SQLite state: `/data/nodebeacon.db` exists, `PRAGMA journal_mode` is `wal`,
+  and an authenticated session still resolves after `rollout restart`; signing
+  out and replaying the old Cookie returns HTTP 401.
+- Deployment strategy is `Recreate`, preventing old and new Pods from writing
+  the shared SQLite/YAML PVC at the same time.
+- `scripts/backup.sh` succeeds from host cron, the archive is visible on the
+  configured off-site VPS, and the restore-drill table below records a verified
+  recovery before 0.8.0 is considered fully accepted.
 - Remote Exec entry points render the NodeBeacon security-boundary notice; this
   app does not expose browser shell or agent command execution.
 - `/admin/settings`: read-only appearance section shows browser-local theme
   preference boundaries alongside data/cache/auth/security/release sections.
+
+## SQLite and registry off-site backup
+
+`scripts/backup.sh` uses SQLite's online backup API inside the running Pod,
+runs an integrity check, includes `/data/nodes.yaml` when present, creates a
+compressed archive on RS1000, and copies it to another host over SSH. The
+destination must be a genuinely separate VPS or storage account; another path
+on RS1000 does not count as off-site backup.
+
+First run it interactively and confirm the archive exists on the remote host:
+
+```sh
+sudo install -d -m 0750 -o "$USER" /var/backups/nodebeacon
+export NODEBEACON_BACKUP_REMOTE='backup@OTHER_VPS:/srv/backups/nodebeacon/'
+export NODEBEACON_BACKUP_IDENTITY='/root/.ssh/id_ed25519_nodebeacon_backup'
+/usr/bin/env bash ./scripts/backup.sh
+ssh backup@OTHER_VPS 'ls -lh /srv/backups/nodebeacon/'
+```
+
+Then install the nightly host cron entry. Use a dedicated SSH key restricted to
+the remote backup account/path and keep the cron environment outside git:
+
+```cron
+17 3 * * * NODEBEACON_BACKUP_REMOTE='backup@OTHER_VPS:/srv/backups/nodebeacon/' NODEBEACON_BACKUP_IDENTITY='/root/.ssh/id_ed25519_nodebeacon_backup' /usr/bin/env bash /path/to/NodeBeacon/scripts/backup.sh >>/var/log/nodebeacon-backup.log 2>&1
+```
+
+The script keeps seven days of local archives by default. Remote retention is
+owned by the destination host and should be configured independently.
+
+## Restore drill
+
+Always test with a copied archive first. The application must be scaled to zero
+before replacing either SQLite or YAML so no writer overlaps the restore pod.
+
+```sh
+mkdir -p /tmp/nodebeacon-restore
+tar -xzf nodebeacon-YYYYMMDDTHHMMSSZ.tar.gz -C /tmp/nodebeacon-restore
+
+kubectl -n nodebeacon scale deploy/nodebeacon --replicas=0
+kubectl apply -f infra/k8s/restore-pod.example.yaml
+kubectl -n nodebeacon wait --for=condition=Ready pod/nodebeacon-restore --timeout=60s
+
+kubectl -n nodebeacon cp /tmp/nodebeacon-restore/nodebeacon.db \
+  nodebeacon-restore:/data/nodebeacon.db.restore
+kubectl -n nodebeacon exec nodebeacon-restore -- \
+  node apps/api/dist/cli/backupDatabase.js \
+  /data/nodebeacon.db.restore /data/nodebeacon.verify.db
+kubectl -n nodebeacon exec nodebeacon-restore -- rm -f /data/nodebeacon.verify.db
+
+# Install the verified snapshot and discard stale WAL sidecars.
+kubectl -n nodebeacon exec nodebeacon-restore -- sh -c \
+  'rm -f /data/nodebeacon.db-wal /data/nodebeacon.db-shm && mv /data/nodebeacon.db.restore /data/nodebeacon.db'
+
+if test -f /tmp/nodebeacon-restore/nodes.yaml; then
+  kubectl -n nodebeacon cp /tmp/nodebeacon-restore/nodes.yaml \
+    nodebeacon-restore:/data/nodes.yaml.restore
+  kubectl -n nodebeacon exec nodebeacon-restore -- mv \
+    /data/nodes.yaml.restore /data/nodes.yaml
+fi
+
+kubectl -n nodebeacon delete pod/nodebeacon-restore
+kubectl -n nodebeacon scale deploy/nodebeacon --replicas=1
+kubectl -n nodebeacon rollout status deploy/nodebeacon --timeout=180s
+curl -fsS http://10.77.0.1:31003/readyz
+```
+
+After each drill, record the date, archive name, SQLite integrity result,
+restored node count, session/audit spot check, and operator here. Do not mark a
+production rehearsal successful until all checks have run against the restored
+PVC.
+
+| Date (UTC) | Archive | Result | Notes |
+| --- | --- | --- | --- |
+| 2026-07-10 | `nodebeacon-20260710T173936Z.tar.gz` | Passed | Restored from the real netcup archive into an isolated RS1000 container; SQLite online backup integrity passed and `/api/status` returned 5/5 nodes online |
 
 ## Roll back
 

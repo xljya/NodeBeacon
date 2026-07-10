@@ -5,6 +5,8 @@ import type {
   AdminNodeResponse,
   AdminNode,
   AdminNodesResponse,
+  AdminAuditEventsResponse,
+  AdminSessionsResponse,
   AdminSummaryResponse,
   AdminUsersResponse,
   NodeBilling,
@@ -15,6 +17,8 @@ import { buildApiError } from "@nodebeacon/shared";
 import type { ApiEnv } from "../config/env.js";
 import { loadNodeRegistry, saveNodeRegistry, withRegistryLock } from "../config/nodeRegistry.js";
 import type { AuthService } from "../services/authService.js";
+import type { AuditService } from "../services/auditService.js";
+import type { SessionService } from "../services/sessionService.js";
 import { clearStatusCache, getStatus } from "../services/statusService.js";
 
 const NODE_ID_PATTERN = /^[a-zA-Z0-9][a-zA-Z0-9._-]{0,63}$/;
@@ -211,7 +215,9 @@ async function getAdminNodes(env: ApiEnv, logger: Parameters<typeof getStatus>[1
 export async function registerAdminRoutes(
   app: FastifyInstance,
   env: ApiEnv,
-  authService: AuthService
+  authService: AuthService,
+  sessionService: SessionService,
+  auditService: AuditService
 ): Promise<void> {
   // All admin endpoints are owner-only. Mutating routes only write the node
   // registry metadata; they never proxy shell/agent execution.
@@ -259,6 +265,12 @@ export async function registerAdminRoutes(
           return created;
         });
         clearStatusCache();
+        auditService.record({
+          actor: request.user!.id,
+          action: "node.created",
+          entityId: entry.id,
+          payload: entry
+        });
         const adminNodes = await getAdminNodes(env, request.log);
         const node = adminNodes.find((candidate) => candidate.id === entry.id);
         if (!node) return reply.code(500).send(buildApiError("node_save_failed", "Node was saved but could not be reloaded."));
@@ -304,6 +316,11 @@ export async function registerAdminRoutes(
           await saveNodeRegistry(reordered, env.nodeConfigPath);
         });
         clearStatusCache();
+        auditService.record({
+          actor: request.user!.id,
+          action: "node.reordered",
+          payload: { ids }
+        });
         return { nodes: await getAdminNodes(env, request.log) };
       } catch (error) {
         if (error instanceof AdminValidationError) {
@@ -321,7 +338,7 @@ export async function registerAdminRoutes(
     async (request, reply): Promise<AdminNodeResponse | void> => {
       try {
         const input = cleanMutation(request.body);
-        await withRegistryLock(async () => {
+        const updated = await withRegistryLock(async () => {
           const nodes = await loadNodeRegistry(env.nodeConfigPath, env.nodeConfigSeedPath, request.log);
           const index = nodes.findIndex((node) => node.id === request.params.id);
           const existing = index === -1 ? undefined : nodes[index];
@@ -329,10 +346,18 @@ export async function registerAdminRoutes(
             throw new AdminValidationError("Unknown node id.", 404, "node_not_found");
           }
           const updatedNodes = [...nodes];
-          updatedNodes[index] = patchNodeEntry(existing, input);
+          const updated = patchNodeEntry(existing, input);
+          updatedNodes[index] = updated;
           await saveNodeRegistry(updatedNodes, env.nodeConfigPath);
+          return updated;
         });
         clearStatusCache();
+        auditService.record({
+          actor: request.user!.id,
+          action: "node.updated",
+          entityId: request.params.id,
+          payload: { changes: input, node: updated }
+        });
         const node = (await getAdminNodes(env, request.log)).find((candidate) => candidate.id === request.params.id);
         if (!node) return reply.code(500).send(buildApiError("node_save_failed", "Node was saved but could not be reloaded."));
         return { node };
@@ -351,15 +376,23 @@ export async function registerAdminRoutes(
     ownerOnly,
     async (request, reply): Promise<{ ok: true } | void> => {
       try {
-        await withRegistryLock(async () => {
+        const deleted = await withRegistryLock(async () => {
           const nodes = await loadNodeRegistry(env.nodeConfigPath, env.nodeConfigSeedPath, request.log);
+          const deleted = nodes.find((node) => node.id === request.params.id);
           const updatedNodes = nodes.filter((node) => node.id !== request.params.id);
-          if (updatedNodes.length === nodes.length) {
+          if (!deleted) {
             throw new AdminValidationError("Unknown node id.", 404, "node_not_found");
           }
           await saveNodeRegistry(updatedNodes, env.nodeConfigPath);
+          return deleted;
         });
         clearStatusCache();
+        auditService.record({
+          actor: request.user!.id,
+          action: "node.deleted",
+          entityId: request.params.id,
+          payload: deleted
+        });
         return { ok: true };
       } catch (error) {
         if (error instanceof AdminValidationError) {
@@ -374,4 +407,34 @@ export async function registerAdminRoutes(
   app.get("/api/admin/users", ownerOnly, async (): Promise<AdminUsersResponse> => {
     return { users: authService.getUsers() };
   });
+
+  app.get("/api/admin/sessions", ownerOnly, async (request): Promise<AdminSessionsResponse> => ({
+    sessions: sessionService.listActive(request.user!.id, request.sessionId)
+  }));
+
+  app.delete<{ Params: { id: string } }>(
+    "/api/admin/sessions/:id",
+    ownerOnly,
+    async (request, reply): Promise<{ ok: true } | void> => {
+      if (!sessionService.revoke(request.params.id, request.user!.id)) {
+        return reply.code(404).send(buildApiError("session_not_found", "Active session not found."));
+      }
+      auditService.record({
+        actor: request.user!.id,
+        action: "session.revoked",
+        entityId: request.params.id
+      });
+      if (request.sessionId === request.params.id) app.clearSession(reply);
+      return { ok: true };
+    }
+  );
+
+  app.get<{ Querystring: { limit?: string } }>(
+    "/api/admin/audit-events",
+    ownerOnly,
+    async (request): Promise<AdminAuditEventsResponse> => {
+      const parsed = Number.parseInt(request.query.limit ?? "100", 10);
+      return { events: auditService.list(Number.isFinite(parsed) ? parsed : 100) };
+    }
+  );
 }

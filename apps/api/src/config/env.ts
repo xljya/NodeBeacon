@@ -7,6 +7,8 @@ export interface ApiEnv {
   webOrigin: string;
   /** Release version: APP_VERSION env override, else the root package.json version. */
   appVersion: string;
+  /** SQLite state database (sessions and audit events; node registry stays YAML). */
+  databasePath: string;
   nodeConfigPath?: string;
   nodeConfigSeedPath?: string;
   prometheusUrl?: string;
@@ -17,7 +19,7 @@ export interface ApiEnv {
   statusCacheTtlSeconds: number;
   /** Prometheus job label of the blackbox HTTP probes ("" disables /api/latency). */
   probeJob: string;
-  // Auth (owner from env; stateless signed-cookie sessions).
+  // Auth (owner from env; revocable SQLite-backed signed-cookie sessions).
   cookieSecret: string;
   secureCookie: boolean;
   sessionTtlSeconds: number;
@@ -64,6 +66,7 @@ function readAppVersion(): string {
 }
 
 export function loadEnv(): ApiEnv {
+  const nodeEnv = process.env.NODE_ENV ?? "development";
   const prometheusUrl = process.env.PROMETHEUS_URL?.trim();
   const prometheusBasicAuthUsername = process.env.PROMETHEUS_BASIC_AUTH_USERNAME?.trim();
   const prometheusBasicAuthPassword = process.env.PROMETHEUS_BASIC_AUTH_PASSWORD?.trim();
@@ -82,6 +85,9 @@ export function loadEnv(): ApiEnv {
     port: numberFromEnv("API_PORT", 3001),
     webOrigin: process.env.WEB_ORIGIN ?? "http://localhost:5173",
     appVersion: readAppVersion(),
+    databasePath:
+      process.env.NODEBEACON_DATABASE_PATH?.trim() ||
+      (nodeEnv === "production" ? "/data/nodebeacon.db" : nodeEnv === "test" ? ":memory:" : "./data/nodebeacon.db"),
     nodeConfigPath: process.env.NODEBEACON_NODE_CONFIG,
     nodeConfigSeedPath: process.env.NODEBEACON_NODE_CONFIG_SEED,
     prometheusUrl: prometheusUrl || undefined,
@@ -94,7 +100,7 @@ export function loadEnv(): ApiEnv {
     // A dev-only fallback keeps local `pnpm dev` working without a .env; in
     // production COOKIE_SECRET must be set (see the k8s Secret).
     cookieSecret: cookieSecret || "nodebeacon-dev-insecure-cookie-secret-change-me",
-    secureCookie: (process.env.NODE_ENV ?? "development") === "production",
+    secureCookie: nodeEnv === "production",
     sessionTtlSeconds: numberFromEnv("SESSION_TTL_SECONDS", 7 * 24 * 60 * 60),
     allowRegister: boolFromEnv("ALLOW_REGISTER", false),
     initialOwnerEmail: initialOwnerEmail || undefined,

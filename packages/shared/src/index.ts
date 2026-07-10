@@ -264,6 +264,33 @@ export interface AdminUsersResponse {
   users: AuthUser[];
 }
 
+export interface AdminSession {
+  id: string;
+  userId: string;
+  createdAt: string;
+  expiresAt: string;
+  ipAddress?: string;
+  userAgent?: string;
+  current: boolean;
+}
+
+export interface AdminSessionsResponse {
+  sessions: AdminSession[];
+}
+
+export interface AdminAuditEvent {
+  id: number;
+  timestamp: string;
+  actor: string;
+  action: string;
+  entityId?: string;
+  payload?: unknown;
+}
+
+export interface AdminAuditEventsResponse {
+  events: AdminAuditEvent[];
+}
+
 const gib = 1024 ** 3;
 
 export const statusFixture: ApiStatusResponse = {

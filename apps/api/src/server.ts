@@ -16,6 +16,9 @@ import { registerAuthRoutes } from "./routes/auth.js";
 import { registerAdminRoutes } from "./routes/admin.js";
 import { registerAuthGuard } from "./plugins/authGuard.js";
 import { createAuthService } from "./services/authService.js";
+import { openDatabase } from "./services/database.js";
+import { createSessionService } from "./services/sessionService.js";
+import { createAuditService } from "./services/auditService.js";
 
 const webDistPath = fileURLToPath(new URL("../../web/dist/", import.meta.url));
 
@@ -37,8 +40,12 @@ export async function createApp() {
   // global:false => only routes that opt in (login) are rate limited.
   await app.register(rateLimit, { global: false });
 
+  const database = openDatabase(env.databasePath);
   const authService = createAuthService(env);
-  registerAuthGuard(app, env, authService);
+  const sessionService = createSessionService(database);
+  const auditService = createAuditService(database);
+  registerAuthGuard(app, env, authService, sessionService);
+  app.addHook("onClose", async () => database.close());
 
   // Own observability: request volume + duration by route pattern (bounded
   // cardinality — the pattern, e.g. "/api/nodes/:id", never the raw URL).
@@ -54,8 +61,8 @@ export async function createApp() {
   await registerNodeRoutes(app, env);
   await registerLatencyRoutes(app, env);
   await registerMetricsRoutes(app);
-  await registerAuthRoutes(app, env, authService);
-  await registerAdminRoutes(app, env, authService);
+  await registerAuthRoutes(app, env, authService, sessionService, auditService);
+  await registerAdminRoutes(app, env, authService, sessionService, auditService);
 
   if (existsSync(webDistPath)) {
     await app.register(fastifyStatic, {

@@ -1,20 +1,17 @@
 import type { FastifyInstance, FastifyReply, FastifyRequest, preHandlerHookHandler } from "fastify";
-import { buildApiError, type AuthUser, type UserRole } from "@nodebeacon/shared";
+import { buildApiError, type AuthUser } from "@nodebeacon/shared";
 import type { ApiEnv } from "../config/env.js";
 import type { AuthService } from "../services/authService.js";
+import type { SessionService } from "../services/sessionService.js";
 
 const SESSION_COOKIE = "nb_session";
-
-interface SessionPayload {
-  sub: string;
-  role: UserRole;
-  exp: number; // epoch seconds
-}
 
 declare module "fastify" {
   interface FastifyRequest {
     /** Populated from the signed session cookie on every request (or undefined). */
     user?: AuthUser;
+    /** Opaque persisted session id, when the request has an active session. */
+    sessionId?: string;
   }
   interface FastifyInstance {
     requireAuth: preHandlerHookHandler;
@@ -24,33 +21,21 @@ declare module "fastify" {
   }
 }
 
-function encode(payload: SessionPayload): string {
-  return Buffer.from(JSON.stringify(payload), "utf8").toString("base64url");
-}
-
-function decode(raw: string): SessionPayload | null {
-  try {
-    const parsed = JSON.parse(Buffer.from(raw, "base64url").toString("utf8")) as SessionPayload;
-    if (typeof parsed.sub === "string" && typeof parsed.exp === "number" && typeof parsed.role === "string") {
-      return parsed;
-    }
-    return null;
-  } catch {
-    return null;
-  }
-}
-
-function readUser(request: FastifyRequest, authService: AuthService): AuthUser | undefined {
+function readUser(
+  request: FastifyRequest,
+  authService: AuthService,
+  sessionService: SessionService
+): AuthUser | undefined {
   const raw = request.cookies[SESSION_COOKIE];
   if (!raw) return undefined;
   const unsigned = request.unsignCookie(raw);
   if (!unsigned.valid || !unsigned.value) return undefined;
-  const payload = decode(unsigned.value);
-  if (!payload) return undefined;
-  if (payload.exp * 1000 <= Date.now()) return undefined;
+  const session = sessionService.resolve(unsigned.value);
+  if (!session) return undefined;
   // Resolve against the current owner so a stale/renamed owner cookie is rejected.
-  const user = authService.getUserById(payload.sub);
-  if (!user || user.role !== payload.role) return undefined;
+  const user = authService.getUserById(session.userId);
+  if (!user) return undefined;
+  request.sessionId = session.id;
   return user;
 }
 
@@ -79,9 +64,14 @@ function originAllowed(request: FastifyRequest, webOrigin: string): boolean {
  * Registers session helpers and the owner-only guard. @fastify/cookie MUST be
  * registered before this so request.cookies / unsignCookie are available.
  */
-export function registerAuthGuard(app: FastifyInstance, env: ApiEnv, authService: AuthService): void {
+export function registerAuthGuard(
+  app: FastifyInstance,
+  env: ApiEnv,
+  authService: AuthService,
+  sessionService: SessionService
+): void {
   app.addHook("onRequest", async (request, reply) => {
-    request.user = readUser(request, authService);
+    request.user = readUser(request, authService, sessionService);
     if (SAFE_METHODS.has(request.method) || !request.user) return;
     if (!originAllowed(request, env.webOrigin)) {
       request.log.warn({ origin: request.headers.origin }, "rejected cross-origin mutating request");
@@ -90,8 +80,11 @@ export function registerAuthGuard(app: FastifyInstance, env: ApiEnv, authService
   });
 
   app.decorate("setSession", function setSession(reply: FastifyReply, user: AuthUser): void {
-    const exp = Math.floor(Date.now() / 1000) + env.sessionTtlSeconds;
-    reply.setCookie(SESSION_COOKIE, encode({ sub: user.id, role: user.role, exp }), {
+    const sessionId = sessionService.create(user, env.sessionTtlSeconds, {
+      ipAddress: reply.request.ip,
+      userAgent: reply.request.headers["user-agent"]
+    });
+    reply.setCookie(SESSION_COOKIE, sessionId, {
       signed: true,
       httpOnly: true,
       sameSite: "lax",
