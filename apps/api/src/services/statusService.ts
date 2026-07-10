@@ -22,6 +22,7 @@ interface CachedStatus {
 
 interface StatusServiceLogger {
   warn(payload: unknown, message?: string): void;
+  error(payload: unknown, message?: string): void;
 }
 
 let cachedStatus: CachedStatus | null = null;
@@ -94,7 +95,7 @@ export async function getStatus(env: ApiEnv, logger?: StatusServiceLogger): Prom
   }
   recordCacheEvent("status", "miss");
 
-  const registry = await loadNodeRegistry(env.nodeConfigPath, env.nodeConfigSeedPath);
+  const registry = await loadNodeRegistry(env.nodeConfigPath, env.nodeConfigSeedPath, logger);
   const now = new Date(nowMs).toISOString();
   const client = createPrometheusClient(env);
   let response: ApiStatusResponse;

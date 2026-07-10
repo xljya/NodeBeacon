@@ -54,13 +54,39 @@ function readUser(request: FastifyRequest, authService: AuthService): AuthUser |
   return user;
 }
 
+const SAFE_METHODS = new Set(["GET", "HEAD", "OPTIONS"]);
+
+/**
+ * Defense-in-depth CSRF backstop. The classic attack path is already blocked
+ * (SameSite=Lax cookie, CORS pinned to WEB_ORIGIN, JSON-only body parsing);
+ * this rejects any mutating request that carries a session but arrives with a
+ * mismatched Origin. Same-origin requests without an Origin header pass.
+ */
+function originAllowed(request: FastifyRequest, webOrigin: string): boolean {
+  const origin = request.headers.origin;
+  if (!origin) return true;
+  if (origin === webOrigin) return true;
+  try {
+    // Accept true same-origin calls (e.g. dev via the Vite proxy on another
+    // host/port): the Origin host must match the Host header we were hit on.
+    return new URL(origin).host === request.headers.host;
+  } catch {
+    return false;
+  }
+}
+
 /**
  * Registers session helpers and the owner-only guard. @fastify/cookie MUST be
  * registered before this so request.cookies / unsignCookie are available.
  */
 export function registerAuthGuard(app: FastifyInstance, env: ApiEnv, authService: AuthService): void {
-  app.addHook("onRequest", async (request) => {
+  app.addHook("onRequest", async (request, reply) => {
     request.user = readUser(request, authService);
+    if (SAFE_METHODS.has(request.method) || !request.user) return;
+    if (!originAllowed(request, env.webOrigin)) {
+      request.log.warn({ origin: request.headers.origin }, "rejected cross-origin mutating request");
+      return reply.code(403).send(buildApiError("origin_mismatch", "Cross-origin request rejected."));
+    }
   });
 
   app.decorate("setSession", function setSession(reply: FastifyReply, user: AuthUser): void {

@@ -94,7 +94,7 @@ export async function registerNodeRoutes(app: FastifyInstance, env: ApiEnv): Pro
         );
       }
 
-      const registry = await loadNodeRegistry(env.nodeConfigPath, env.nodeConfigSeedPath);
+      const registry = await loadNodeRegistry(env.nodeConfigPath, env.nodeConfigSeedPath, request.log);
       const node = registry.find((candidate) => candidate.id === request.params.id);
       if (!node) {
         return reply.code(404).send(buildApiError("node_not_found", "Unknown node id."));

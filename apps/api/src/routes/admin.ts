@@ -1,6 +1,7 @@
 import type { FastifyInstance } from "fastify";
 import type {
   AdminNodeMutation,
+  AdminNodeOrderRequest,
   AdminNodeResponse,
   AdminNode,
   AdminNodesResponse,
@@ -12,11 +13,10 @@ import type {
 } from "@nodebeacon/shared";
 import { buildApiError } from "@nodebeacon/shared";
 import type { ApiEnv } from "../config/env.js";
-import { loadNodeRegistry, saveNodeRegistry } from "../config/nodeRegistry.js";
+import { loadNodeRegistry, saveNodeRegistry, withRegistryLock } from "../config/nodeRegistry.js";
 import type { AuthService } from "../services/authService.js";
 import { clearStatusCache, getStatus } from "../services/statusService.js";
 
-const APP_VERSION = process.env.APP_VERSION ?? "0.6.2";
 const NODE_ID_PATTERN = /^[a-zA-Z0-9][a-zA-Z0-9._-]{0,63}$/;
 
 function safeHost(url: string): string | undefined {
@@ -202,7 +202,7 @@ function toAdminNode(node: StatusNode, registry?: NodeConfigEntry): AdminNode {
 async function getAdminNodes(env: ApiEnv, logger: Parameters<typeof getStatus>[1]): Promise<AdminNode[]> {
   const [status, registry] = await Promise.all([
     getStatus(env, logger),
-    loadNodeRegistry(env.nodeConfigPath, env.nodeConfigSeedPath)
+    loadNodeRegistry(env.nodeConfigPath, env.nodeConfigSeedPath, logger)
   ]);
   const registryById = new Map(registry.map((node) => [node.id, node]));
   return status.nodes.map((node) => toAdminNode(node, registryById.get(node.id)));
@@ -221,7 +221,7 @@ export async function registerAdminRoutes(
     const status = await getStatus(env, request.log);
     return {
       generatedAt: new Date().toISOString(),
-      version: APP_VERSION,
+      version: env.appVersion,
       prometheus: {
         configured: Boolean(env.prometheusUrl),
         host: env.prometheusUrl ? safeHost(env.prometheusUrl) : undefined,
@@ -252,9 +252,12 @@ export async function registerAdminRoutes(
     async (request, reply): Promise<AdminNodeResponse | void> => {
       try {
         const input = cleanMutation(request.body);
-        const nodes = await loadNodeRegistry(env.nodeConfigPath, env.nodeConfigSeedPath);
-        const entry = createNodeEntry(input, nodes);
-        await saveNodeRegistry([...nodes, entry], env.nodeConfigPath);
+        const entry = await withRegistryLock(async () => {
+          const nodes = await loadNodeRegistry(env.nodeConfigPath, env.nodeConfigSeedPath, request.log);
+          const created = createNodeEntry(input, nodes);
+          await saveNodeRegistry([...nodes, created], env.nodeConfigPath);
+          return created;
+        });
         clearStatusCache();
         const adminNodes = await getAdminNodes(env, request.log);
         const node = adminNodes.find((candidate) => candidate.id === entry.id);
@@ -270,25 +273,65 @@ export async function registerAdminRoutes(
     }
   );
 
+  // Batch reorder: one request instead of N concurrent PATCHes, so the whole
+  // permutation is applied under a single registry lock (no lost updates).
+  // Static route wins over ":id", so "order" is reserved as a node id.
+  app.patch<{ Body: AdminNodeOrderRequest }>(
+    "/api/admin/nodes/order",
+    ownerOnly,
+    async (request, reply): Promise<AdminNodesResponse | void> => {
+      try {
+        const body: unknown = request.body;
+        if (!isRecord(body) || !Array.isArray(body.ids)) {
+          throw new AdminValidationError("ids must be an array of node ids.", 400, "invalid_order");
+        }
+        const ids = body.ids.map(String);
+
+        await withRegistryLock(async () => {
+          const nodes = await loadNodeRegistry(env.nodeConfigPath, env.nodeConfigSeedPath, request.log);
+          const byId = new Map(nodes.map((node) => [node.id, node]));
+          const isPermutation =
+            ids.length === nodes.length &&
+            new Set(ids).size === ids.length &&
+            ids.every((id) => byId.has(id));
+          if (!isPermutation) {
+            throw new AdminValidationError("ids must list every node id exactly once.", 400, "invalid_order");
+          }
+          const reordered = ids.map((id, index) => ({
+            ...(byId.get(id) as NodeConfigEntry),
+            displayOrder: (index + 1) * 10
+          }));
+          await saveNodeRegistry(reordered, env.nodeConfigPath);
+        });
+        clearStatusCache();
+        return { nodes: await getAdminNodes(env, request.log) };
+      } catch (error) {
+        if (error instanceof AdminValidationError) {
+          return reply.code(error.statusCode).send(buildApiError(error.code, error.message));
+        }
+        request.log.error({ error }, "failed to reorder admin nodes");
+        return reply.code(503).send(buildApiError("node_registry_unwritable", "Node registry is not writable."));
+      }
+    }
+  );
+
   app.patch<{ Params: { id: string }; Body: AdminNodeMutation }>(
     "/api/admin/nodes/:id",
     ownerOnly,
     async (request, reply): Promise<AdminNodeResponse | void> => {
       try {
         const input = cleanMutation(request.body);
-        const nodes = await loadNodeRegistry(env.nodeConfigPath, env.nodeConfigSeedPath);
-        const index = nodes.findIndex((node) => node.id === request.params.id);
-        if (index === -1) {
-          return reply.code(404).send(buildApiError("node_not_found", "Unknown node id."));
-        }
-
-        const updatedNodes = [...nodes];
-        const existing = nodes[index];
-        if (!existing) {
-          return reply.code(404).send(buildApiError("node_not_found", "Unknown node id."));
-        }
-        updatedNodes[index] = patchNodeEntry(existing, input);
-        await saveNodeRegistry(updatedNodes, env.nodeConfigPath);
+        await withRegistryLock(async () => {
+          const nodes = await loadNodeRegistry(env.nodeConfigPath, env.nodeConfigSeedPath, request.log);
+          const index = nodes.findIndex((node) => node.id === request.params.id);
+          const existing = index === -1 ? undefined : nodes[index];
+          if (!existing) {
+            throw new AdminValidationError("Unknown node id.", 404, "node_not_found");
+          }
+          const updatedNodes = [...nodes];
+          updatedNodes[index] = patchNodeEntry(existing, input);
+          await saveNodeRegistry(updatedNodes, env.nodeConfigPath);
+        });
         clearStatusCache();
         const node = (await getAdminNodes(env, request.log)).find((candidate) => candidate.id === request.params.id);
         if (!node) return reply.code(500).send(buildApiError("node_save_failed", "Node was saved but could not be reloaded."));
@@ -308,15 +351,20 @@ export async function registerAdminRoutes(
     ownerOnly,
     async (request, reply): Promise<{ ok: true } | void> => {
       try {
-        const nodes = await loadNodeRegistry(env.nodeConfigPath, env.nodeConfigSeedPath);
-        const updatedNodes = nodes.filter((node) => node.id !== request.params.id);
-        if (updatedNodes.length === nodes.length) {
-          return reply.code(404).send(buildApiError("node_not_found", "Unknown node id."));
-        }
-        await saveNodeRegistry(updatedNodes, env.nodeConfigPath);
+        await withRegistryLock(async () => {
+          const nodes = await loadNodeRegistry(env.nodeConfigPath, env.nodeConfigSeedPath, request.log);
+          const updatedNodes = nodes.filter((node) => node.id !== request.params.id);
+          if (updatedNodes.length === nodes.length) {
+            throw new AdminValidationError("Unknown node id.", 404, "node_not_found");
+          }
+          await saveNodeRegistry(updatedNodes, env.nodeConfigPath);
+        });
         clearStatusCache();
         return { ok: true };
       } catch (error) {
+        if (error instanceof AdminValidationError) {
+          return reply.code(error.statusCode).send(buildApiError(error.code, error.message));
+        }
         request.log.error({ error, nodeId: request.params.id }, "failed to delete admin node");
         return reply.code(503).send(buildApiError("node_registry_unwritable", "Node registry is not writable."));
       }

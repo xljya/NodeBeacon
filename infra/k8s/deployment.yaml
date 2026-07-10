@@ -28,7 +28,7 @@ spec:
       containers:
         - name: nodebeacon
           # Built on the node and imported into containerd, so never pull.
-          image: nodebeacon:0.6.2
+          image: nodebeacon:0.7.0
           imagePullPolicy: Never
           ports:
             - name: http
@@ -55,8 +55,9 @@ spec:
               value: "/config/nodes.yaml"
             - name: ALLOW_REGISTER
               value: "false"
-            - name: APP_VERSION
-              value: "0.6.2"
+            # APP_VERSION is intentionally not set: the app reads the release
+            # version from the root package.json baked into the image, so the
+            # image tag above is the only per-release edit in this file.
             # Blackbox HTTP probe job shown on /api/latency ("" disables it).
             - name: PROBE_JOB
               value: "blackbox-http-public"
@@ -104,7 +105,8 @@ spec:
             - name: node-config
               mountPath: /config
               readOnly: true
-            # Reserved for P3 SQLite (sessions / incidents). Unused in P1.
+            # Runtime node registry (/data/nodes.yaml, written by the admin
+            # console since 0.6.0) and the future SQLite database.
             - name: data
               mountPath: /data
             # Fastify/pino need a writable tmp with readOnlyRootFilesystem.

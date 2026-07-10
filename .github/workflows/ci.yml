@@ -1,0 +1,30 @@
+# Regression net for direct-to-main pushes: typecheck + unit tests + build.
+# Playwright e2e stays local (needs a real browser channel and dev-server env).
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      # Reads the pinned pnpm version from package.json "packageManager".
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      # Shared types must be built before dependents typecheck against dist.
+      - run: pnpm --filter @nodebeacon/shared build
+      - run: pnpm typecheck
+      - run: pnpm test
+      - run: pnpm build

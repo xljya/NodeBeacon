@@ -17,7 +17,13 @@ import {
   X
 } from "lucide-react";
 import { useTranslation } from "react-i18next";
-import type { AdminNode, AdminNodeMutation, AdminNodeResponse, AdminNodesResponse } from "@nodebeacon/shared";
+import type {
+  AdminNode,
+  AdminNodeMutation,
+  AdminNodeOrderRequest,
+  AdminNodeResponse,
+  AdminNodesResponse
+} from "@nodebeacon/shared";
 import { apiDelete, apiPatch, apiPost } from "../../lib/api";
 import { useApi } from "../../lib/useApi";
 import { PageError, PageLoading } from "../components/PageState";
@@ -194,11 +200,10 @@ export function NodesPage() {
     setReordering(true);
     setActionError(null);
     try {
-      await Promise.all(
-        reordered.map((node, index) =>
-          apiPatch<AdminNodeResponse>(`/api/admin/nodes/${encodeURIComponent(node.id)}`, { displayOrder: (index + 1) * 10 })
-        )
-      );
+      // One batched request: the API applies the whole permutation under a
+      // single registry lock, so concurrent per-node PATCHes can't drop writes.
+      const payload: AdminNodeOrderRequest = { ids: reordered.map((node) => node.id) };
+      await apiPatch<AdminNodesResponse>("/api/admin/nodes/order", payload);
       await reload();
     } catch (err) {
       setActionError(err instanceof Error ? err.message : t("common.requestFailed", { status: 0 }));

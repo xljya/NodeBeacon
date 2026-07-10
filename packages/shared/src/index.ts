@@ -255,6 +255,11 @@ export interface AdminNodeResponse {
   node: AdminNode;
 }
 
+/** Full desired display order: must list every node id exactly once. */
+export interface AdminNodeOrderRequest {
+  ids: string[];
+}
+
 export interface AdminUsersResponse {
   users: AuthUser[];
 }

@@ -1,7 +1,12 @@
+import { readFileSync } from "node:fs";
+import { fileURLToPath } from "node:url";
+
 export interface ApiEnv {
   host: string;
   port: number;
   webOrigin: string;
+  /** Release version: APP_VERSION env override, else the root package.json version. */
+  appVersion: string;
   nodeConfigPath?: string;
   nodeConfigSeedPath?: string;
   prometheusUrl?: string;
@@ -41,6 +46,23 @@ function boolFromEnv(name: string, fallback: boolean): boolean {
   return raw === "true" || raw === "1" || raw === "yes";
 }
 
+/**
+ * Single-sourced release version: the root package.json is the only place a
+ * release bump is written (deploy.sh and the image tag both read it). The
+ * APP_VERSION env stays as an override for ad-hoc builds.
+ */
+function readAppVersion(): string {
+  const override = process.env.APP_VERSION?.trim();
+  if (override) return override;
+  try {
+    const rootPackageJson = fileURLToPath(new URL("../../../../package.json", import.meta.url));
+    const parsed = JSON.parse(readFileSync(rootPackageJson, "utf8")) as { version?: string };
+    return parsed.version?.trim() || "dev";
+  } catch {
+    return "dev";
+  }
+}
+
 export function loadEnv(): ApiEnv {
   const prometheusUrl = process.env.PROMETHEUS_URL?.trim();
   const prometheusBasicAuthUsername = process.env.PROMETHEUS_BASIC_AUTH_USERNAME?.trim();
@@ -59,6 +81,7 @@ export function loadEnv(): ApiEnv {
     host: process.env.API_HOST ?? "0.0.0.0",
     port: numberFromEnv("API_PORT", 3001),
     webOrigin: process.env.WEB_ORIGIN ?? "http://localhost:5173",
+    appVersion: readAppVersion(),
     nodeConfigPath: process.env.NODEBEACON_NODE_CONFIG,
     nodeConfigSeedPath: process.env.NODEBEACON_NODE_CONFIG_SEED,
     prometheusUrl: prometheusUrl || undefined,

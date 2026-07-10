@@ -44,15 +44,26 @@ curl -s "$PROMETHEUS_URL/api/v1/query" --data-urlencode 'query=up' \
   | jq '.data.result[].metric | {job, instance}'
 ```
 
-## Build and load the image (on RS1000)
+## Build, load and deploy (on RS1000)
 
 The image is built on the node with Docker and imported into k3s containerd. No
 external registry is used, so the Deployment uses `imagePullPolicy: Never`.
 
+Preferred path — the release script does everything (version check → build →
+import → apply → rollout wait → smoke checks). The release version is
+single-sourced from the root `package.json`; the script refuses to run if
+`k8s/deployment.yaml` references a different image tag:
+
 ```sh
-# From a checkout of this repo on RS1000:
-docker build -t nodebeacon:0.6.2 .
-docker save nodebeacon:0.6.2 | sudo k3s ctr images import -
+# From a synced checkout of this repo on RS1000:
+./scripts/deploy.sh
+```
+
+Manual fallback (what the script automates):
+
+```sh
+docker build -t nodebeacon:0.7.0 .
+docker save nodebeacon:0.7.0 | sudo k3s ctr images import -
 ```
 
 ## Deploy
@@ -94,9 +105,9 @@ curl -i https://monitor.liucf.com/api/admin/summary
 curl -I https://monitor.liucf.com/api/auth/github
 ```
 
-For `0.6.2`, expected production checks are:
+For `0.7.0`, expected production checks are:
 
-- image: `nodebeacon:0.6.2`
+- image: `nodebeacon:0.7.0`
 - `/readyz` and `/healthz`: HTTP 200
 - `/api/status`: `summary.total == 5` and `summary.online == 5`
 - `/api/auth/config`: password and GitHub login both enabled
@@ -128,11 +139,20 @@ For `0.6.2`, expected production checks are:
   data as an operations timeline without claiming persisted audit logs.
 - `/admin/nodes`: row actions can copy the Prometheus selector, download a YAML
   snippet, edit node display metadata, edit billing metadata, delete nodes, and
-  copy selectors for selected rows from the bulk bar.
+  copy selectors for selected rows from the bulk bar. Drag-reorder issues a
+  single `PATCH /api/admin/nodes/order` (batch permutation), not per-node
+  PATCHes.
+- mutating admin request with a foreign `Origin` header: HTTP 403
+  (`origin_mismatch`) — verify with
+  `curl -X PATCH -H 'Origin: https://evil.example' ...` using a valid session.
 - node registry write-back: the pod loads `/data/nodes.yaml` and falls back to
-  `/config/nodes.yaml` as a read-only seed. After an owner edit, verify the PVC
-  copy exists with:
-  `kubectl -n nodebeacon exec deploy/nodebeacon -- test -s /data/nodes.yaml`
+  `/config/nodes.yaml` as a read-only seed — on a fresh install the runtime
+  file legitimately does not exist until the first admin edit. After an owner
+  edit, verify the PVC copy (and its rolling backups) exist with:
+  `kubectl -n nodebeacon exec deploy/nodebeacon -- ls /data/`
+  (expect `nodes.yaml` plus `nodes.yaml.bak.1..3` after repeated saves; writes
+  are atomic tmp+rename, and a corrupt runtime file degrades to the seed
+  instead of failing `/api/status`)
 - Remote Exec entry points render the NodeBeacon security-boundary notice; this
   app does not expose browser shell or agent command execution.
 - `/admin/settings`: read-only appearance section shows browser-local theme
@@ -148,12 +168,12 @@ kubectl delete -k infra/k8s
 
 ## Update to a new build
 
+Bump `version` in the root `package.json` and the image tag in
+`k8s/deployment.yaml` (the only two per-release edits), commit, sync the tree
+to RS1000, then:
+
 ```sh
-docker build -t nodebeacon:<new-tag> .
-docker save nodebeacon:<new-tag> | sudo k3s ctr images import -
-# bump image tag and APP_VERSION in k8s/deployment.yaml, then:
-kubectl apply -k infra/k8s
-kubectl -n nodebeacon rollout status deploy/nodebeacon
+./scripts/deploy.sh
 ```
 
 ## Build notes

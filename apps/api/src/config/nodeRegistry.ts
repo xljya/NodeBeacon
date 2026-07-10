@@ -1,4 +1,4 @@
-import { mkdir, readFile, writeFile } from "node:fs/promises";
+import { copyFile, mkdir, readFile, rename, writeFile } from "node:fs/promises";
 import { dirname } from "node:path";
 import { fileURLToPath } from "node:url";
 import { parse, stringify } from "yaml";
@@ -8,9 +8,29 @@ interface NodeRegistryFile {
   nodes?: NodeConfigEntry[];
 }
 
+interface RegistryLogger {
+  error(payload: unknown, message?: string): void;
+}
+
 const defaultConfigPath = fileURLToPath(
   new URL("../../../../config/nodes.example.yaml", import.meta.url)
 );
+
+const BACKUP_DEPTH = 3;
+
+/**
+ * Serializes every load-modify-save cycle on the registry. The app runs as a
+ * single process (one replica, imagePullPolicy: Never), so an in-process
+ * promise chain is a complete lock — without it, two concurrent admin writes
+ * both read the same file and the second save silently drops the first.
+ */
+let registryQueue: Promise<unknown> = Promise.resolve();
+
+export function withRegistryLock<T>(fn: () => Promise<T>): Promise<T> {
+  const run = registryQueue.then(fn, fn);
+  registryQueue = run.catch(() => undefined);
+  return run;
+}
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
@@ -82,31 +102,56 @@ function sortNodes(nodes: NodeConfigEntry[]): NodeConfigEntry[] {
   return [...nodes].sort((a, b) => a.displayOrder - b.displayOrder || a.name.localeCompare(b.name));
 }
 
-async function readRegistryFile(configPath: string, seedPath?: string): Promise<string> {
-  try {
-    return await readFile(configPath, "utf8");
-  } catch (error) {
-    if (!seedPath) throw error;
-    try {
-      return await readFile(seedPath, "utf8");
-    } catch {
-      throw error;
-    }
-  }
-}
-
-export async function loadNodeRegistry(
-  configPath = defaultConfigPath,
-  seedPath?: string
-): Promise<NodeConfigEntry[]> {
-  const content = await readRegistryFile(configPath, seedPath);
+function parseRegistryContent(content: string): NodeConfigEntry[] {
   const parsed = parse(content) as NodeRegistryFile;
-  const nodes = Array.isArray(parsed.nodes) ? parsed.nodes : [];
+  const nodes = Array.isArray(parsed?.nodes) ? parsed.nodes : [];
   return sortNodes(nodes
     .map(normalizeNode)
     .filter((node) => node.id && node.name));
 }
 
+/**
+ * Loads the runtime registry file, falling back to the read-only seed when the
+ * runtime file is missing OR unparseable. A corrupt /data/nodes.yaml must
+ * degrade to the ConfigMap seed instead of taking the public status page down.
+ */
+export async function loadNodeRegistry(
+  configPath = defaultConfigPath,
+  seedPath?: string,
+  logger?: RegistryLogger
+): Promise<NodeConfigEntry[]> {
+  let primaryError: unknown;
+  try {
+    return parseRegistryContent(await readFile(configPath, "utf8"));
+  } catch (error) {
+    primaryError = error;
+  }
+
+  if (!seedPath) throw primaryError;
+  logger?.error(
+    { error: primaryError, configPath, seedPath },
+    "node registry file is missing or corrupt; falling back to the seed file"
+  );
+  try {
+    return parseRegistryContent(await readFile(seedPath, "utf8"));
+  } catch {
+    throw primaryError;
+  }
+}
+
+/** Shifts nodes.yaml.bak.1..N up one slot and snapshots the current file as .bak.1. */
+async function rotateBackups(configPath: string): Promise<void> {
+  for (let index = BACKUP_DEPTH - 1; index >= 1; index -= 1) {
+    await rename(`${configPath}.bak.${index}`, `${configPath}.bak.${index + 1}`).catch(() => undefined);
+  }
+  await copyFile(configPath, `${configPath}.bak.1`).catch(() => undefined);
+}
+
+/**
+ * Persists the registry atomically: write to a temp file, then rename over the
+ * target (atomic on the same filesystem), so a crash mid-write can never leave
+ * a half-written nodes.yaml behind. The previous file is kept as .bak.1..3.
+ */
 export async function saveNodeRegistry(
   nodes: NodeConfigEntry[],
   configPath = defaultConfigPath
@@ -114,6 +159,9 @@ export async function saveNodeRegistry(
   const sorted = sortNodes(nodes);
   const content = stringify({ nodes: sorted }, { lineWidth: 0 });
   await mkdir(dirname(configPath), { recursive: true });
-  await writeFile(configPath, content, "utf8");
+  await rotateBackups(configPath);
+  const tmpPath = `${configPath}.tmp`;
+  await writeFile(tmpPath, content, "utf8");
+  await rename(tmpPath, configPath);
   return sorted;
 }

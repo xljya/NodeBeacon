@@ -342,6 +342,14 @@ P1 验证记录：2026-07-06 已用浏览器在 `https://monitor.liucf.com/` 端
 - **开发配置**：`vite.config.ts` 代理目标支持 `NB_API_PROXY` 环境变量覆盖，便于在 5173 被占用时起第二套隔离实例验证。
 - **验证**：`pnpm typecheck`/`build`/`test`（33 用例）全绿。因本机 5173 被日常 `pnpm dev` 占用且凭据不同，Playwright 套件未直接运行，改为在隔离实例（API 3002 + vite 5174，e2e 同款凭据）手动执行 e2e 覆盖的全部断言：登录→节点表、Settings→Theme Management、Notification→Offline、Default Theme Settings、Server→Node list、登出→登录页；另验证列弹层开合、编辑抽屉 + Escape、明暗主题、拖拽提示、375px 移动端（汉堡菜单/遮罩/侧栏抽屉/无横向溢出）与公开状态页。
 
+进展记录：2026-07-10 `0.7.0`「写得安全」——按当日架构评审落地写路径加固与发布流水线，修复评审发现的两个真实缺陷（并发丢写、损坏文件拖垮公开页）。
+
+- **注册表写路径加固**（`config/nodeRegistry.ts`）：新增 `withRegistryLock`（模块级 promise 链互斥），所有 admin 写路由的 load-modify-save 全部串行化；保存改为 tmp 文件 + `rename` 原子替换，进程中途被杀不再可能留下半截 `nodes.yaml`；保存前轮转 `nodes.yaml.bak.1..3` 三份快照；`loadNodeRegistry` 在运行态文件**损坏**（不只是缺失）时降级读 seed 并打 error 日志——损坏的 `/data/nodes.yaml` 从此只影响写入，不再 500 公开状态页。
+- **批量排序 API**：新增 owner-only `PATCH /api/admin/nodes/order`（body `{ ids }`，须为全量节点 id 的排列，非法返回 400 `invalid_order`），在单次锁内套用整个排列（`displayOrder = (i+1)*10`）；前端拖拽从 N 个并行 PATCH 改为一次调用，彻底消灭竞态源头。静态路由优先于 `:id`，`order` 保留为不可用的节点 id。
+- **Origin 兜底校验**（`plugins/authGuard.ts`）：非 GET/HEAD/OPTIONS 且带会话的请求，若携带 `Origin` 头则必须等于 `WEB_ORIGIN` 或与请求 `Host` 同源，否则 403 `origin_mismatch`。同时把本文档的 CSRF 条目重新定性：经典 CSRF 路径此前已被 `SameSite=Lax` Cookie + CORS 锁定 + JSON-only body 解析基本封死，本次是防御纵深收尾，不再需要 double-submit token。
+- **版本单源 + 发布流水线**：根 `package.json.version` 成为唯一版本源（升至 0.7.0），API 启动时读取（`APP_VERSION` env 仅作覆盖，deployment.yaml 已删除该 env）；新增 `scripts/deploy.sh`（RS1000 上执行：校验 deployment.yaml 镜像 tag 与版本一致→build→ctr import→apply→rollout→冒烟断言，不一致直接拒绝，git 始终是清单事实源）；新增 GitHub Actions CI（push/PR 跑 shared build → typecheck → vitest → build，e2e 保留在本地）。
+- **验证**：`pnpm typecheck`/`test` 全绿（42 用例，新增 9：并发 PATCH 双写保留、`.bak.1` 轮转、排序排列成功/非排列 400、损坏文件降级 seed 后 `/api/status` 仍 200、异源 Origin 403、合法 Origin/无 Origin 放行）。
+
 ### P2：核心增强
 
 | 状态 | 任务 | 交付标准 | 备注 |
@@ -382,10 +390,10 @@ P2 进展记录：2026-07-09 `0.4.0` 交付节点详情 + 趋势主线（P2 前�
 | 已完成（最小闭环） | 管理端最小闭环 | 可查看用户、节点配置摘要、系统状态，并能保存节点展示配置 | `0.6.0` 已完成节点新增/编辑/删除/账单备注/私有备注/selector 复制/配置导出；用户、会话、通知和日志仍按当前后端能力收敛 |
 | 已完成 | 管理后台节点配置页 | 表格展示所有节点；详情抽屉或编辑面板修改分组和展示元数据 | `0.6.0`：表格列和操作区对齐 Komari 截图；保存走 YAML 注册表写回 |
 | 部分完成 | 登录限速与安全响应头 | `/api/auth/login` 限速；CSP/HSTS 等安全响应头 | 登录限速已随 `0.2.3` 上线；CSP/HSTS 在 nginx/Cloudflare 侧补 |
-| 待做（写回加固） | CSRF 防护 | 写回类 admin 接口加 CSRF 校验 | `0.6.0` 已上线 owner-only 写回；下一步补双提交 token 或同源 CSRF token |
+| 已完成（重新定性） | CSRF 防护 | 写回类 admin 接口不可被跨站伪造 | 读码结论：`SameSite=Lax` Cookie + CORS 锁定 `WEB_ORIGIN` + JSON-only body 解析已封死经典 CSRF 路径；`0.7.0` 补 Origin 头兜底校验（携带会话的写请求 Origin 不匹配即 403），double-submit token 不再需要 |
 | 待做（绑定首次 SQLite 写入） | SQLite 备份策略 | 有备份路径、恢复步骤、保留周期和恢复演练说明 | 本轮登录不落 SQLite，时机与节点写回/incident 绑定 |
 | 待做（随写回·多用户） | 会话/用户持久化升级到 SQLite | users + sessions 落 SQLite，支持可撤销会话与 `viewer` 角色 | 从无状态 Cookie 迁移；接口边界本轮已留好 |
-| 待做 | 镜像构建/发布流水线 | 脚本化 build+import、按 git sha 打 tag；可选 GitHub Actions | 目前在 RS1000 手工 `docker build`+`k3s ctr import` |
+| 部分完成 | 镜像构建/发布流水线 | 脚本化 build+import、按 git sha 打 tag；可选 GitHub Actions | `0.7.0`：`scripts/deploy.sh`（版本一致性校验 + build/import/apply/rollout/冒烟断言）+ GitHub Actions CI（typecheck/test/build）；按 git sha 打 tag 未做，发版仍按语义版本 |
 | 待做 | Cloudflare 缓存和 WAF 规则 | `/api/*`、`/auth/*` 不缓存；登录限速 | 和 RS1000 nginx 配置一起记录 |
 | 部分完成 | UI 细节打磨 | 空状态、骨架屏、键盘可访问性、移动端触控区域 | `0.6.2`：全局 focus-visible / hover / active / disabled 状态、共享加载与错误组件、空状态图标与动作、抽屉动画、密度收紧、窄屏 Group 标签可滚动、760–900px 遮罩修复；骨架屏仍待做 |
 | 待做 | 文档补齐 | README、部署文档、环境变量、故障排查、ADR 更新 | 每个生产决策都能追溯 |
