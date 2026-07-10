@@ -1682,21 +1682,6 @@ button.admin-menu-btn {
   gap: 16px;
 }
 
-.top-lang .icon-btn {
-  width: 38px;
-  height: 38px;
-  padding: 0;
-  border: 1px solid var(--border);
-  border-radius: 9px;
-  background: var(--surface-2);
-  color: var(--text-muted);
-}
-
-.top-lang .icon-btn:hover {
-  color: var(--text);
-  background: var(--surface);
-}
-
 .komari-nav {
   gap: 4px;
 }
@@ -2147,6 +2132,19 @@ button.admin-menu-btn {
   color: var(--accent);
   background: color-mix(in srgb, var(--accent) 7%, var(--surface));
   border-color: color-mix(in srgb, var(--accent) 24%, var(--border));
+}
+
+/* Keep the language control visually identical to the compact public toggle. */
+.top-lang .lang-switch > .icon-btn {
+  width: 34px;
+  height: 34px;
+  padding: 0;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  color: var(--text);
+  background: var(--surface);
+  box-shadow: 0 1px 3px rgba(40, 70, 116, 0.04);
+  justify-content: center;
 }
 
 .logout-icon,

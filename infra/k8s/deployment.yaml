@@ -28,7 +28,7 @@ spec:
       containers:
         - name: nodebeacon
           # Built on the node and imported into containerd, so never pull.
-          image: nodebeacon:0.7.2
+          image: nodebeacon:0.7.3
           imagePullPolicy: Never
           ports:
             - name: http
