@@ -364,7 +364,7 @@ P1 验证记录：2026-07-06 已用浏览器在 `https://monitor.liucf.com/` 端
 - **Webhook 与 Incident**：SQLite schema v2 新增 `incidents`，以 `fingerprint + startsAt` 幂等合并 firing/resolved；新增 Bearer token 保护的集群内 `POST /api/webhooks/alertmanager`、owner-only 完整历史和脱敏公开时间线。节点详情显示该节点最近事故，管理通知页显示完整流水。
 - **自身监控清单**：新增 ServiceMonitor、PrometheusRule 和 AlertmanagerConfig；规则覆盖 NodeBeacon 不可用、Prometheus 查询错误率与 p95 查询延迟，Alertmanager 仅把 `namespace=nodebeacon` 且非 Watchdog 的告警回送 NodeBeacon，避免改变现有全局告警路由。公网 nginx 对 webhook 精确返回 404。
 - **诚实降级**：配置真实 Prometheus 时，冷失败从 fixture 改为注册表节点 `unknown` + 零指标；管理摘要的可达性来自最近一次真实查询结果，不再用缓存新鲜度代替上游连通性。
-- **验证**：覆盖 Alertmanager 读取、错误 token、firing 幂等、resolved 合并、公开字段脱敏、schema v2 迁移和 Prometheus 冷失败；API 测试增至 9 个文件 56 个用例，部署 CRD 已通过 Kubernetes 服务端 dry-run。
+- **验证**：覆盖 Alertmanager 读取、错误 token、firing 幂等、resolved 合并、公开字段脱敏、schema v2 迁移和 Prometheus 冷失败；API 测试增至 9 个文件 56 个用例。生产 `0.9.0` 已验证 5/5 节点、Pod 零重启、SQLite schema v2 / `integrity_check=ok`、ServiceMonitor 抓取 `up=1`、三条规则 `health=ok`、owner Alertmanager API、真实验收告警 firing→resolved 原位合并、公网 webhook/metrics 404，以及 schema v2 异地归档隔离恢复。
 
 ### P2：核心增强
 

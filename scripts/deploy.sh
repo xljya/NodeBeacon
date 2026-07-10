@@ -4,8 +4,9 @@
 #   ./scripts/deploy.sh
 #
 # The release version is single-sourced from the root package.json. The script
-# refuses to run if infra/k8s/deployment.yaml does not reference the same tag,
-# so git stays the source of truth (no blind sed on manifests).
+# refuses to run if the live Deployment or restore Pod template does not
+# reference the same tag, so git stays the source of truth (no blind sed on
+# manifests and no stale recovery image).
 #
 # Rollback: `kubectl -n nodebeacon rollout undo deploy/nodebeacon` (previous
 # images stay in containerd), or check out the previous tag and re-run this.
@@ -17,11 +18,13 @@ VERSION="$(node -p "require('./package.json').version")"
 TAG="nodebeacon:${VERSION}"
 BASE_URL="${NODEBEACON_BASE_URL:-http://10.77.0.1:31003}"
 
-if ! grep -Eq "image:[[:space:]]+${TAG}\$" infra/k8s/deployment.yaml; then
-  echo "ERROR: infra/k8s/deployment.yaml does not reference ${TAG}." >&2
-  echo "Bump the image tag there (single per-release edit) and commit first." >&2
-  exit 1
-fi
+for manifest in infra/k8s/deployment.yaml infra/k8s/restore-pod.example.yaml; do
+  if ! grep -Eq "image:[[:space:]]+${TAG}\$" "${manifest}"; then
+    echo "ERROR: ${manifest} does not reference ${TAG}." >&2
+    echo "Bump both release image tags and commit first." >&2
+    exit 1
+  fi
+done
 
 echo "==> Building ${TAG}"
 docker build -t "${TAG}" .

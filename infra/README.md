@@ -52,8 +52,8 @@ external registry is used, so the Deployment uses `imagePullPolicy: Never`.
 
 Preferred path — the release script does everything (version check → build →
 import → apply → rollout wait → smoke checks). The release version is
-single-sourced from the root `package.json`; the script refuses to run if
-`k8s/deployment.yaml` references a different image tag:
+single-sourced from the root `package.json`; the script refuses to run if the
+Deployment or restore Pod template references a different image tag:
 
 ```sh
 # From a synced checkout of this repo on RS1000:
@@ -256,6 +256,7 @@ PVC.
 | Date (UTC) | Archive | Result | Notes |
 | --- | --- | --- | --- |
 | 2026-07-10 | `nodebeacon-20260710T173936Z.tar.gz` | Passed | Restored from the real netcup archive into an isolated RS1000 container; SQLite online backup integrity passed and `/api/status` returned 5/5 nodes online |
+| 2026-07-10 | `nodebeacon-20260710T181813Z.tar.gz` | Passed | `0.9.0` schema v2 isolated restore: `integrity_check=ok`, 4 sessions, 6 audit events, one resolved acceptance incident and 5 registry nodes; the same archive is present on netcup |
 
 ## Roll back
 
@@ -267,8 +268,8 @@ kubectl delete -k infra/k8s
 
 ## Update to a new build
 
-Bump `version` in the root `package.json` and the image tag in
-`k8s/deployment.yaml` (the only two per-release edits), commit, sync the tree
+Bump `version` in the root `package.json` and the image tags in
+`k8s/deployment.yaml` plus `k8s/restore-pod.example.yaml`, commit, sync the tree
 to RS1000, then:
 
 ```sh
