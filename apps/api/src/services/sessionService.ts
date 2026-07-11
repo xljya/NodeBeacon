@@ -22,6 +22,7 @@ export interface SessionService {
   resolve(sessionToken: string): { id: string; userId: string } | null;
   revoke(sessionId: string, userId?: string): boolean;
   listActive(userId: string, currentSessionId?: string): AdminSession[];
+  cleanupExpired(now?: number, revokedRetentionDays?: number): number;
 }
 
 export function createSessionService(db: SqliteDatabase): SessionService {
@@ -96,6 +97,10 @@ export function createSessionService(db: SqliteDatabase): SessionService {
         userAgent: row.user_agent ?? undefined,
         current: row.id === currentSessionId
       }));
+    },
+
+    cleanupExpired(now = Date.now(), revokedRetentionDays = 30): number {
+      return cleanup.run(now, now - revokedRetentionDays * 24 * 60 * 60 * 1000).changes;
     }
   };
 }

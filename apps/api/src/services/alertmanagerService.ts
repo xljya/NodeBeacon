@@ -1,5 +1,6 @@
 import type { AdminAlert, AdminAlertsResponse } from "@nodebeacon/shared";
 import type { ApiEnv } from "../config/env.js";
+import { alertmanagerReadDurationSeconds, alertmanagerReadsTotal } from "../observability/metrics.js";
 
 interface AlertmanagerAlert {
   fingerprint?: string;
@@ -41,6 +42,7 @@ export function createAlertmanagerService(env: ApiEnv): AlertmanagerService {
 
       const controller = new AbortController();
       const timeout = setTimeout(() => controller.abort(), env.alertmanagerTimeoutMs);
+      const stopTimer = alertmanagerReadDurationSeconds.startTimer();
       try {
         const url = `${env.alertmanagerUrl.replace(/\/+$/, "")}/api/v2/alerts`;
         const response = await fetch(url, {
@@ -77,14 +79,19 @@ export function createAlertmanagerService(env: ApiEnv): AlertmanagerService {
           alerts
         };
         cache = { value, expiresAt: now + 15_000 };
+        alertmanagerReadsTotal.inc({ outcome: "success" });
         return value;
       } catch (error) {
+        alertmanagerReadsTotal.inc({
+          outcome: error instanceof Error && error.name === "AbortError" ? "timeout" : "error"
+        });
         if (error instanceof AlertmanagerError) throw error;
         if (error instanceof Error && error.name === "AbortError") {
           throw new AlertmanagerError("Alertmanager request timed out.");
         }
         throw new AlertmanagerError(error instanceof Error ? error.message : "Alertmanager request failed.");
       } finally {
+        stopTimer();
         clearTimeout(timeout);
       }
     }

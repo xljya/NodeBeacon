@@ -36,6 +36,7 @@ export interface IncidentService {
   record(alerts: IncomingIncidentAlert[]): number;
   list(limit?: number, nodeId?: string): AdminIncident[];
   listPublic(limit?: number, nodeId?: string): IncidentSummary[];
+  pruneResolvedBefore(cutoff: number): number;
 }
 
 function parseTimestamp(value: string | undefined, fallback: number): number {
@@ -109,6 +110,10 @@ export function createIncidentService(db: SqliteDatabase): IncidentService {
   const listByNode = db.prepare(`
     SELECT * FROM incidents WHERE node_id = ? ORDER BY started_at DESC, id DESC LIMIT ?
   `);
+  const pruneResolved = db.prepare(`
+    DELETE FROM incidents
+    WHERE status = 'resolved' AND resolved_at IS NOT NULL AND resolved_at < ?
+  `);
 
   const recordTransaction = db.transaction((alerts: IncomingIncidentAlert[]) => {
     const now = Date.now();
@@ -149,6 +154,10 @@ export function createIncidentService(db: SqliteDatabase): IncidentService {
 
     listPublic(limit = 20, nodeId): IncidentSummary[] {
       return this.list(Math.min(50, limit), nodeId).map(toPublicIncident);
+    },
+
+    pruneResolvedBefore(cutoff): number {
+      return pruneResolved.run(cutoff).changes;
     }
   };
 }

@@ -63,8 +63,8 @@ Deployment or restore Pod template references a different image tag:
 Manual fallback (what the script automates):
 
 ```sh
-docker build -t nodebeacon:0.9.1 .
-docker save nodebeacon:0.9.1 | sudo k3s ctr images import -
+docker build -t nodebeacon:0.9.2 .
+docker save nodebeacon:0.9.2 | sudo k3s ctr images import -
 ```
 
 ## Deploy
@@ -107,9 +107,9 @@ curl -i https://monitor.liucf.com/api/admin/summary
 curl -I https://monitor.liucf.com/api/auth/github
 ```
 
-For `0.9.1`, expected production checks are:
+For `0.9.2`, expected production checks are:
 
-- image: `nodebeacon:0.9.1`
+- image: `nodebeacon:0.9.2`
 - `/readyz` and `/healthz`: HTTP 200
 - `/api/status`: `summary.total == 5` and `summary.online == 5`
 - `/api/auth/config`: password and GitHub login both enabled
@@ -128,6 +128,9 @@ For `0.9.1`, expected production checks are:
   24h success rate and cert expiry; the status page shows the probe panel
 - `/metrics` via the public hostname: HTTP 404 (nginx blocks it); via the
   NodePort/cluster: Prometheus text with `nodebeacon_*` metrics
+- `/metrics` includes Alertmanager read duration/outcome and webhook outcome
+  counters; Prometheus reports healthy `NodeBeaconAlertmanagerReadErrors` and
+  `NodeBeaconWebhookFailures` rules when no failures occur
 - `/`, `/api/status` and `/assets/*.js` expose the cache/security policy from
   `infra/cloudflare.md`: HTML `no-cache`, API `no-store`, hashed assets one-year
   immutable, and HTTPS responses include CSP/HSTS/nosniff/frame/referrer/
@@ -182,6 +185,8 @@ For `0.9.1`, expected production checks are:
 - `scripts/backup.sh` succeeds from host cron, the archive is visible on the
   configured off-site VPS, and the restore-drill table below records a verified
   recovery before the release is considered fully accepted.
+- remote backup retention runs in dry-run first, then `--apply`, keeping 30 days
+  of daily archives plus one archive per month for 12 months
 - Remote Exec entry points render the NodeBeacon security-boundary notice; this
   app does not expose browser shell or agent command execution.
 - `/admin/settings`: read-only appearance section shows browser-local theme
@@ -212,8 +217,19 @@ the remote backup account/path and keep the cron environment outside git:
 17 3 * * * NODEBEACON_BACKUP_REMOTE='backup@OTHER_VPS:/srv/backups/nodebeacon/' NODEBEACON_BACKUP_IDENTITY='/root/.ssh/id_ed25519_nodebeacon_backup' /usr/bin/env bash /path/to/NodeBeacon/scripts/backup.sh >>/var/log/nodebeacon-backup.log 2>&1
 ```
 
-The script keeps seven days of local archives by default. Remote retention is
-owned by the destination host and should be configured independently.
+The script keeps seven days of local archives by default. On the remote host,
+install `scripts/prune-remote-backups.sh` and run it daily after the backup:
+
+```cron
+37 4 * * * /usr/local/sbin/nodebeacon-prune-backups --apply >>/var/log/nodebeacon-backup-retention.log 2>&1
+```
+
+The default remote policy retains every daily archive for 30 days and then the
+newest archive from each UTC calendar month for 12 months. Run `--dry-run`
+after changing either retention environment variable.
+
+Minimal cron environments may not include `/usr/local/bin`; set
+`NODEBEACON_KUBECTL_BIN=/usr/local/bin/kubectl` in the RS1000 cron entry.
 
 ## Restore drill
 

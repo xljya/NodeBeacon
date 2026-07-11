@@ -46,3 +46,28 @@ spec:
           annotations:
             summary: NodeBeacon Prometheus query latency is high
             description: The p95 Prometheus API latency observed by NodeBeacon exceeds two seconds.
+        - alert: NodeBeaconAlertmanagerReadErrors
+          expr: |
+            sum(rate(nodebeacon_alertmanager_reads_total{outcome!="success"}[5m]))
+              /
+            clamp_min(sum(rate(nodebeacon_alertmanager_reads_total[5m])), 0.001)
+              > 0.10
+          for: 5m
+          labels:
+            severity: warning
+            namespace: nodebeacon
+            node_id: rs1000
+          annotations:
+            summary: NodeBeacon cannot reliably read Alertmanager
+            description: More than 10% of NodeBeacon Alertmanager API reads failed over five minutes.
+        - alert: NodeBeaconWebhookFailures
+          expr: |
+            sum(increase(nodebeacon_alertmanager_webhook_requests_total{outcome!="success"}[10m])) >= 3
+          for: 1m
+          labels:
+            severity: critical
+            namespace: nodebeacon
+            node_id: rs1000
+          annotations:
+            summary: NodeBeacon Alertmanager webhook is repeatedly failing
+            description: At least three webhook requests failed authentication, validation, configuration, or persistence within ten minutes.

@@ -26,6 +26,9 @@ export interface ApiEnv {
   cookieSecret: string;
   secureCookie: boolean;
   sessionTtlSeconds: number;
+  incidentRetentionDays: number;
+  auditRetentionDays: number;
+  revokedSessionRetentionDays: number;
   allowRegister: boolean;
   initialOwnerEmail?: string;
   initialOwnerPassword?: string;
@@ -110,6 +113,9 @@ export function loadEnv(): ApiEnv {
     cookieSecret: cookieSecret || "nodebeacon-dev-insecure-cookie-secret-change-me",
     secureCookie: nodeEnv === "production",
     sessionTtlSeconds: numberFromEnv("SESSION_TTL_SECONDS", 7 * 24 * 60 * 60),
+    incidentRetentionDays: numberFromEnv("INCIDENT_RETENTION_DAYS", 180),
+    auditRetentionDays: numberFromEnv("AUDIT_RETENTION_DAYS", 365),
+    revokedSessionRetentionDays: numberFromEnv("REVOKED_SESSION_RETENTION_DAYS", 30),
     allowRegister: boolFromEnv("ALLOW_REGISTER", false),
     initialOwnerEmail: initialOwnerEmail || undefined,
     initialOwnerPassword: initialOwnerPassword || undefined,

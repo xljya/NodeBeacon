@@ -75,6 +75,16 @@ describe("Alertmanager alerts and incident webhook", () => {
     expect(response.statusCode).toBe(401);
   });
 
+  it("counts invalid webhook payloads separately", async () => {
+    const response = await app.inject({
+      method: "POST",
+      url: "/api/webhooks/alertmanager",
+      headers: { authorization: "Bearer test-alertmanager-webhook-token" },
+      payload: { status: "firing", alerts: [{ status: "firing" }] }
+    });
+    expect(response.statusCode).toBe(400);
+  });
+
   it("stores firing and resolved webhook retries as one incident", async () => {
     const alert = {
       fingerprint: "incident-fingerprint",
@@ -109,5 +119,15 @@ describe("Alertmanager alerts and incident webhook", () => {
 
     const adminResponse = await app.inject({ method: "GET", url: "/api/admin/incidents", cookies });
     expect(adminResponse.json().incidents[0].labels.private_label).toBe("hidden");
+  });
+
+  it("exposes Alertmanager read and webhook outcome metrics", async () => {
+    const response = await app.inject({ method: "GET", url: "/metrics" });
+    expect(response.statusCode).toBe(200);
+    expect(response.body).toContain('nodebeacon_alertmanager_reads_total{outcome="success"}');
+    expect(response.body).toContain("nodebeacon_alertmanager_read_duration_seconds_count");
+    expect(response.body).toContain('nodebeacon_alertmanager_webhook_requests_total{outcome="success"}');
+    expect(response.body).toContain('nodebeacon_alertmanager_webhook_requests_total{outcome="invalid_auth"}');
+    expect(response.body).toContain('nodebeacon_alertmanager_webhook_requests_total{outcome="invalid_payload"}');
   });
 });

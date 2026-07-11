@@ -135,4 +135,49 @@ describe("SQLite sessions and audit events", () => {
     const actions = audit.json().events.map((event: { action: string }) => event.action);
     expect(actions).toEqual(expect.arrayContaining(["node.created", "node.updated", "node.deleted"]));
   });
+
+  it("prunes expired persisted state while retaining active incidents and sessions", async () => {
+    const { databasePath } = await paths();
+    const now = Date.now();
+    const old = now - 400 * 24 * 60 * 60 * 1000;
+    const database = openDatabase(databasePath);
+    database.prepare(`
+      INSERT INTO incidents(
+        fingerprint, alert_name, status, started_at, resolved_at, updated_at,
+        labels_json, annotations_json
+      ) VALUES (?, ?, ?, ?, ?, ?, '{}', '{}')
+    `).run("old-resolved", "OldResolved", "resolved", old, old, old);
+    database.prepare(`
+      INSERT INTO incidents(
+        fingerprint, alert_name, status, started_at, resolved_at, updated_at,
+        labels_json, annotations_json
+      ) VALUES (?, ?, ?, ?, NULL, ?, '{}', '{}')
+    `).run("old-firing", "OldFiring", "firing", old, old);
+    database.prepare("INSERT INTO audit_events(ts, actor, action) VALUES (?, ?, ?)")
+      .run(old, "owner", "old.event");
+    database.prepare("INSERT INTO sessions(id, user_id, created_at, expires_at) VALUES (?, ?, ?, ?)")
+      .run("expired", "owner", old, old);
+    database.prepare(`
+      INSERT INTO sessions(id, user_id, created_at, expires_at, revoked_at)
+      VALUES (?, ?, ?, ?, ?)
+    `).run("revoked", "owner", old, now + 60_000, old);
+    database.prepare("INSERT INTO sessions(id, user_id, created_at, expires_at) VALUES (?, ?, ?, ?)")
+      .run("active", "owner", now, now + 60_000);
+    database.close();
+
+    const app = await buildTestApp({
+      NODEBEACON_DATABASE_PATH: databasePath,
+      INCIDENT_RETENTION_DAYS: "180",
+      AUDIT_RETENTION_DAYS: "365",
+      REVOKED_SESSION_RETENTION_DAYS: "30"
+    });
+    apps.push(app);
+
+    const check = openDatabase(databasePath);
+    expect(check.prepare("SELECT alert_name FROM incidents ORDER BY alert_name").all())
+      .toEqual([{ alert_name: "OldFiring" }]);
+    expect(check.prepare("SELECT count(*) AS count FROM audit_events").get()).toMatchObject({ count: 0 });
+    expect(check.prepare("SELECT id FROM sessions ORDER BY id").all()).toEqual([{ id: "active" }]);
+    check.close();
+  });
 });

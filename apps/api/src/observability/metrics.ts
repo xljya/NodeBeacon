@@ -46,6 +46,27 @@ export const cacheEventsTotal = new Counter({
   registers: [metricsRegistry]
 });
 
+export const alertmanagerWebhookRequestsTotal = new Counter({
+  name: "nodebeacon_alertmanager_webhook_requests_total",
+  help: "Alertmanager webhook requests handled, by outcome.",
+  labelNames: ["outcome"] as const,
+  registers: [metricsRegistry]
+});
+
+export const alertmanagerReadsTotal = new Counter({
+  name: "nodebeacon_alertmanager_reads_total",
+  help: "Upstream Alertmanager API reads, by outcome.",
+  labelNames: ["outcome"] as const,
+  registers: [metricsRegistry]
+});
+
+export const alertmanagerReadDurationSeconds = new Histogram({
+  name: "nodebeacon_alertmanager_read_duration_seconds",
+  help: "Upstream Alertmanager API read duration.",
+  buckets: [0.01, 0.05, 0.1, 0.25, 0.5, 1, 2, 5],
+  registers: [metricsRegistry]
+});
+
 export type CacheName = "status" | "trend" | "probe";
 
 export function recordCacheEvent(cache: CacheName, event: "hit" | "miss" | "stale"): void {

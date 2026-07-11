@@ -373,6 +373,13 @@ P1 验证记录：2026-07-06 已用浏览器在 `https://monitor.liucf.com/` 端
 - **缓存分层**：nginx `map` 将 SPA HTML 设为 `no-cache`、API 设为 `no-store`、Vite hash 资源设为一年 `immutable`。新增 `infra/cloudflare.md`，记录 Cache Rule 精确表达式、免费计划兼容的登录突发限速方案、HSTS 边界和验收命令；当前主机与仓库没有 Cloudflare 管理凭据，因此边缘规则保留为显式人工步骤，源站头是已生效的最终安全网。
 - **验证**：新增公开 200 与未登录 401 的 `no-store` 断言；`pnpm typecheck`、56 个 API 测试、生产构建和独立 nginx 配置语法检查通过。生产 `0.9.1` 已验证 Pod 零重启、NodePort API `no-store`、公网 HTML `no-cache`、API/401 `no-store + DYNAMIC`、hash 资源 `EXPIRED → HIT`、完整安全响应头；Playwright 复验节点/事故/Google Fonts 渲染正常，Cloudflare Analytics beacon 200、RUM 上报 204、CSP 违规为 0。
 
+进展记录：2026-07-11 `0.9.2`「留得住、看得到」——为持久化状态增加生命周期治理，为 Alertmanager 闭环增加可观测性，并把异地备份保留策略脚本化。
+
+- **状态保留**：新增 `INCIDENT_RETENTION_DAYS`（默认 180）、`AUDIT_RETENTION_DAYS`（默认 365）和 `REVOKED_SESSION_RETENTION_DAYS`（默认 30）；进程启动及每 6 小时清理已恢复事故、旧审计和过期/长期吊销会话，活动事故与活动会话不受影响。
+- **Alertmanager 可观测性**：新增读取次数/成功失败/超时、读取耗时、Webhook 鉴权/载荷/持久化结果指标；PrometheusRule 新增读取错误率和连续 Webhook 失败告警，避免 NodeBeacon 自身的告警管道失明。
+- **备份保留**：`backup.sh` 支持 cron 中显式指定绝对 `kubectl` 路径；新增 `scripts/prune-remote-backups.sh`，默认保留每日 30 天、每月归档 12 个月，dry-run 默认安全，`--apply` 才执行删除。
+- **验证**：API 测试增至 9 个文件 59 个用例，覆盖状态清理、Alertmanager 指标和无效 Webhook 载荷；`pnpm typecheck`/`build`/`test` 与 shell 语法检查全绿。该版本已提交 GitHub，生产部署待下一步执行。
+
 ### P2：核心增强
 
 | 状态 | 任务 | 交付标准 | 备注 |

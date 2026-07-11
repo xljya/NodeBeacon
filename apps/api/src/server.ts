@@ -59,8 +59,26 @@ export async function createApp() {
   const auditService = createAuditService(database);
   const alertmanagerService = createAlertmanagerService(env);
   const incidentService = createIncidentService(database);
+  const DAY_MS = 24 * 60 * 60 * 1000;
+  const pruneState = () => {
+    const now = Date.now();
+    const pruned = {
+      incidents: incidentService.pruneResolvedBefore(now - env.incidentRetentionDays * DAY_MS),
+      auditEvents: auditService.pruneBefore(now - env.auditRetentionDays * DAY_MS),
+      sessions: sessionService.cleanupExpired(now, env.revokedSessionRetentionDays)
+    };
+    if (Object.values(pruned).some((count) => count > 0)) {
+      app.log.info(pruned, "pruned expired persisted state");
+    }
+  };
+  pruneState();
+  const retentionTimer = setInterval(pruneState, 6 * 60 * 60 * 1000);
+  retentionTimer.unref();
   registerAuthGuard(app, env, authService, sessionService);
-  app.addHook("onClose", async () => database.close());
+  app.addHook("onClose", async () => {
+    clearInterval(retentionTimer);
+    database.close();
+  });
 
   // Own observability: request volume + duration by route pattern (bounded
   // cardinality — the pattern, e.g. "/api/nodes/:id", never the raw URL).

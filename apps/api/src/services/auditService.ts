@@ -20,6 +20,7 @@ export interface AuditEventInput {
 export interface AuditService {
   record(event: AuditEventInput): void;
   list(limit?: number): AdminAuditEvent[];
+  pruneBefore(cutoff: number): number;
 }
 
 export function createAuditService(db: SqliteDatabase): AuditService {
@@ -33,6 +34,7 @@ export function createAuditService(db: SqliteDatabase): AuditService {
     ORDER BY ts DESC, id DESC
     LIMIT ?
   `);
+  const prune = db.prepare("DELETE FROM audit_events WHERE ts < ?");
 
   return {
     record(event): void {
@@ -65,6 +67,10 @@ export function createAuditService(db: SqliteDatabase): AuditService {
           payload
         };
       });
+    },
+
+    pruneBefore(cutoff): number {
+      return prune.run(cutoff).changes;
     }
   };
 }

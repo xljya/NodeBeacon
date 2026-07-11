@@ -10,6 +10,7 @@ import {
 import type { ApiEnv } from "../config/env.js";
 import { AlertmanagerError, type AlertmanagerService } from "../services/alertmanagerService.js";
 import type { IncidentService, IncomingIncidentAlert } from "../services/incidentService.js";
+import { alertmanagerWebhookRequestsTotal } from "../observability/metrics.js";
 
 interface AlertmanagerWebhookBody {
   status?: string;
@@ -105,6 +106,7 @@ export async function registerAlertRoutes(
 
   app.post("/api/webhooks/alertmanager", async (request, reply) => {
     if (!env.alertmanagerWebhookToken) {
+      alertmanagerWebhookRequestsTotal.inc({ outcome: "not_configured" });
       return reply.code(503).send(buildApiError("webhook_not_configured", "Alertmanager webhook is not configured."));
     }
     const token = readBearer(request.headers.authorization) ??
@@ -112,19 +114,30 @@ export async function registerAlertRoutes(
         ? request.headers["x-nodebeacon-webhook-token"]
         : undefined);
     if (!safeTokenEqual(token, env.alertmanagerWebhookToken)) {
+      alertmanagerWebhookRequestsTotal.inc({ outcome: "invalid_auth" });
       request.log.warn("rejected Alertmanager webhook with invalid token");
       return reply.code(401).send(buildApiError("invalid_webhook_token", "Invalid webhook token."));
     }
 
+    let alerts: IncomingIncidentAlert[];
     try {
-      const alerts = normalizeWebhook(request.body);
-      const processed = incidentService.record(alerts);
-      return reply.send({ status: "ok", processed });
+      alerts = normalizeWebhook(request.body);
     } catch (error) {
+      alertmanagerWebhookRequestsTotal.inc({ outcome: "invalid_payload" });
       return reply.code(400).send(buildApiError(
         "invalid_webhook_payload",
         error instanceof Error ? error.message : "Invalid Alertmanager webhook payload."
       ));
+    }
+
+    try {
+      const processed = incidentService.record(alerts);
+      alertmanagerWebhookRequestsTotal.inc({ outcome: "success" });
+      return reply.send({ status: "ok", processed });
+    } catch (error) {
+      alertmanagerWebhookRequestsTotal.inc({ outcome: "error" });
+      request.log.error({ error }, "failed to persist Alertmanager webhook");
+      return reply.code(500).send(buildApiError("webhook_persistence_failed", "Failed to persist Alertmanager webhook."));
     }
   });
 }
