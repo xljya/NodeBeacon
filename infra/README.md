@@ -51,20 +51,30 @@ The image is built on the node with Docker and imported into k3s containerd. No
 external registry is used, so the Deployment uses `imagePullPolicy: Never`.
 
 Preferred path — the release script does everything (version check → build →
-import → apply → rollout wait → smoke checks). The release version is
-single-sourced from the root `package.json`; the script refuses to run if the
-Deployment or restore Pod template references a different image tag:
+dual-tag → import → immutable manifest render → apply → rollout wait → smoke
+checks → acceptance record). The release version is single-sourced from the
+root `package.json`; the script refuses to deploy a dirty tracked tree or run
+if the Deployment or restore Pod template references a different version tag.
+Production runs the immutable `nodebeacon:git-<12-char-sha>` tag while the
+matching `nodebeacon:<version>` tag remains available for operators:
 
 ```sh
 # From a synced checkout of this repo on RS1000:
+./scripts/deploy.sh --plan
 ./scripts/deploy.sh
 ```
+
+Successful runs write a timestamped key/value acceptance record under
+`artifacts/deployments/` by default. Override the host-only evidence location
+with `NODEBEACON_RELEASE_DIR`; the default directory is gitignored.
 
 Manual fallback (what the script automates):
 
 ```sh
-docker build -t nodebeacon:0.9.2 .
-docker save nodebeacon:0.9.2 | sudo k3s ctr images import -
+git_sha="$(git rev-parse --short=12 HEAD)"
+docker build -t nodebeacon:0.10.0 -t "nodebeacon:git-${git_sha}" .
+docker save nodebeacon:0.10.0 "nodebeacon:git-${git_sha}" \
+  | sudo k3s ctr images import -
 ```
 
 ## Deploy
@@ -107,9 +117,11 @@ curl -i https://monitor.liucf.com/api/admin/summary
 curl -I https://monitor.liucf.com/api/auth/github
 ```
 
-For `0.9.2`, expected production checks are:
+For the next `0.10.0` deployment, expected production checks are:
 
-- image: `nodebeacon:0.9.2`
+- Deployment image: `nodebeacon:git-<12-char-sha>` matching the deployed
+  commit; Deployment and Pod-template annotations record the full Git SHA,
+  semantic version and UTC deployment time
 - `/readyz` and `/healthz`: HTTP 200
 - `/api/status`: `summary.total == 5` and `summary.online == 5`
 - `/api/auth/config`: password and GitHub login both enabled
@@ -302,11 +314,12 @@ kubectl delete -k infra/k8s
 
 ## Update to a new build
 
-Bump `version` in the root `package.json` and the image tags in
-`k8s/deployment.yaml` plus `k8s/restore-pod.example.yaml`, commit, sync the tree
-to RS1000, then:
+Bump `version` in the root `package.json` and the version image tags in
+`k8s/deployment.yaml` plus `k8s/restore-pod.example.yaml`, commit, sync the
+clean tree to RS1000, inspect the plan, then deploy:
 
 ```sh
+./scripts/deploy.sh --plan
 ./scripts/deploy.sh
 ```
 

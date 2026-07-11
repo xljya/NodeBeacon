@@ -423,7 +423,7 @@ P2 进展记录：2026-07-09 `0.4.0` 交付节点详情 + 趋势主线（P2 前�
 | 已完成（重新定性） | CSRF 防护 | 写回类 admin 接口不可被跨站伪造 | 读码结论：`SameSite=Lax` Cookie + CORS 锁定 `WEB_ORIGIN` + JSON-only body 解析已封死经典 CSRF 路径；`0.7.0` 补 Origin 头兜底校验（携带会话的写请求 Origin 不匹配即 403），double-submit token 不再需要 |
 | 已完成 | SQLite 备份策略 | 有备份路径、恢复步骤、保留周期和恢复演练说明 | `0.8.0`：在线备份 + 7 天本地保留 + netcup 异地归档 + 每日 cron；首份归档已完成隔离恢复演练并回填记录 |
 | 已完成（会话） | 会话持久化升级到 SQLite | sessions 落 SQLite，支持可撤销会话 | `0.8.0` 完成；users 表、`viewer` 与账号 CRUD 明确等第二个真实用户出现再做 |
-| 部分完成 | 镜像构建/发布流水线 | 脚本化 build+import、按 git sha 打 tag；可选 GitHub Actions | `0.7.0`：`scripts/deploy.sh`（版本一致性校验 + build/import/apply/rollout/冒烟断言）+ GitHub Actions CI（typecheck/test/build）；按 git sha 打 tag 未做，发版仍按语义版本 |
+| 已完成（0.10.0 待部署） | 镜像构建/发布流水线 | 脚本化 build+import、按 git sha 打 tag；可选 GitHub Actions | `0.10.0`：`scripts/deploy.sh` 同时构建语义版本与 `git-<12位SHA>` 标签，通过临时 Kustomize overlay 让生产实际运行不可变 SHA 标签，并把完整 SHA/版本/UTC 时间写入 Deployment 注解；冒烟通过后生成 gitignored 验收记录，CI 校验发布计划 |
 | 已完成 | Cloudflare 缓存和 WAF 规则 | `/api/*`、`/auth/*` 不缓存；登录限速 | 2026-07-11：两条 Cache Rules 与一条 IP 登录限速规则已通过控制台部署并回读；Free plan 使用 `5/10s`、`Block 10s` 降级方案，生产验证出现 Cloudflare `1015`；规则 ID 与响应头证据见 `infra/cloudflare.md` |
 | 部分完成 | UI 细节打磨 | 空状态、骨架屏、键盘可访问性、移动端触控区域 | `0.6.2`：全局 focus-visible / hover / active / disabled 状态、共享加载与错误组件、空状态图标与动作、抽屉动画、密度收紧、窄屏 Group 标签可滚动、760–900px 遮罩修复；骨架屏仍待做 |
 | 部分完成 | 文档补齐 | README、部署文档、环境变量、故障排查、ADR 更新 | README/部署/备份恢复/Cloudflare 边界已可追溯；独立故障排查手册与 ADR 增量仍待补 |

@@ -10,6 +10,10 @@ It collects host metrics from `node_exporter`, probes service availability throu
 
 > Status: `0.9.2` is deployed in production with persisted-state retention, Alertmanager read/webhook observability, off-site backup retention, active Cloudflare cache rules, and layered login rate limiting.
 
+The next `0.10.0` release is being prepared with immutable Git-SHA image tags,
+Deployment provenance annotations, and timestamped deployment acceptance
+records.
+
 ## Features
 
 - Server node monitoring
@@ -111,6 +115,8 @@ NodeBeacon 是一个基于 Prometheus 的轻量级自托管节点监控与可用
 它通过 `node_exporter` 获取服务器主机指标，通过 `blackbox_exporter` 探测服务可用性，并为 VPS、Homelab、小团队和个人基础设施提供清晰的状态展示页面。
 
 > 当前状态：`0.9.2` 已部署到生产，持久化状态保留、Alertmanager 读写可观测性、异地备份保留、Cloudflare 缓存规则与分层登录限速均已生效。
+
+下一版本 `0.10.0` 正在补齐不可变 Git SHA 镜像标签、Deployment 发布来源注解和带时间戳的部署验收记录。
 
 ## 功能特性
 
