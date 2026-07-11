@@ -78,6 +78,7 @@ The backend runs on RS1000 k3s as a Kubernetes Deployment. The web UI and Fastif
 - [`Status Page.dc.html`](Status%20Page.dc.html): high-fidelity HTML prototype
 - [`monitoring-setup.md`](monitoring-setup.md): Prometheus metric mapping and data-plumbing notes
 - [`infra/cloudflare.md`](infra/cloudflare.md): production cache, security-header, HSTS, and login rate-limit policy
+- [`docs/cross-platform-sync.md`](docs/cross-platform-sync.md): Windows/macOS/Linux Git setup and line-ending troubleshooting
 - [`docs/development-plan.md`](docs/development-plan.md): current development plan
 - [`docs/adr/`](docs/adr): architecture decision records
 - [`docs/reference/legacy-monitor-status/`](docs/reference/legacy-monitor-status): reference copy of the previous lightweight monitor page
@@ -179,6 +180,7 @@ Cloudflare
 - [`Status Page.dc.html`](Status%20Page.dc.html)：高保真 HTML 原型
 - [`monitoring-setup.md`](monitoring-setup.md)：Prometheus 指标映射和数据接入说明
 - [`infra/cloudflare.md`](infra/cloudflare.md)：生产缓存、安全响应头、HSTS 与登录限速策略
+- [`docs/cross-platform-sync.md`](docs/cross-platform-sync.md)：Windows/macOS/Linux Git 配置和换行符排查
 - [`docs/development-plan.md`](docs/development-plan.md)：当前开发计划
 - [`docs/adr/`](docs/adr)：架构决策记录
 - [`docs/reference/legacy-monitor-status/`](docs/reference/legacy-monitor-status)：旧轻量状态页的参考副本
