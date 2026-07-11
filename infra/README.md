@@ -192,6 +192,20 @@ For `0.9.2`, expected production checks are:
 - `/admin/settings`: read-only appearance section shows browser-local theme
   preference boundaries alongside data/cache/auth/security/release sections.
 
+### 0.9.2 production acceptance record
+
+Production `0.9.2` and its Cloudflare edge controls were accepted on
+2026-07-11 (Asia/Shanghai). The two Cache Rules are active in the required
+order, and the login burst rule is active with the Free-plan fallback of five
+requests per 10 seconds, counted by IP, followed by a 10-second block.
+
+Public verification returned HTML `no-cache + DYNAMIC`, repeated API
+`no-store + DYNAMIC`, and repeated hashed-asset `immutable + HIT`. An invalid
+credential burst returned the normal application failures first, the Fastify
+`429` on attempt 6, and Cloudflare error `1015` with `Retry-After: 10` on
+attempt 7. Rule IDs and the full edge acceptance record are maintained in
+[`cloudflare.md`](cloudflare.md).
+
 ## SQLite and registry off-site backup
 
 `scripts/backup.sh` uses SQLite's online backup API inside the running Pod,

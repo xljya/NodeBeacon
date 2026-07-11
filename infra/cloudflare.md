@@ -113,3 +113,40 @@ References:
 - [Cloudflare rate limiting rules](https://developers.cloudflare.com/waf/rate-limiting-rules/)
 - [Cloudflare HSTS requirements](https://developers.cloudflare.com/ssl/edge-certificates/additional-options/http-strict-transport-security/)
 - [Cloudflare Web Analytics CSP requirements](https://developers.cloudflare.com/web-analytics/faq/#what-do-i-need-to-add-to-my-content-security-policy-csp)
+
+## Production rollout record
+
+Applied to the `liucf.com` zone for `monitor.liucf.com` on 2026-07-11
+(Asia/Shanghai). Existing DNS, SSL, Tunnel, bot controls and managed WAF settings
+were left unchanged.
+
+### Active rules
+
+| Order | Rule | Rule ID | Effective settings |
+| --- | --- | --- | --- |
+| 1 | `NodeBeacon - Cache hashed assets` | `6fca667180b048b0a7d3fa0de282b53b` | Eligible for cache; Edge TTL uses the origin Cache-Control header and bypasses when absent; Browser TTL accepts the origin TTL |
+| 2 | `NodeBeacon - Bypass API and auth` | `3b4ce4fd7c3e4824b9eec0dd11b7980a` | Bypass cache for `/api/` and `/auth/` |
+
+The active login burst rule is `NodeBeacon - Login burst protection` (rule ID
+`0221c751f22f4fc0a166bd94ab94086c`). It matches the production hostname,
+`POST`, and the exact `/api/auth/login` path, counting by IP. The Free plan
+offered a 10-second period and `Block`, but not Managed Challenge, so the
+deployed fallback is five requests per 10 seconds with a 10-second block.
+Fastify's five-per-minute limiter remains the authoritative origin control.
+
+### Acceptance evidence
+
+Production header checks after deployment returned:
+
+- `/`: `Cache-Control: no-cache`, `CF-Cache-Status: DYNAMIC`.
+- `/api/status`, repeated: `Cache-Control: no-store`,
+  `CF-Cache-Status: DYNAMIC`.
+- `/assets/index-Db5Jxr4n.js`, repeated: `Cache-Control: public,
+  max-age=31536000, immutable`, `CF-Cache-Status: HIT`.
+- Invalid login burst: attempts 1-5 returned the normal application `401`;
+  attempt 6 reached the Fastify `429`; attempt 7 was blocked at Cloudflare
+  with error `1015` and `Retry-After: 10`.
+
+Security Events sampling did not immediately show the test event, but the
+Cloudflare-generated `1015` response confirms that the edge rate-limit action
+executed. No real administrator credentials were used for the test.

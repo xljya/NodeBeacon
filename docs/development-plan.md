@@ -33,7 +33,7 @@ NodeBeacon 是给当前五台服务器使用的自托管监控状态页。它不
 - Namespace：`nodebeacon`，和已有 `sre-lab` 学习服务隔离。
 - 入口链路：Cloudflare 橙云代理 -> RS1000 nginx -> RS1000 k3s。
 - 当前源站：Cloudflare `monitor.liucf.com` 的 IPv4 源站指向 RS1000；dmit-uswest 不再承载 monitor 入口。
-- 当前状态（2026-07-09）：NodeBeacon `0.6.0` 主线推进到原生 React 状态页、节点详情/趋势、登录/GitHub OAuth、Blackbox 探测、自身 `/metrics`、vitest 基础测试，以及 Komari 风格可写 `/admin` 后台。`/admin` 首屏为 Server / Node list，支持节点展示配置新增、编辑、删除、账单备注、私有备注、Prometheus selector 复制与 YAML 片段导出；RS1000 生产注册表改为 ConfigMap seed + PVC `/data/nodes.yaml` 写回。RS1000 nginx 已反代 k3s Service（NodePort 31003），`https://monitor.liucf.com/` 展示真实五节点总览。
+- 当前状态（2026-07-11）：NodeBeacon `0.9.2` 已部署到 RS1000 生产环境。原生 React 状态页、节点详情/趋势、登录/GitHub OAuth、Komari 风格可写后台、SQLite 会话与审计、Alertmanager incident 闭环、自身 Prometheus 监控、状态保留和异地备份均已上线；Cloudflare 哈希资源缓存、API/auth 绕过缓存和登录突发限速规则已部署并验收。`https://monitor.liucf.com/` 展示真实五节点总览。
 - 第一版目标（已达成）：替换当前轻量 `monitor-status` 应用，保留现有域名和 Cloudflare 安全边界。
 
 ## 2. 总体架构
@@ -378,7 +378,7 @@ P1 验证记录：2026-07-06 已用浏览器在 `https://monitor.liucf.com/` 端
 - **状态保留**：新增 `INCIDENT_RETENTION_DAYS`（默认 180）、`AUDIT_RETENTION_DAYS`（默认 365）和 `REVOKED_SESSION_RETENTION_DAYS`（默认 30）；进程启动及每 6 小时清理已恢复事故、旧审计和过期/长期吊销会话，活动事故与活动会话不受影响。
 - **Alertmanager 可观测性**：新增读取次数/成功失败/超时、读取耗时、Webhook 鉴权/载荷/持久化结果指标；PrometheusRule 新增读取错误率和连续 Webhook 失败告警，避免 NodeBeacon 自身的告警管道失明。
 - **备份保留**：`backup.sh` 支持 cron 中显式指定绝对 `kubectl` 路径；新增 `scripts/prune-remote-backups.sh`，默认保留每日 30 天、每月归档 12 个月，dry-run 默认安全，`--apply` 才执行删除。
-- **验证**：API 测试增至 9 个文件 59 个用例，覆盖状态清理、Alertmanager 指标和无效 Webhook 载荷；`pnpm typecheck`/`build`/`test` 与 shell 语法检查全绿。该版本已提交 GitHub，生产部署待下一步执行。
+- **验证**：API 测试增至 9 个文件 59 个用例，覆盖状态清理、Alertmanager 指标和无效 Webhook 载荷；`pnpm typecheck`/`build`/`test` 与 shell 语法检查全绿。该版本已提交 GitHub 并部署生产；Cloudflare 验收确认首页/API 保持 `DYNAMIC`、哈希资源为 `HIT`，登录突发测试由 Fastify `429` 与 Cloudflare `1015` 形成分层保护。
 
 ### P2：核心增强
 
@@ -424,7 +424,7 @@ P2 进展记录：2026-07-09 `0.4.0` 交付节点详情 + 趋势主线（P2 前�
 | 已完成 | SQLite 备份策略 | 有备份路径、恢复步骤、保留周期和恢复演练说明 | `0.8.0`：在线备份 + 7 天本地保留 + netcup 异地归档 + 每日 cron；首份归档已完成隔离恢复演练并回填记录 |
 | 已完成（会话） | 会话持久化升级到 SQLite | sessions 落 SQLite，支持可撤销会话 | `0.8.0` 完成；users 表、`viewer` 与账号 CRUD 明确等第二个真实用户出现再做 |
 | 部分完成 | 镜像构建/发布流水线 | 脚本化 build+import、按 git sha 打 tag；可选 GitHub Actions | `0.7.0`：`scripts/deploy.sh`（版本一致性校验 + build/import/apply/rollout/冒烟断言）+ GitHub Actions CI（typecheck/test/build）；按 git sha 打 tag 未做，发版仍按语义版本 |
-| 部分完成（源站完成） | Cloudflare 缓存和 WAF 规则 | `/api/*`、`/auth/*` 不缓存；登录限速 | `0.9.1`：源站 API `no-store` + HTML/assets 分层已上线，`infra/cloudflare.md` 给出精确 Cache Rule/WAF 表达式；账户侧规则待有 scoped token 或控制台操作时应用 |
+| 已完成 | Cloudflare 缓存和 WAF 规则 | `/api/*`、`/auth/*` 不缓存；登录限速 | 2026-07-11：两条 Cache Rules 与一条 IP 登录限速规则已通过控制台部署并回读；Free plan 使用 `5/10s`、`Block 10s` 降级方案，生产验证出现 Cloudflare `1015`；规则 ID 与响应头证据见 `infra/cloudflare.md` |
 | 部分完成 | UI 细节打磨 | 空状态、骨架屏、键盘可访问性、移动端触控区域 | `0.6.2`：全局 focus-visible / hover / active / disabled 状态、共享加载与错误组件、空状态图标与动作、抽屉动画、密度收紧、窄屏 Group 标签可滚动、760–900px 遮罩修复；骨架屏仍待做 |
 | 部分完成 | 文档补齐 | README、部署文档、环境变量、故障排查、ADR 更新 | README/部署/备份恢复/Cloudflare 边界已可追溯；独立故障排查手册与 ADR 增量仍待补 |
 
