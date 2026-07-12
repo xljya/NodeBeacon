@@ -1,4 +1,5 @@
-import { Counter, Histogram, Registry, collectDefaultMetrics } from "prom-client";
+import { readFileSync } from "node:fs";
+import { Counter, Gauge, Histogram, Registry, collectDefaultMetrics } from "prom-client";
 
 /**
  * NodeBeacon's own observability (development-plan §11): request volume and
@@ -66,6 +67,30 @@ export const alertmanagerReadDurationSeconds = new Histogram({
   buckets: [0.01, 0.05, 0.1, 0.25, 0.5, 1, 2, 5],
   registers: [metricsRegistry]
 });
+
+let backupSuccessTimestampPath: string | undefined;
+
+export const backupLastSuccessTimestampSeconds = new Gauge({
+  name: "nodebeacon_backup_last_success_timestamp_seconds",
+  help: "Unix timestamp of the last successfully copied off-site backup; zero means missing or invalid.",
+  registers: [metricsRegistry],
+  collect() {
+    if (!backupSuccessTimestampPath) {
+      this.set(0);
+      return;
+    }
+    try {
+      const value = Number.parseInt(readFileSync(backupSuccessTimestampPath, "utf8").trim(), 10);
+      this.set(Number.isSafeInteger(value) && value > 0 ? value : 0);
+    } catch {
+      this.set(0);
+    }
+  }
+});
+
+export function configureBackupSuccessTimestamp(path: string): void {
+  backupSuccessTimestampPath = path;
+}
 
 export type CacheName = "status" | "trend" | "probe";
 

@@ -29,6 +29,8 @@ export interface ApiEnv {
   incidentRetentionDays: number;
   auditRetentionDays: number;
   revokedSessionRetentionDays: number;
+  /** Timestamp file written only after a successful off-site backup copy. */
+  backupSuccessTimestampPath: string;
   allowRegister: boolean;
   initialOwnerEmail?: string;
   initialOwnerPassword?: string;
@@ -116,6 +118,9 @@ export function loadEnv(): ApiEnv {
     incidentRetentionDays: numberFromEnv("INCIDENT_RETENTION_DAYS", 180),
     auditRetentionDays: numberFromEnv("AUDIT_RETENTION_DAYS", 365),
     revokedSessionRetentionDays: numberFromEnv("REVOKED_SESSION_RETENTION_DAYS", 30),
+    backupSuccessTimestampPath:
+      process.env.NODEBEACON_BACKUP_SUCCESS_PATH?.trim() ||
+      (nodeEnv === "production" ? "/data/backup-last-success.timestamp" : "./data/backup-last-success.timestamp"),
     allowRegister: boolFromEnv("ALLOW_REGISTER", false),
     initialOwnerEmail: initialOwnerEmail || undefined,
     initialOwnerPassword: initialOwnerPassword || undefined,

@@ -13,5 +13,6 @@ playwright-report/
 blob-report/
 e2e/.auth/
 artifacts/deployments/
+artifacts/production-verification/
 .claude/
 data/

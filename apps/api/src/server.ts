@@ -11,7 +11,11 @@ import { registerStatusRoutes } from "./routes/status.js";
 import { registerNodeRoutes } from "./routes/nodes.js";
 import { registerLatencyRoutes } from "./routes/latency.js";
 import { registerMetricsRoutes } from "./routes/metrics.js";
-import { httpRequestDurationSeconds, httpRequestsTotal } from "./observability/metrics.js";
+import {
+  configureBackupSuccessTimestamp,
+  httpRequestDurationSeconds,
+  httpRequestsTotal
+} from "./observability/metrics.js";
 import { registerAuthRoutes } from "./routes/auth.js";
 import { registerAdminRoutes } from "./routes/admin.js";
 import { registerAuthGuard } from "./plugins/authGuard.js";
@@ -54,6 +58,7 @@ export async function createApp() {
   });
 
   const database = openDatabase(env.databasePath);
+  configureBackupSuccessTimestamp(env.backupSuccessTimestampPath);
   const authService = createAuthService(env);
   const sessionService = createSessionService(database);
   const auditService = createAuditService(database);
@@ -89,7 +94,11 @@ export async function createApp() {
     httpRequestDurationSeconds.observe(labels, reply.elapsedTime / 1000);
   });
 
-  await registerHealthRoutes(app);
+  await registerHealthRoutes(app, {
+    database,
+    nodeConfigPath: env.nodeConfigPath,
+    nodeConfigSeedPath: env.nodeConfigSeedPath
+  });
   await registerStatusRoutes(app, env);
   await registerNodeRoutes(app, env);
   await registerLatencyRoutes(app, env);

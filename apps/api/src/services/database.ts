@@ -4,7 +4,7 @@ import Database from "better-sqlite3";
 
 export type SqliteDatabase = Database.Database;
 
-const CURRENT_SCHEMA_VERSION = 2;
+export const CURRENT_SCHEMA_VERSION = 2;
 
 function migrateToV1(db: SqliteDatabase): void {
   db.exec(`

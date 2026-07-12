@@ -1,5 +1,9 @@
+import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import type { FastifyInstance } from "fastify";
+import { configureBackupSuccessTimestamp } from "../src/observability/metrics.js";
 import { buildTestApp } from "./helpers.js";
 
 describe("GET /metrics (own observability)", () => {
@@ -36,5 +40,25 @@ describe("GET /metrics (own observability)", () => {
     const text = (await app.inject({ method: "GET", url: "/metrics" })).body;
     expect(text).toContain('route="/api/nodes/:id"');
     expect(text).not.toContain("some-raw-id");
+  });
+
+  it.each([
+    { label: "missing", content: undefined, expected: 0 },
+    { label: "invalid", content: "not-a-timestamp\n", expected: 0 },
+    { label: "valid", content: "1712345678\n", expected: 1712345678 }
+  ])("reports a $label backup timestamp", async ({ content, expected }) => {
+    const directory = mkdtempSync(join(tmpdir(), "nodebeacon-metrics-"));
+    const path = join(directory, "backup-last-success.timestamp");
+    if (content !== undefined) writeFileSync(path, content);
+    configureBackupSuccessTimestamp(path);
+
+    try {
+      const text = (await app.inject({ method: "GET", url: "/metrics" })).body;
+      expect(text).toMatch(
+        new RegExp(`nodebeacon_backup_last_success_timestamp_seconds ${expected}(?:\\.0+)?(?:\\n|$)`)
+      );
+    } finally {
+      rmSync(directory, { recursive: true, force: true });
+    }
   });
 });

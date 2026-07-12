@@ -12,6 +12,7 @@ KUBECTL_BIN="${NODEBEACON_KUBECTL_BIN:-$(command -v kubectl || true)}"
 STAMP="$(date -u +%Y%m%dT%H%M%SZ)"
 WORK_DIR="${BACKUP_DIR}/${STAMP}"
 REMOTE_DB="/data/nodebeacon-backup-${STAMP}.db"
+SUCCESS_TIMESTAMP_PATH="${NODEBEACON_BACKUP_SUCCESS_PATH:-/data/backup-last-success.timestamp}"
 
 if [[ -z "${KUBECTL_BIN}" || ! -x "${KUBECTL_BIN}" ]]; then
   echo "kubectl not found; set NODEBEACON_KUBECTL_BIN to its absolute path" >&2
@@ -47,6 +48,13 @@ if [[ -n "${BACKUP_IDENTITY}" ]]; then
   SCP_OPTIONS+=(-i "${BACKUP_IDENTITY}")
 fi
 scp "${SCP_OPTIONS[@]}" "${ARCHIVE}" "${BACKUP_REMOTE}"
+
+# Only advance freshness after the off-site copy succeeds. Write atomically on
+# the same PVC observed by NodeBeacon's /metrics collector.
+SUCCESS_EPOCH="$(date -u +%s)"
+"${KUBECTL_BIN}" -n "${NAMESPACE}" exec "${POD}" -- sh -c \
+  'printf "%s\n" "$1" > "$2.tmp" && mv "$2.tmp" "$2"' \
+  sh "${SUCCESS_EPOCH}" "${SUCCESS_TIMESTAMP_PATH}"
 
 find "${BACKUP_DIR}" -maxdepth 1 -type f -name 'nodebeacon-*.tar.gz' \
   -mtime "+${KEEP_LOCAL_DAYS}" -delete

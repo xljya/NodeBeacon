@@ -71,3 +71,28 @@ spec:
           annotations:
             summary: NodeBeacon Alertmanager webhook is repeatedly failing
             description: At least three webhook requests failed authentication, validation, configuration, or persistence within ten minutes.
+        - alert: NodeBeaconBackupStale
+          expr: |
+            nodebeacon_backup_last_success_timestamp_seconds > 0
+              and time() - nodebeacon_backup_last_success_timestamp_seconds > 36 * 60 * 60
+              and time() - nodebeacon_backup_last_success_timestamp_seconds <= 72 * 60 * 60
+          for: 15m
+          labels:
+            severity: warning
+            namespace: nodebeacon
+            node_id: rs1000
+          annotations:
+            summary: NodeBeacon off-site backup is stale
+            description: The last successful off-site NodeBeacon backup is more than 36 hours old.
+        - alert: NodeBeaconBackupMissing
+          expr: |
+            nodebeacon_backup_last_success_timestamp_seconds == 0
+              or time() - nodebeacon_backup_last_success_timestamp_seconds > 72 * 60 * 60
+          for: 15m
+          labels:
+            severity: critical
+            namespace: nodebeacon
+            node_id: rs1000
+          annotations:
+            summary: NodeBeacon off-site backup is missing
+            description: No valid backup success timestamp exists, or the last successful off-site backup is more than 72 hours old.

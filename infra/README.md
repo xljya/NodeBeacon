@@ -72,8 +72,8 @@ Manual fallback (what the script automates):
 
 ```sh
 git_sha="$(git rev-parse --short=12 HEAD)"
-docker build -t nodebeacon:0.10.0 -t "nodebeacon:git-${git_sha}" .
-docker save nodebeacon:0.10.0 "nodebeacon:git-${git_sha}" \
+docker build -t nodebeacon:0.11.0 -t "nodebeacon:git-${git_sha}" .
+docker save nodebeacon:0.11.0 "nodebeacon:git-${git_sha}" \
   | sudo k3s ctr images import -
 ```
 
@@ -117,7 +117,7 @@ curl -i https://monitor.liucf.com/api/admin/summary
 curl -I https://monitor.liucf.com/api/auth/github
 ```
 
-For the next `0.10.0` deployment, expected production checks are:
+For each deployment, expected production checks are:
 
 - Deployment image: `nodebeacon:git-<12-char-sha>` matching the deployed
   commit; Deployment and Pod-template annotations record the full Git SHA,
@@ -138,6 +138,15 @@ For the next `0.10.0` deployment, expected production checks are:
   appear after owner sign-in, with a working 1h/4h/24h/7d switch
 - `/api/latency`: `probes` lists the blackbox HTTP targets with latency,
   24h success rate and cert expiry; the status page shows the probe panel
+
+After the nightly backup has succeeded, run the read-only acceptance script.
+It archives version/SHA provenance, Pod readiness, health endpoints, five-node
+status, authentication boundaries, Cloudflare cache headers, backup freshness,
+and required Prometheus rules without logging in or changing production:
+
+```sh
+./scripts/verify-production.sh
+```
 - `/metrics` via the public hostname: HTTP 404 (nginx blocks it); via the
   NodePort/cluster: Prometheus text with `nodebeacon_*` metrics
 - `/metrics` includes Alertmanager read duration/outcome and webhook outcome
@@ -256,6 +265,10 @@ after changing either retention environment variable.
 
 Minimal cron environments may not include `/usr/local/bin`; set
 `NODEBEACON_KUBECTL_BIN=/usr/local/bin/kubectl` in the RS1000 cron entry.
+After the off-site copy succeeds, the backup script atomically writes
+`/data/backup-last-success.timestamp`. NodeBeacon exports it as
+`nodebeacon_backup_last_success_timestamp_seconds`; warning and critical rules
+fire after 36 and 72 hours respectively. A failed copy never advances it.
 
 ## Restore drill
 

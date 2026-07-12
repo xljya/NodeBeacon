@@ -12,7 +12,7 @@ spec:
     fsGroup: 1000
   containers:
     - name: restore
-      image: nodebeacon:0.10.0
+      image: nodebeacon:0.11.0
       imagePullPolicy: Never
       command: ["sleep", "infinity"]
       volumeMounts:
