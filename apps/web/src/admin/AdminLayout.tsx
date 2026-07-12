@@ -22,7 +22,6 @@ import {
   Server,
   Settings,
   Sun,
-  Terminal,
   UsersRound
 } from "lucide-react";
 import { useTranslation } from "react-i18next";
@@ -51,7 +50,6 @@ const SETTINGS_ITEMS: NestedNavItem[] = [
   { to: "/admin/settings/sign-on", label: "Sign-On", icon: CircleUserRound },
   { to: "/admin/settings/notifications", label: "Notifications", icon: Bell },
   { to: "/admin/settings/general", label: "General", icon: Settings },
-  { to: "/admin/settings/xtermjs", label: "XtermJS", icon: Terminal },
   { to: "/admin/settings/reverse-proxy", label: "Reverse Proxy", icon: Activity },
   { to: "/admin/settings/metrics", label: "Metrics Database", icon: Server }
 ];
@@ -127,7 +125,6 @@ export function AdminLayout() {
               items={NOTIFICATION_ITEMS}
             />
             <AdminLink to="/admin/users" icon={UsersRound} label={t("admin.nav.users")} onNavigate={() => setSidebarOpen(false)} />
-            <AdminLink to="/admin/remote-exec" icon={Terminal} label={t("admin.nav.remoteExec")} onNavigate={() => setSidebarOpen(false)} />
             <AdminLink to="/admin/sessions" icon={KeyRound} label={t("admin.nav.sessions")} onNavigate={() => setSidebarOpen(false)} />
             <AdminLink to="/admin/account" icon={CircleUserRound} label={t("admin.nav.account")} onNavigate={() => setSidebarOpen(false)} />
             <AdminLink to="/admin/logs" icon={ScrollText} label={t("admin.nav.logs")} onNavigate={() => setSidebarOpen(false)} />

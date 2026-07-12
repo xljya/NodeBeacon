@@ -11,7 +11,8 @@ It collects host metrics from `node_exporter`, probes service availability throu
 > Status: `0.10.0` is deployed in production with immutable Git-SHA images,
 > deployment provenance, archived acceptance records, off-site backups,
 > Cloudflare cache rules, and layered login rate limiting. `0.11.0` adds
-> component readiness and monitored backup freshness.
+> component readiness and monitored backup freshness; `0.12.0` adds isolated
+> browser CI and removes UI claims that exceed the product's real scope.
 
 ## Features
 
@@ -82,6 +83,7 @@ The backend runs on RS1000 k3s as a Kubernetes Deployment. The web UI and Fastif
 - [`monitoring-setup.md`](monitoring-setup.md): Prometheus metric mapping and data-plumbing notes
 - [`infra/cloudflare.md`](infra/cloudflare.md): production cache, security-header, HSTS, and login rate-limit policy
 - [`docs/cross-platform-sync.md`](docs/cross-platform-sync.md): Windows/macOS/Linux Git setup and line-ending troubleshooting
+- [`docs/troubleshooting.md`](docs/troubleshooting.md): production diagnosis, rollback, backup, and recovery runbook
 - [`docs/development-plan.md`](docs/development-plan.md): current development plan
 - [`docs/adr/`](docs/adr): architecture decision records
 - [`docs/reference/legacy-monitor-status/`](docs/reference/legacy-monitor-status): reference copy of the previous lightweight monitor page
@@ -115,7 +117,7 @@ NodeBeacon 是一个基于 Prometheus 的轻量级自托管节点监控与可用
 
 > 当前状态：`0.10.0` 已部署到生产，不可变 Git SHA 镜像、Deployment
 > 发布来源、验收记录、异地备份、Cloudflare 缓存规则与分层登录限速均已生效。
-> `0.11.0` 将补齐组件级 readiness 与备份新鲜度监控。
+> `0.11.0` 已补齐组件级 readiness 与备份新鲜度监控；`0.12.0` 增加隔离的浏览器 CI，并清理超出产品真实能力的界面入口。
 
 ## 功能特性
 

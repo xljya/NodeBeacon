@@ -10,7 +10,6 @@ import { UsersPage } from "./admin/pages/UsersPage";
 import { SettingsPage } from "./admin/pages/SettingsPage";
 import { AboutPage } from "./admin/pages/AboutPage";
 import { ActivityPage } from "./admin/pages/ActivityPage";
-import { RemoteExecPage } from "./admin/pages/RemoteExecPage";
 import { LatencyPage } from "./admin/pages/LatencyPage";
 import { AccountPage } from "./admin/pages/AccountPage";
 import { SessionsPage } from "./admin/pages/SessionsPage";
@@ -38,7 +37,6 @@ export function App() {
           <Route path="settings/:section" element={<SettingsPage />} />
           <Route path="notification" element={<NotificationPage />} />
           <Route path="notification/:kind" element={<NotificationPage />} />
-          <Route path="remote-exec" element={<RemoteExecPage />} />
           <Route path="latency" element={<LatencyPage />} />
           <Route path="sessions" element={<SessionsPage />} />
           <Route path="account" element={<AccountPage />} />

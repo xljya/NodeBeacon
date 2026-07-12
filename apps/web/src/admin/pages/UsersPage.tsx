@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import { KeyRound, RefreshCw, ShieldCheck, UserCheck, Users } from "lucide-react";
+import { KeyRound, RefreshCw, ShieldCheck, Users } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import type { AdminUsersResponse } from "@nodebeacon/shared";
 import { useApi } from "../../lib/useApi";
@@ -13,7 +13,6 @@ export function UsersPage() {
   if (error) return <PageError message={error} />;
   const usersList = data?.users ?? [];
   const owners = usersList.filter((user) => user.role === "owner").length;
-  const viewers = usersList.filter((user) => user.role === "viewer").length;
 
   return (
     <div className="page page-wide">
@@ -30,7 +29,6 @@ export function UsersPage() {
       <div className="mini-stat-grid">
         <MiniStat icon={<Users size={17} />} label={t("admin.users.totalAccounts")} value={usersList.length} />
         <MiniStat icon={<ShieldCheck size={17} />} label={t("admin.users.ownerAccounts")} value={owners} tone="ok" />
-        <MiniStat icon={<UserCheck size={17} />} label={t("admin.users.viewerAccounts")} value={viewers} />
         <MiniStat icon={<KeyRound size={17} />} label={t("admin.users.authSource")} value={t("admin.users.envBacked")} />
       </div>
 
@@ -77,13 +75,6 @@ export function UsersPage() {
               <p>{t("admin.users.ownerOnlyDesc")}</p>
             </div>
             <span className="pill pill-ok">{t("admin.users.active")}</span>
-          </div>
-          <div className="setting-card flat">
-            <div className="setting-text">
-              <h3>{t("admin.users.persistenceTitle")}</h3>
-              <p>{t("admin.users.persistenceDesc")}</p>
-            </div>
-            <span className="pill pill-warn">{t("admin.users.planned")}</span>
           </div>
         </div>
       </section>

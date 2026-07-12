@@ -11,8 +11,7 @@ import {
   Palette,
   RefreshCw,
   Server,
-  Settings2,
-  Terminal
+  Settings2
 } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import type { AdminSummaryResponse } from "@nodebeacon/shared";
@@ -26,7 +25,6 @@ const SETTINGS_INDEX = [
   { slug: "sign-on", label: "Sign-On", icon: LockKeyhole },
   { slug: "notifications", label: "Notifications", icon: Bell },
   { slug: "general", label: "General", icon: Settings2 },
-  { slug: "xtermjs", label: "XtermJS", icon: Terminal },
   { slug: "reverse-proxy", label: "Reverse Proxy", icon: ArrowUpRight },
   { slug: "metrics", label: "Metrics Database", icon: Database }
 ] as const;
@@ -100,8 +98,6 @@ function SettingsContent({ section, summary }: { section: string; summary: Admin
           <SettingRow label="Node registry" value="Writable YAML registry" ok />
         </div>
       );
-    case "xtermjs":
-      return <SettingsLink target="/admin/remote-exec" text="Review remote-execution boundary" />;
     case "reverse-proxy":
       return <CopyOrigin />;
     case "metrics":
@@ -167,7 +163,6 @@ function descriptionFor(section: string): string {
     "sign-on": "Effective owner-authentication information.",
     notifications: "Rule categories and notification readiness.",
     general: "Runtime values that are safe to inspect from the console.",
-    xtermjs: "Remote terminal compatibility and its security boundary.",
     "reverse-proxy": "The public URL that a reverse proxy should forward.",
     metrics: "The server-side Prometheus integration."
   };

@@ -12,6 +12,7 @@ test-results/
 playwright-report/
 blob-report/
 e2e/.auth/
+e2e/.tmp/
 artifacts/deployments/
 artifacts/production-verification/
 .claude/

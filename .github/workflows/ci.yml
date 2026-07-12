@@ -1,5 +1,4 @@
-# Regression net for direct-to-main pushes: typecheck + unit tests + build.
-# Playwright e2e stays local (needs a real browser channel and dev-server env).
+# Regression net for direct-to-main pushes, including isolated Chromium E2E.
 name: CI
 
 on:
@@ -29,3 +28,5 @@ jobs:
       - run: pnpm test
       - run: pnpm build
       - run: ./scripts/test-deploy-plan.sh
+      - run: pnpm exec playwright install --with-deps chromium
+      - run: pnpm exec playwright test --project=chromium

@@ -1,6 +1,8 @@
 import { defineConfig, devices } from "@playwright/test";
+import { resolve } from "node:path";
 
 const PORT = 5173;
+const E2E_STATE_DIR = resolve("e2e/.tmp");
 export const BASE_URL = `http://localhost:${PORT}`;
 
 // Owner credentials injected into the dev API for the lifetime of the test
@@ -23,19 +25,15 @@ export default defineConfig({
     screenshot: "only-on-failure"
   },
 
-  // Edge and Chrome are launched via their system install (channel), not a
-  // Playwright-managed download — matches what's actually on this machine.
-  // `pnpm test:e2e` only runs "edge" by default; pass --project=chrome for a
-  // cross-browser spot check (running both in one invocation doubles the
-  // real logins below and can trip the API's 5/min rate limit).
   projects: [
     { name: "setup", testMatch: /auth\.setup\.ts/ },
+    { name: "chromium", use: { ...devices["Desktop Chrome"] }, dependencies: ["setup"] },
     { name: "edge", use: { ...devices["Desktop Edge"], channel: "msedge" }, dependencies: ["setup"] },
     { name: "chrome", use: { ...devices["Desktop Chrome"], channel: "chrome" }, dependencies: ["setup"] }
   ],
 
   webServer: {
-    command: "pnpm dev",
+    command: "node scripts/prepare-e2e.mjs && pnpm dev",
     url: BASE_URL,
     reuseExistingServer: !process.env.CI,
     timeout: 60_000,
@@ -48,7 +46,11 @@ export default defineConfig({
       PROMETHEUS_URL: "",
       GITHUB_CLIENT_ID: "",
       GITHUB_CLIENT_SECRET: "",
-      ALLOW_REGISTER: "false"
+      ALLOW_REGISTER: "false",
+      NODEBEACON_DATABASE_PATH: resolve(E2E_STATE_DIR, "nodebeacon.db"),
+      NODEBEACON_NODE_CONFIG: resolve(E2E_STATE_DIR, "nodes.yaml"),
+      NODEBEACON_NODE_CONFIG_SEED: resolve(E2E_STATE_DIR, "nodes.seed.yaml"),
+      NODEBEACON_BACKUP_SUCCESS_PATH: resolve(E2E_STATE_DIR, "backup-last-success.timestamp")
     }
   }
 });

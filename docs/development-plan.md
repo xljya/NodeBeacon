@@ -33,7 +33,7 @@ NodeBeacon 是给当前五台服务器使用的自托管监控状态页。它不
 - Namespace：`nodebeacon`，和已有 `sre-lab` 学习服务隔离。
 - 入口链路：Cloudflare 橙云代理 -> RS1000 nginx -> RS1000 k3s。
 - 当前源站：Cloudflare `monitor.liucf.com` 的 IPv4 源站指向 RS1000；dmit-uswest 不再承载 monitor 入口。
-- 当前状态（2026-07-11）：NodeBeacon `0.9.2` 已部署到 RS1000 生产环境。原生 React 状态页、节点详情/趋势、登录/GitHub OAuth、Komari 风格可写后台、SQLite 会话与审计、Alertmanager incident 闭环、自身 Prometheus 监控、状态保留和异地备份均已上线；Cloudflare 哈希资源缓存、API/auth 绕过缓存和登录突发限速规则已部署并验收。`https://monitor.liucf.com/` 展示真实五节点总览。
+- 当前状态（2026-07-12）：NodeBeacon `0.11.0` 已部署到 RS1000 生产环境。组件级 readiness、备份新鲜度告警、不可变 Git SHA 发布与统一只读生产验收均已上线；`0.12.0` 正在收口隔离 E2E、产品真实性和故障手册。
 - 第一版目标（已达成）：替换当前轻量 `monitor-status` 应用，保留现有域名和 Cloudflare 安全边界。
 
 ## 2. 总体架构
@@ -415,7 +415,7 @@ P2 进展记录：2026-07-09 `0.4.0` 交付节点详情 + 趋势主线（P2 前�
 | --- | --- | --- | --- |
 | 已完成 | 登录和会话 | `owner` 角色可用；cookie 使用 `httpOnly + Secure + SameSite=Lax` 且服务端可吊销 | `0.8.0`：SQLite 会话、token 摘要存储、登出/单条吊销、重启存续；`viewer` 等真实第二用户出现再做 |
 | 已完成 | 初始管理员创建方式 | 支持通过环境变量创建初始 `owner` 账号 | 生产 Secret 提供 `INITIAL_OWNER_*`；自由注册保持关闭 |
-| 已完成 | 管理员后台入口和布局 | `/admin` 仅 `owner` 可访问；首屏为 Komari 风格 Server / Node list，并包含设置、通知、远程入口、延迟、会话、账号、日志、关于、文档、首页和主题入口 | `0.6.0`：顶部栏 + 左侧 Komari 风格菜单 + 紧凑节点表；Remote Exec 入口保留但明确不启用浏览器 shell/agent 命令 |
+| 已完成 | 管理员后台入口和布局 | `/admin` 仅 `owner` 可访问；首屏为 Komari 风格 Server / Node list，并只包含真实可用入口 | `0.12.0` 删除 Remote Exec/XtermJS 主导航与路由；About 保留“不支持远程执行”的安全边界 |
 | 已完成（YAML 写回） | 节点手动分组管理 | 管理后台可修改服务器展示分组、展示名、区域、标签、排序和可见性 | `0.6.0`：owner-only `POST/PATCH/DELETE /api/admin/nodes` 写入 `/data/nodes.yaml`；修改后影响首页分组筛选和节点列表展示 |
 | 已完成（最小闭环） | 管理端最小闭环 | 可查看用户、节点配置摘要、系统状态，并能保存节点展示配置 | `0.6.0` 已完成节点新增/编辑/删除/账单备注/私有备注/selector 复制/配置导出；用户、会话、通知和日志仍按当前后端能力收敛 |
 | 已完成 | 管理后台节点配置页 | 表格展示所有节点；详情抽屉或编辑面板修改分组和展示元数据 | `0.6.0`：表格列和操作区对齐 Komari 截图；保存走 YAML 注册表写回 |
