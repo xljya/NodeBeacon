@@ -756,7 +756,16 @@ function formatSelector(labels: Record<string, string>): string {
 }
 
 function displayIp(node: AdminNode): string {
-  return node.ipAddress ?? node.labels.instance ?? node.labels.address ?? node.labels.job ?? "-";
+  const endpoint = node.ipAddress ?? node.labels.instance ?? node.labels.address ?? node.labels.job;
+  if (!endpoint) return "-";
+
+  // The registry keeps exporter endpoints (for example 10.77.0.2:9100), but
+  // this column is explicitly an IP address. Hide the transport port without
+  // corrupting unbracketed IPv6 addresses, which legitimately contain colons.
+  const bracketedIpv6 = /^\[([^\]]+)\](?::\d+)?$/.exec(endpoint);
+  if (bracketedIpv6?.[1]) return bracketedIpv6[1];
+  const hostWithPort = /^([^:]+):\d+$/.exec(endpoint);
+  return hostWithPort?.[1] ?? endpoint;
 }
 
 function formatBilling(node: AdminNode): string {

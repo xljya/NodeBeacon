@@ -73,6 +73,12 @@ test("dragging a node previews displaced rows before saving the new order", asyn
   }
 });
 
+test("the IP address column hides exporter ports", async ({ ownerPage: page }) => {
+  const addressCells = page.locator(".komari-table tbody .inline-copy");
+  await expect(addressCells).toHaveCount(5);
+  expect(await addressCells.allTextContents()).toEqual(["10.77.0.1", "10.77.0.2", "10.77.0.3", "10.77.0.4", "10.77.0.5"]);
+});
+
 test("API responses are no-store and another session can be revoked", async ({ ownerPage: page, playwright }) => {
   const status = await page.request.get("/api/status");
   expect(status.headers()["cache-control"]).toContain("no-store");
