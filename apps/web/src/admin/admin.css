@@ -2499,9 +2499,30 @@ button.admin-menu-btn {
   cursor: grab;
 }
 
+.komari-table tbody.node-list-drag-active tr[draggable="true"] {
+  cursor: grabbing;
+}
+
+.komari-table tbody.node-list-drag-active tr:not(.node-row-dragging) td {
+  transition: background-color 160ms ease, box-shadow 160ms ease;
+}
+
 .komari-table tbody tr.node-row-dragging td {
-  background: color-mix(in srgb, var(--accent) 12%, var(--surface));
-  opacity: 0.72;
+  background: color-mix(in srgb, var(--accent) 15%, var(--surface));
+  box-shadow:
+    inset 0 2px 0 color-mix(in srgb, var(--accent) 55%, transparent),
+    inset 0 -2px 0 color-mix(in srgb, var(--accent) 55%, transparent);
+  opacity: 0.62;
+}
+
+.komari-table tbody tr.node-row-dragging .komari-grip-col {
+  color: var(--accent);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .komari-table tbody.node-list-drag-active tr td {
+    transition: none;
+  }
 }
 
 .komari-grip-col {

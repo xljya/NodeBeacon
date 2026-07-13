@@ -31,6 +31,36 @@ test("node CRUD is isolated and recorded in the audit trail", async ({ ownerPage
   expect(deleted.status()).toBe(200);
 });
 
+test("dragging a node previews displaced rows before saving the new order", async ({ ownerPage: page }) => {
+  const originalResponse = await page.request.get("/api/admin/nodes");
+  const originalNodes = (await originalResponse.json()).nodes as Array<{ id: string; name: string }>;
+  const originalIds = originalNodes.map((node) => node.id);
+  const expectedNames = [originalNodes[1].name, originalNodes[2].name, originalNodes[0].name];
+  const rows = page.locator(".komari-table tbody tr");
+  const names = page.locator(".komari-table tbody .node-name-button");
+  const dataTransfer = await page.evaluateHandle(() => new DataTransfer());
+
+  try {
+    await rows.nth(0).dispatchEvent("dragstart", { dataTransfer });
+    await rows.nth(2).dispatchEvent("dragover", { dataTransfer });
+
+    // The browser has not emitted drop yet: this assertion specifically checks
+    // the live gap/preview behavior, not only the persisted server response.
+    await expect(names.nth(0)).toHaveText(expectedNames[0]);
+    await expect(names.nth(1)).toHaveText(expectedNames[1]);
+    await expect(names.nth(2)).toHaveText(expectedNames[2]);
+
+    const saved = page.waitForResponse(
+      (response) => response.request().method() === "PATCH" && response.url().endsWith("/api/admin/nodes/order")
+    );
+    await page.locator("tr.node-row-dragging").dispatchEvent("drop", { dataTransfer });
+    expect((await saved).status()).toBe(200);
+  } finally {
+    await page.request.patch("/api/admin/nodes/order", { data: { ids: originalIds } });
+    await dataTransfer.dispose();
+  }
+});
+
 test("API responses are no-store and another session can be revoked", async ({ ownerPage: page, playwright }) => {
   const status = await page.request.get("/api/status");
   expect(status.headers()["cache-control"]).toContain("no-store");

@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState, type FormEvent, type ReactNode } from "react";
+import { useEffect, useLayoutEffect, useMemo, useRef, useState, type DragEvent, type FormEvent, type ReactNode } from "react";
 import {
   AlertCircle,
   Check,
@@ -93,7 +93,11 @@ export function NodesPage() {
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [drawer, setDrawer] = useState<DrawerState>(null);
   const [draggingId, setDraggingId] = useState<string | null>(null);
+  const [dragOrder, setDragOrder] = useState<string[] | null>(null);
   const [reordering, setReordering] = useState(false);
+  const rowRefs = useRef(new Map<string, HTMLTableRowElement>());
+  const rowPositions = useRef(new Map<string, number>());
+  const dropHandledRef = useRef(false);
   const [columnsOpen, setColumnsOpen] = useState(false);
   const columnsMenuRef = useRef<HTMLDivElement>(null);
   const [visibleColumns, setVisibleColumns] = useState<Record<OptionalColumn, boolean>>({
@@ -145,6 +149,35 @@ export function NodesPage() {
     );
   }, [nodes, query]);
 
+  const displayedNodes = useMemo(() => {
+    if (!dragOrder || query.trim()) return filteredNodes;
+    const byId = new Map(nodes.map((node) => [node.id, node]));
+    return dragOrder.map((id) => byId.get(id)).filter((node): node is AdminNode => Boolean(node));
+  }, [dragOrder, filteredNodes, nodes, query]);
+
+  // React reorders the table rows immediately during a drag. Animate each row
+  // from its previous screen position so the surrounding rows visibly make
+  // room for the dragged node instead of snapping to their new positions.
+  useLayoutEffect(() => {
+    const nextPositions = new Map<string, number>();
+    for (const node of displayedNodes) {
+      const row = rowRefs.current.get(node.id);
+      if (!row) continue;
+      const nextTop = row.offsetTop;
+      nextPositions.set(node.id, nextTop);
+      const previousTop = rowPositions.current.get(node.id);
+      const delta = previousTop === undefined ? 0 : previousTop - nextTop;
+      if (draggingId && Math.abs(delta) > 1 && !window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+        row.getAnimations().forEach((animation) => animation.cancel());
+        row.animate(
+          [{ transform: `translateY(${delta}px)` }, { transform: "translateY(0)" }],
+          { duration: 180, easing: "cubic-bezier(0.2, 0.8, 0.2, 1)" }
+        );
+      }
+    }
+    rowPositions.current = nextPositions;
+  }, [displayedNodes, draggingId]);
+
   const allFilteredSelected =
     filteredNodes.length > 0 && filteredNodes.every((node) => selectedIds.includes(node.id));
   const selectedNodes = nodes.filter((node) => selectedIds.includes(node.id));
@@ -186,28 +219,70 @@ export function NodesPage() {
     downloadText(toNodeConfigSnippet(node), `${node.id}.nodebeacon.yaml`);
   };
 
-  const reorderNodes = async (targetId: string) => {
-    if (!draggingId || draggingId === targetId || query.trim()) return;
-    const from = nodes.findIndex((node) => node.id === draggingId);
-    const to = nodes.findIndex((node) => node.id === targetId);
-    if (from < 0 || to < 0) return;
+  const startReorder = (event: DragEvent<HTMLTableRowElement>, id: string) => {
+    if (query.trim() || reordering) return;
+    event.dataTransfer.effectAllowed = "move";
+    event.dataTransfer.setData("text/plain", id);
+    dropHandledRef.current = false;
+    rowPositions.current = new Map(
+      nodes.flatMap((node) => {
+        const row = rowRefs.current.get(node.id);
+        return row ? [[node.id, row.offsetTop] as const] : [];
+      })
+    );
+    setDragOrder(nodes.map((node) => node.id));
+    setDraggingId(id);
+    setActionError(null);
+  };
 
-    const reordered = [...nodes];
-    const [moved] = reordered.splice(from, 1);
-    if (!moved) return;
-    reordered.splice(to, 0, moved);
+  const previewReorder = (event: DragEvent<HTMLTableRowElement>, targetId: string) => {
+    event.preventDefault();
+    event.dataTransfer.dropEffect = "move";
+    if (!draggingId || draggingId === targetId) return;
+    setDragOrder((current) => {
+      const next = [...(current ?? nodes.map((node) => node.id))];
+      const from = next.indexOf(draggingId);
+      const to = next.indexOf(targetId);
+      if (from < 0 || to < 0 || from === to) return current;
+      const [moved] = next.splice(from, 1);
+      if (!moved) return current;
+      next.splice(to, 0, moved);
+      return next;
+    });
+  };
+
+  const cancelReorder = () => {
+    if (dropHandledRef.current) {
+      dropHandledRef.current = false;
+      return;
+    }
     setDraggingId(null);
+    setDragOrder(null);
+  };
+
+  const commitReorder = async (event: DragEvent<HTMLTableRowElement>) => {
+    event.preventDefault();
+    if (!draggingId || !dragOrder) return;
+    dropHandledRef.current = true;
+    const ids = [...dragOrder];
+    const changed = ids.some((id, index) => id !== nodes[index]?.id);
+    setDraggingId(null);
+    if (!changed) {
+      setDragOrder(null);
+      return;
+    }
     setReordering(true);
     setActionError(null);
     try {
       // One batched request: the API applies the whole permutation under a
       // single registry lock, so concurrent per-node PATCHes can't drop writes.
-      const payload: AdminNodeOrderRequest = { ids: reordered.map((node) => node.id) };
+      const payload: AdminNodeOrderRequest = { ids };
       await apiPatch<AdminNodesResponse>("/api/admin/nodes/order", payload);
       await reload();
     } catch (err) {
       setActionError(err instanceof Error ? err.message : t("common.requestFailed", { status: 0 }));
     } finally {
+      setDragOrder(null);
       setReordering(false);
     }
   };
@@ -289,16 +364,20 @@ export function NodesPage() {
               <th className="komari-action-col">{t("admin.nodes.thActions")}</th>
             </tr>
           </thead>
-          <tbody>
-            {filteredNodes.map((node) => (
+          <tbody className={draggingId ? "node-list-drag-active" : undefined}>
+            {displayedNodes.map((node) => (
               <tr
                 key={node.id}
+                ref={(row) => {
+                  if (row) rowRefs.current.set(node.id, row);
+                  else rowRefs.current.delete(node.id);
+                }}
                 className={draggingId === node.id ? "node-row-dragging" : undefined}
                 draggable={!query.trim() && !reordering}
-                onDragStart={() => setDraggingId(node.id)}
-                onDragEnd={() => setDraggingId(null)}
-                onDragOver={(event) => event.preventDefault()}
-                onDrop={() => void reorderNodes(node.id)}
+                onDragStart={(event) => startReorder(event, node.id)}
+                onDragEnd={cancelReorder}
+                onDragOver={(event) => previewReorder(event, node.id)}
+                onDrop={(event) => void commitReorder(event)}
               >
                 <td className="komari-grip-col">
                   <span title={query.trim() ? t("admin.nodes.clearSearchToReorder") : t("admin.nodes.dragToReorder")}><GripVertical size={18} /></span>
