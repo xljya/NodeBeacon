@@ -708,6 +708,12 @@
   text-align: center;
 }
 
+@media (min-width: 721px) {
+  .stat-gear {
+    margin-left: clamp(16px, 2.5vw, 36px);
+  }
+}
+
 @media (max-width: 720px) {
   .stat-grid {
     justify-content: flex-start;
