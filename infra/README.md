@@ -72,8 +72,8 @@ Manual fallback (what the script automates):
 
 ```sh
 git_sha="$(git rev-parse --short=12 HEAD)"
-docker build -t nodebeacon:0.11.0 -t "nodebeacon:git-${git_sha}" .
-docker save nodebeacon:0.11.0 "nodebeacon:git-${git_sha}" \
+docker build -t nodebeacon:1.0.0 -t "nodebeacon:git-${git_sha}" .
+docker save nodebeacon:1.0.0 "nodebeacon:git-${git_sha}" \
   | sudo k3s ctr images import -
 ```
 

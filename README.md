@@ -8,11 +8,10 @@ NodeBeacon is a lightweight self-hosted node monitoring and uptime dashboard pow
 
 It collects host metrics from `node_exporter`, probes service availability through `blackbox_exporter`, and presents a clean status view for VPS, homelab, small teams, and personal infrastructure.
 
-> Status: `0.10.0` is deployed in production with immutable Git-SHA images,
-> deployment provenance, archived acceptance records, off-site backups,
-> Cloudflare cache rules, and layered login rate limiting. `0.11.0` adds
-> component readiness and monitored backup freshness; `0.12.0` adds isolated
-> browser CI and removes UI claims that exceed the product's real scope.
+> Status: NodeBeacon 1.0 is the stable production release. It provides an
+> owner-operated, self-hosted status page and Prometheus BFF with traceable
+> immutable deployments, component readiness, monitored off-site backups,
+> isolated browser CI, and explicit security boundaries.
 
 ## Features
 
@@ -115,9 +114,9 @@ NodeBeacon 是一个基于 Prometheus 的轻量级自托管节点监控与可用
 
 它通过 `node_exporter` 获取服务器主机指标，通过 `blackbox_exporter` 探测服务可用性，并为 VPS、Homelab、小团队和个人基础设施提供清晰的状态展示页面。
 
-> 当前状态：`0.10.0` 已部署到生产，不可变 Git SHA 镜像、Deployment
-> 发布来源、验收记录、异地备份、Cloudflare 缓存规则与分层登录限速均已生效。
-> `0.11.0` 已补齐组件级 readiness 与备份新鲜度监控；`0.12.0` 增加隔离的浏览器 CI，并清理超出产品真实能力的界面入口。
+> 当前状态：NodeBeacon 1.0 为稳定生产版本，定位为 Owner 自用的轻量级
+> 自托管状态页与 Prometheus BFF。不可变发布、组件级 readiness、异地备份
+> 新鲜度监控、隔离浏览器 CI、Cloudflare 缓存与分层登录限速均已生效。
 
 ## 功能特性
 
