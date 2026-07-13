@@ -39,13 +39,24 @@ test("dragging a node previews displaced rows before saving the new order", asyn
   const rows = page.locator(".komari-table tbody tr");
   const names = page.locator(".komari-table tbody .node-name-button");
   const dataTransfer = await page.evaluateHandle(() => new DataTransfer());
+  const target = await rows.nth(2).elementHandle();
+  const targetBox = await rows.nth(2).boundingBox();
+  if (!target || !targetBox) throw new Error("Could not locate the drag target row.");
+  const dragOver = { dataTransfer, clientY: targetBox.y + targetBox.height * 0.75 };
 
   try {
     await rows.nth(0).dispatchEvent("dragstart", { dataTransfer });
-    await rows.nth(2).dispatchEvent("dragover", { dataTransfer });
+    await target.dispatchEvent("dragover", dragOver);
 
     // The browser has not emitted drop yet: this assertion specifically checks
     // the live gap/preview behavior, not only the persisted server response.
+    await expect(names.nth(0)).toHaveText(expectedNames[0]);
+    await expect(names.nth(1)).toHaveText(expectedNames[1]);
+    await expect(names.nth(2)).toHaveText(expectedNames[2]);
+
+    // During the 180ms displacement animation the same target can keep firing
+    // dragover. Its repeated events must not toggle the two rows back and forth.
+    for (let index = 0; index < 5; index += 1) await target.dispatchEvent("dragover", dragOver);
     await expect(names.nth(0)).toHaveText(expectedNames[0]);
     await expect(names.nth(1)).toHaveText(expectedNames[1]);
     await expect(names.nth(2)).toHaveText(expectedNames[2]);
@@ -57,6 +68,7 @@ test("dragging a node previews displaced rows before saving the new order", asyn
     expect((await saved).status()).toBe(200);
   } finally {
     await page.request.patch("/api/admin/nodes/order", { data: { ids: originalIds } });
+    await target.dispose();
     await dataTransfer.dispose();
   }
 });

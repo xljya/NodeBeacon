@@ -239,11 +239,22 @@ export function NodesPage() {
     event.preventDefault();
     event.dataTransfer.dropEffect = "move";
     if (!draggingId || draggingId === targetId) return;
+    const targetRect = event.currentTarget.getBoundingClientRect();
+    const targetMiddleY = targetRect.top + targetRect.height / 2;
+    const pointerY = event.clientY;
     setDragOrder((current) => {
       const next = [...(current ?? nodes.map((node) => node.id))];
       const from = next.indexOf(draggingId);
       const to = next.indexOf(targetId);
       if (from < 0 || to < 0 || from === to) return current;
+
+      // The displaced target row remains visually under the pointer while its
+      // FLIP animation finishes. Do not let repeated dragover events from that
+      // same row immediately reverse the move: the pointer must cross the
+      // target row's midpoint in the direction it is travelling.
+      if (from < to && pointerY <= targetMiddleY) return current;
+      if (from > to && pointerY >= targetMiddleY) return current;
+
       const [moved] = next.splice(from, 1);
       if (!moved) return current;
       next.splice(to, 0, moved);
