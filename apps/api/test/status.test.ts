@@ -32,6 +32,8 @@ describe("GET /api/status (fixture fallback, no Prometheus)", () => {
       expect(node.metrics.memoryTotalBytes).toBeGreaterThan(0);
       expect(node.metrics.cpuPercent).toBeGreaterThanOrEqual(0);
       expect(node.metrics.cpuPercent).toBeLessThanOrEqual(100);
+      expect(node.metrics.networkRxBytesTotal).toBeGreaterThan(0);
+      expect(node.metrics.networkTxBytesTotal).toBeGreaterThan(0);
     }
   });
 

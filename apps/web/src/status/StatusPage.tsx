@@ -116,8 +116,10 @@ export function StatusPage() {
   const total = publicNodes.length;
   const onlineCount = publicNodes.filter((n) => n.online).length;
   const regions = new Set(publicNodes.map((n) => n.region).filter(Boolean)).size;
-  const totalTx = publicNodes.reduce((s, n) => s + (Number(n.metrics.networkTxBytesPerSecond) || 0), 0);
-  const totalRx = publicNodes.reduce((s, n) => s + (Number(n.metrics.networkRxBytesPerSecond) || 0), 0);
+  const totalTxRate = publicNodes.reduce((s, n) => s + (Number(n.metrics.networkTxBytesPerSecond) || 0), 0);
+  const totalRxRate = publicNodes.reduce((s, n) => s + (Number(n.metrics.networkRxBytesPerSecond) || 0), 0);
+  const totalTxBytes = publicNodes.reduce((s, n) => s + (Number(n.metrics.networkTxBytesTotal) || 0), 0);
+  const totalRxBytes = publicNodes.reduce((s, n) => s + (Number(n.metrics.networkRxBytesTotal) || 0), 0);
 
   const tone: DataTone =
     loading && !data
@@ -143,10 +145,10 @@ export function StatusPage() {
           <StatBar
             onlineText={`${onlineCount} / ${total}`}
             regions={regions}
-            trafficUp={fmtBytes(totalTx * 86400)}
-            trafficDown={fmtBytes(totalRx * 86400)}
-            speedUp={fmtRate(totalTx)}
-            speedDown={fmtRate(totalRx)}
+            trafficUp={fmtBytes(totalTxBytes)}
+            trafficDown={fmtBytes(totalRxBytes)}
+            speedUp={fmtRate(totalTxRate)}
+            speedDown={fmtRate(totalRxRate)}
             cfg={cfg}
             onToggle={(key: StatKey) => setCfg((c) => ({ ...c, [key]: !c[key] }))}
           />
@@ -163,7 +165,7 @@ export function StatusPage() {
 
           <div className="status-meta">
             <div className="status-count">{t("status.count", { total, online: onlineCount })}</div>
-            <DataStatusBadge tone={tone} />
+            {tone !== "live" && <DataStatusBadge tone={tone} />}
           </div>
 
           {showEmpty ? (

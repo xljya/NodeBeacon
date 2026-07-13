@@ -56,7 +56,9 @@ backend owns PromQL, caching, error handling, and node metadata mapping.
         "load1": 0.38,
         "uptimeSeconds": 16250400,
         "networkRxBytesPerSecond": 9500,
-        "networkTxBytesPerSecond": 4200
+        "networkTxBytesPerSecond": 4200,
+        "networkRxBytesTotal": 440401920,
+        "networkTxBytesTotal": 325058560
       },
       "updatedAt": "2026-07-03T08:30:00.000Z"
     }
@@ -96,3 +98,8 @@ All API errors should use the same JSON envelope:
 - When `PROMETHEUS_URL` is configured, `/api/status` uses server-side whitelisted
   PromQL for `up`, CPU, memory, root filesystem disk usage, load, uptime, and
   network throughput. Browsers never submit PromQL.
+- `networkRxBytesPerSecond` and `networkTxBytesPerSecond` are current rates.
+  `networkRxBytesTotal` and `networkTxBytesTotal` are the physical-interface
+  counters since the current host boot; they reset when the host or counter
+  resets. Container, bridge, tunnel and WireGuard interfaces are excluded to
+  avoid counting the same traffic twice.

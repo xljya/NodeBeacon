@@ -45,6 +45,44 @@ curl -s "$PROMETHEUS_URL/api/v1/query" --data-urlencode 'query=up' \
   | jq '.data.result[].metric | {job, instance}'
 ```
 
+### Host network metrics
+
+NodeBeacon reads both the current network rate and the cumulative byte counters
+directly from `node_exporter`; no additional NodeBeacon or Komari agent Pod is
+required. The in-cluster exporter must, however, run in the host network
+namespace. Otherwise the RS1000 series represents the exporter Pod's `eth0`
+rather than the server's physical interface.
+
+Keep this value in the kube-prometheus-stack values used by the separate
+monitoring release (currently `/root/monitoring-stack/values-monitoring.yaml`
+on RS1000), then upgrade that Helm release:
+
+```yaml
+prometheus-node-exporter:
+  hostNetwork: true
+```
+
+```sh
+helm --kubeconfig /etc/rancher/k3s/k3s.yaml upgrade monitoring \
+  prometheus-community/kube-prometheus-stack \
+  --namespace monitoring \
+  --values /root/monitoring-stack/values-monitoring.yaml
+```
+
+After the DaemonSet rolls out, verify that the exporter exposes the host's
+physical interface and that NodeBeacon returns non-zero totals:
+
+```sh
+kubectl -n monitoring rollout status daemonset/monitoring-prometheus-node-exporter
+curl -s http://10.77.0.1:31003/api/status \
+  | jq '.nodes[] | {id, rx: .metrics.networkRxBytesTotal, tx: .metrics.networkTxBytesTotal}'
+```
+
+The total fields are the kernel counters since the current host boot, matching
+the lightweight default used by agent-based monitors. A billing-cycle or
+calendar-month total would need an explicit period and persistence/recording
+rule; it should not be inferred from the current rate.
+
 ## Build, load and deploy (on RS1000)
 
 The image is built on the node with Docker and imported into k3s containerd. No

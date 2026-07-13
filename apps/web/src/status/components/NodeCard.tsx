@@ -1,4 +1,3 @@
-import { useState } from "react";
 import { Link } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import type { MetricView, NodeView } from "../nodeView";
@@ -21,21 +20,16 @@ function Metric({ label, m, showSub }: { label: string; m: MetricView; showSub?:
 
 export function NodeCard({ node }: { node: NodeView }) {
   const { t } = useTranslation();
-  const [expanded, setExpanded] = useState(false);
 
   return (
-    <div className="node-card" onClick={() => setExpanded((v) => !v)}>
+    <Link
+      to={`/nodes/${encodeURIComponent(node.id)}`}
+      className="node-card"
+    >
       <div className="node-card-head">
         <div className="node-name-wrap">
           <span className="node-flag">{node.flag}</span>
-          {/* Stop propagation so opening the detail page doesn't toggle expand. */}
-          <Link
-            to={`/nodes/${encodeURIComponent(node.id)}`}
-            className="node-name node-name-link"
-            onClick={(e) => e.stopPropagation()}
-          >
-            {node.name}
-          </Link>
+          <span className="node-name">{node.name}</span>
         </div>
         <span className={`status-pill ${node.online ? "online" : "offline"}`}>
           {node.online ? t("status.card.online") : t("status.card.offline")}
@@ -79,27 +73,7 @@ export function NodeCard({ node }: { node: NodeView }) {
           <span className="l">{t("status.card.uptime")}</span>
           <span className="v">{node.uptime}</span>
         </div>
-        {expanded && (
-          <>
-            <div className="node-foot-row">
-              <span className="l">{t("status.card.load")}</span>
-              <span className="v">{node.load1}</span>
-            </div>
-            <div className="node-foot-row">
-              <span className="l">{t("status.card.memory")}</span>
-              <span className="v">{node.ram.sub}</span>
-            </div>
-            <div className="node-foot-row">
-              <span className="l">{t("status.card.disk")}</span>
-              <span className="v">{node.disk.sub}</span>
-            </div>
-            <div className="node-foot-row">
-              <span className="l">{t("status.card.updatedAt")}</span>
-              <span className="v">{node.updatedAt}</span>
-            </div>
-          </>
-        )}
       </div>
-    </div>
+    </Link>
   );
 }

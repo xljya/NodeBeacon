@@ -39,7 +39,9 @@ const UNKNOWN_METRICS: StatusNode["metrics"] = {
   load1: 0,
   uptimeSeconds: 0,
   networkRxBytesPerSecond: 0,
-  networkTxBytesPerSecond: 0
+  networkTxBytesPerSecond: 0,
+  networkRxBytesTotal: 0,
+  networkTxBytesTotal: 0
 };
 
 function cacheKey(env: ApiEnv): string {

@@ -38,6 +38,10 @@ export interface StatusMetricSet {
   uptimeSeconds: number;
   networkRxBytesPerSecond: number;
   networkTxBytesPerSecond: number;
+  /** Bytes received on physical interfaces since the current host boot. */
+  networkRxBytesTotal: number;
+  /** Bytes transmitted on physical interfaces since the current host boot. */
+  networkTxBytesTotal: number;
 }
 
 export interface StatusNode {
@@ -339,6 +343,7 @@ export interface AdminIncidentsResponse {
 }
 
 const gib = 1024 ** 3;
+const mib = 1024 ** 2;
 
 export const statusFixture: ApiStatusResponse = {
   generatedAt: "2026-07-03T08:30:00.000Z",
@@ -386,7 +391,9 @@ export const statusFixture: ApiStatusResponse = {
         load1: 0.38,
         uptimeSeconds: 188 * 24 * 60 * 60 + 2 * 60 * 60,
         networkRxBytesPerSecond: 9500,
-        networkTxBytesPerSecond: 4200
+        networkTxBytesPerSecond: 4200,
+        networkRxBytesTotal: 420 * mib,
+        networkTxBytesTotal: 310 * mib
       },
       updatedAt: "2026-07-03T08:30:00.000Z"
     },
@@ -415,7 +422,9 @@ export const statusFixture: ApiStatusResponse = {
         load1: 0.51,
         uptimeSeconds: 74 * 24 * 60 * 60 + 9 * 60 * 60,
         networkRxBytesPerSecond: 22100,
-        networkTxBytesPerSecond: 8700
+        networkTxBytesPerSecond: 8700,
+        networkRxBytesTotal: 550 * mib,
+        networkTxBytesTotal: 430 * mib
       },
       updatedAt: "2026-07-03T08:30:00.000Z"
     },
@@ -444,7 +453,9 @@ export const statusFixture: ApiStatusResponse = {
         load1: 0.21,
         uptimeSeconds: 121 * 24 * 60 * 60 + 14 * 60 * 60,
         networkRxBytesPerSecond: 6800,
-        networkTxBytesPerSecond: 3100
+        networkTxBytesPerSecond: 3100,
+        networkRxBytesTotal: 320 * mib,
+        networkTxBytesTotal: 290 * mib
       },
       updatedAt: "2026-07-03T08:30:00.000Z"
     },
@@ -473,7 +484,9 @@ export const statusFixture: ApiStatusResponse = {
         load1: 0.63,
         uptimeSeconds: 33 * 24 * 60 * 60 + 3 * 60 * 60,
         networkRxBytesPerSecond: 14300,
-        networkTxBytesPerSecond: 5900
+        networkTxBytesPerSecond: 5900,
+        networkRxBytesTotal: 260 * mib,
+        networkTxBytesTotal: 270 * mib
       },
       updatedAt: "2026-07-03T08:30:00.000Z"
     },
@@ -502,7 +515,9 @@ export const statusFixture: ApiStatusResponse = {
         load1: 0.42,
         uptimeSeconds: 19 * 24 * 60 * 60 + 6 * 60 * 60,
         networkRxBytesPerSecond: 4800,
-        networkTxBytesPerSecond: 1900
+        networkTxBytesPerSecond: 1900,
+        networkRxBytesTotal: 190 * mib,
+        networkTxBytesTotal: 200 * mib
       },
       updatedAt: "2026-07-03T08:30:00.000Z"
     }

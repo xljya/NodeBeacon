@@ -196,7 +196,8 @@
   display: flex;
   flex-wrap: wrap;
   align-items: flex-start;
-  gap: 16px 44px;
+  justify-content: space-between;
+  gap: 16px clamp(48px, 5vw, 84px);
 }
 .stat-item {
   display: flex;
@@ -477,6 +478,8 @@
   flex-direction: column;
   gap: 13px;
   cursor: pointer;
+  color: inherit;
+  text-decoration: none;
   transition: transform 0.2s cubic-bezier(0.2, 0.7, 0.3, 1), box-shadow 0.2s ease, border-color 0.2s ease;
 }
 .node-card:hover {
@@ -706,6 +709,10 @@
 }
 
 @media (max-width: 720px) {
+  .stat-grid {
+    justify-content: flex-start;
+    column-gap: 32px;
+  }
   .node-table-head,
   .node-row {
     grid-template-columns: 1.4fr 60px 1fr 1fr 1fr;

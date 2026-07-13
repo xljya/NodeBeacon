@@ -47,12 +47,12 @@ export function buildNodeView(node: StatusNode, units: UptimeUnits): NodeView {
   const m = node.metrics;
   const tx = Number(m.networkTxBytesPerSecond) || 0;
   const rx = Number(m.networkRxBytesPerSecond) || 0;
+  const txTotal = Number(m.networkTxBytesTotal) || 0;
+  const rxTotal = Number(m.networkRxBytesTotal) || 0;
   const upSpeed = `↑ ${fmtRate(tx)}`;
   const downSpeed = `↓ ${fmtRate(rx)}`;
-  // No cumulative-bytes metric in the contract; keep the prototype's 24h
-  // projection from the current rate (documented limitation).
-  const upTotal = `↑ ${fmtBytes(tx * 86400)}`;
-  const downTotal = `↓ ${fmtBytes(rx * 86400)}`;
+  const upTotal = `↑ ${fmtBytes(txTotal)}`;
+  const downTotal = `↓ ${fmtBytes(rxTotal)}`;
 
   const cpuPct = Number(m.cpuPercent) || 0;
   const ramPct = Number(m.memoryPercent) || 0;

@@ -15,8 +15,8 @@ function instantValue(query: string): number {
   if (query.includes("node_filesystem_free")) return 50 * 1024 ** 3;
   if (query.includes("node_load1")) return 0.42;
   if (query.startsWith("time() -")) return 123456;
-  if (query.includes("receive")) return 21000;
-  if (query.includes("transmit")) return 9000;
+  if (query.includes("receive")) return query.includes("rate(") ? 21000 : 2 * 1024 ** 3;
+  if (query.includes("transmit")) return query.includes("rate(") ? 9000 : 1024 ** 3;
   return 12.5;
 }
 

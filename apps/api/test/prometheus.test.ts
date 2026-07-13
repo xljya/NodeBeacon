@@ -28,6 +28,10 @@ describe("real-Prometheus paths against a mock upstream", () => {
     const node = body.nodes[0];
     expect(node.metrics.memoryTotalBytes).toBe(8 * 1024 ** 3);
     expect(node.metrics.load1).toBeCloseTo(0.42);
+    expect(node.metrics.networkRxBytesPerSecond).toBe(21000);
+    expect(node.metrics.networkTxBytesPerSecond).toBe(9000);
+    expect(node.metrics.networkRxBytesTotal).toBe(2 * 1024 ** 3);
+    expect(node.metrics.networkTxBytesTotal).toBe(1024 ** 3);
   });
 
   it("range endpoint returns a percent series for cpu", async () => {

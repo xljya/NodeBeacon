@@ -29,7 +29,9 @@ type NodeMetricName =
   | "load1"
   | "uptime"
   | "networkRx"
-  | "networkTx";
+  | "networkTx"
+  | "networkRxTotal"
+  | "networkTxTotal";
 
 export interface LabelMatcher {
   name: string;
@@ -37,7 +39,8 @@ export interface LabelMatcher {
   value: string;
 }
 
-export const networkDeviceExclude = "lo|docker.*|veth.*|br-.*|cni.*|flannel.*";
+export const networkDeviceExclude =
+  "lo|docker.*|veth.*|br-.*|cni.*|flannel.*|podman.*|virbr.*|vmbr.*|fwbr.*|fwpr.*|wg.*|tailscale.*|tun.*|tap.*";
 export const filesystemTypeExclude = "tmpfs|devtmpfs|overlay|squashfs|nsfs";
 
 function clampPercent(value: number | null): number {
@@ -86,7 +89,9 @@ function withDefaultMetrics(): StatusMetricSet {
     load1: 0,
     uptimeSeconds: 0,
     networkRxBytesPerSecond: 0,
-    networkTxBytesPerSecond: 0
+    networkTxBytesPerSecond: 0,
+    networkRxBytesTotal: 0,
+    networkTxBytesTotal: 0
   };
 }
 
@@ -124,7 +129,9 @@ function buildQueries(labels: Record<string, string>): Record<NodeMetricName, st
     load1: metric("node_load1", labels),
     uptime: `time() - ${metric("node_boot_time_seconds", labels)}`,
     networkRx: `sum(rate(${metric("node_network_receive_bytes_total", labels, networkExtra)}[1m]))`,
-    networkTx: `sum(rate(${metric("node_network_transmit_bytes_total", labels, networkExtra)}[1m]))`
+    networkTx: `sum(rate(${metric("node_network_transmit_bytes_total", labels, networkExtra)}[1m]))`,
+    networkRxTotal: `sum(${metric("node_network_receive_bytes_total", labels, networkExtra)})`,
+    networkTxTotal: `sum(${metric("node_network_transmit_bytes_total", labels, networkExtra)})`
   };
 }
 
@@ -167,7 +174,9 @@ async function buildNodeStatus(
     valueOf("load1").value,
     valueOf("uptime").value,
     valueOf("networkRx").value,
-    valueOf("networkTx").value
+    valueOf("networkTx").value,
+    valueOf("networkRxTotal").value,
+    valueOf("networkTxTotal").value
   ].some((value) => value === null);
 
   const online = up !== null ? up > 0 : false;
@@ -199,7 +208,9 @@ async function buildNodeStatus(
         load1: finiteOrZero(valueOf("load1").value),
         uptimeSeconds: finiteOrZero(valueOf("uptime").value),
         networkRxBytesPerSecond: finiteOrZero(valueOf("networkRx").value),
-        networkTxBytesPerSecond: finiteOrZero(valueOf("networkTx").value)
+        networkTxBytesPerSecond: finiteOrZero(valueOf("networkTx").value),
+        networkRxBytesTotal: finiteOrZero(valueOf("networkRxTotal").value),
+        networkTxBytesTotal: finiteOrZero(valueOf("networkTxTotal").value)
       },
       updatedAt: now
     }
