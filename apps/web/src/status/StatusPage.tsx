@@ -11,6 +11,7 @@ import { NodeCard } from "./components/NodeCard";
 import { NodeTable } from "./components/NodeTable";
 import { ProbePanel } from "./components/ProbePanel";
 import { DataStatusBadge, type DataTone } from "./components/DataStatusBadge";
+import { getStatusSnapshot, loadStatusSnapshot } from "./statusSnapshot";
 import "./status.css";
 
 type Theme = "light" | "dark";
@@ -29,9 +30,10 @@ function readJson<T>(key: string, fallback: T): T {
 
 export function StatusPage() {
   const { t } = useTranslation();
+  const initialStatus = getStatusSnapshot();
 
-  const [data, setData] = useState<ApiStatusResponse | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [data, setData] = useState<ApiStatusResponse | null>(initialStatus);
+  const [loading, setLoading] = useState(!initialStatus);
   const [error, setError] = useState(false);
   const [probes, setProbes] = useState<ProbeResult[]>([]);
 
@@ -48,7 +50,7 @@ export function StatusPage() {
   const mounted = useRef(true);
   const load = useCallback(async () => {
     try {
-      const res = await apiGet<ApiStatusResponse>("/api/status");
+      const res = await loadStatusSnapshot();
       if (!mounted.current) return;
       setData(res);
       setError(false);
@@ -133,7 +135,8 @@ export function StatusPage() {
             : "live";
 
   const noMatch = total > 0 && filtered.length === 0;
-  const showEmpty = total === 0 || noMatch;
+  const initialLoading = loading && !data;
+  const showEmpty = !initialLoading && (total === 0 || noMatch);
   const lastUpdated = data?.generatedAt ? new Date(data.generatedAt).toLocaleString() : "—";
 
   return (
@@ -168,7 +171,11 @@ export function StatusPage() {
             {tone !== "live" && <DataStatusBadge tone={tone} />}
           </div>
 
-          {showEmpty ? (
+          {initialLoading ? (
+            <div className="status-empty" aria-busy="true">
+              <div className="status-empty-title">{t("common.loading")}</div>
+            </div>
+          ) : showEmpty ? (
             <div className="status-empty">
               <div className="status-empty-title">
                 {noMatch ? t("status.empty.noMatchTitle") : t("status.empty.noConfigTitle")}

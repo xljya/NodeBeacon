@@ -16,6 +16,7 @@ import { buildNodeView, type MetricView } from "./nodeView";
 import { StatusHeader } from "./components/StatusHeader";
 import { OsLogo } from "./components/OsLogo";
 import { TrendChart } from "./components/TrendChart";
+import { getStatusSnapshot, loadStatusSnapshot } from "./statusSnapshot";
 import "./status.css";
 
 type Theme = "light" | "dark";
@@ -53,8 +54,9 @@ export function NodeDetailPage() {
   const [theme, setTheme] = useState<Theme>(() => (localStorage.getItem("nb-theme") as Theme) || "light");
   useEffect(() => localStorage.setItem("nb-theme", theme), [theme]);
 
-  const [status, setStatus] = useState<ApiStatusResponse | null>(null);
-  const [statusLoading, setStatusLoading] = useState(true);
+  const initialStatus = getStatusSnapshot();
+  const [status, setStatus] = useState<ApiStatusResponse | null>(initialStatus);
+  const [statusLoading, setStatusLoading] = useState(!initialStatus);
   const [range, setRange] = useState<TrendRange>(() => {
     const stored = localStorage.getItem("nb-trend-range");
     return isTrendRange(stored) ? stored : "1h";
@@ -74,7 +76,7 @@ export function NodeDetailPage() {
 
   const loadStatus = useCallback(async () => {
     try {
-      const res = await apiGet<ApiStatusResponse>("/api/status");
+      const res = await loadStatusSnapshot();
       if (mounted.current) setStatus(res);
     } catch {
       /* keep the previous snapshot */

@@ -17,6 +17,28 @@ test("the whole node card opens its detail page and hides the live badge", async
   await expect(page).toHaveURL(new RegExp(`${href}$`));
 });
 
+test("returning from a node detail keeps the previous status snapshot visible", async ({ page }) => {
+  await page.goto("/");
+  const cards = page.locator(".node-card");
+  await expect(cards).toHaveCount(5);
+
+  await cards.first().click();
+  await expect(page).toHaveURL(/\/nodes\/[^/]+$/);
+  await expect(page.locator(".detail-head")).toBeVisible();
+
+  let delayStatus = true;
+  await page.route("**/api/status", async (route) => {
+    if (delayStatus) await new Promise((resolve) => setTimeout(resolve, 1_200));
+    await route.continue();
+  });
+
+  await page.locator(".detail-back").click();
+  await expect(page).toHaveURL(/\/$/);
+  await expect(cards).toHaveCount(5, { timeout: 300 });
+  await expect(page.getByText("No servers configured", { exact: true })).toHaveCount(0);
+  delayStatus = false;
+});
+
 test("login page is reachable and rejects bad credentials", async ({ page }) => {
   await page.goto("/login");
   await expect(page.getByRole("heading", { name: "NodeBeacon" })).toBeVisible();
