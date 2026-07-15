@@ -1,6 +1,6 @@
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import type { FastifyInstance } from "fastify";
-import type { ApiLatencyResponse, ApiNodeRangeResponse, ApiStatusResponse } from "@nodebeacon/shared";
+import type { ApiLatencyResponse, ApiNodeDetailSeriesResponse, ApiNodeRangeResponse, ApiStatusResponse } from "@nodebeacon/shared";
 import { buildTestApp, loginOwner } from "./helpers.js";
 import { startMockPrometheus, type MockPrometheus } from "./mockPrometheus.js";
 
@@ -57,6 +57,19 @@ describe("real-Prometheus paths against a mock upstream", () => {
     const body = res.json() as ApiNodeRangeResponse;
     expect(body.unit).toBe("bytes_per_second");
     expect(body.series.map((s) => s.name)).toEqual(["rx", "tx"]);
+  });
+
+  it("public V2 detail returns a batched series response", async () => {
+    const res = await app.inject({
+      method: "GET",
+      url: "/api/public/nodes/rs1000/series?metrics=cpu,memory,network&range=1d&aggregation=avg"
+    });
+    expect(res.statusCode).toBe(200);
+    const body = res.json() as ApiNodeDetailSeriesResponse;
+    expect(body.nodeId).toBe("rs1000");
+    expect(body.aggregation).toBe("avg");
+    expect(body.stepSeconds).toBe(120);
+    expect(body.series.length).toBeGreaterThan(3);
   });
 
   it("range endpoint returns 404 for an unknown node when Prometheus exists", async () => {

@@ -11,14 +11,16 @@ import type {
   AdminUsersResponse,
   NodeBilling,
   NodeConfigEntry,
+  NodeDetailConfig,
   StatusNode
 } from "@nodebeacon/shared";
 import { buildApiError } from "@nodebeacon/shared";
 import type { ApiEnv } from "../config/env.js";
-import { loadNodeRegistry, saveNodeRegistry, withRegistryLock } from "../config/nodeRegistry.js";
+import { loadNodeRegistry, normalizeDetail, saveNodeRegistry, withRegistryLock } from "../config/nodeRegistry.js";
 import type { AuthService } from "../services/authService.js";
 import type { AuditService } from "../services/auditService.js";
 import type { SessionService } from "../services/sessionService.js";
+import { clearNodeDetailCache } from "../services/nodeDetailService.js";
 import { clearStatusCache, getPrometheusReachability, getStatus } from "../services/statusService.js";
 
 const NODE_ID_PATTERN = /^[a-zA-Z0-9][a-zA-Z0-9._-]{0,63}$/;
@@ -106,6 +108,42 @@ function normalizeBilling(value: unknown): NodeBilling | undefined {
   return Object.keys(billing).length > 0 ? billing : undefined;
 }
 
+function strictStringArray(value: unknown, field: string, max: number): string[] | undefined {
+  if (value === undefined) return undefined;
+  if (!Array.isArray(value) || value.some((item) => typeof item !== "string")) {
+    throw new AdminValidationError(`${field} must be an array of strings.`);
+  }
+  if (value.length > max) {
+    throw new AdminValidationError(`${field} may contain at most ${max} items.`);
+  }
+  return value.map((item) => item.trim()).filter(Boolean);
+}
+
+function normalizeDetailMutation(raw: unknown): NodeDetailConfig | undefined {
+  if (raw === null) return undefined;
+  if (!isRecord(raw)) throw new AdminValidationError("detail must be an object or null.");
+  if (raw.enabled !== undefined && typeof raw.enabled !== "boolean") {
+    throw new AdminValidationError("detail.enabled must be a boolean.");
+  }
+  if (raw.visibility !== undefined && !["safe", "full", "authenticated"].includes(String(raw.visibility))) {
+    throw new AdminValidationError("detail.visibility must be safe, full, or authenticated.");
+  }
+  strictStringArray(raw.networkDevices, "detail.networkDevices", 8);
+  strictStringArray(raw.diskMounts, "detail.diskMounts", 16);
+  strictStringArray(raw.latencyVantages, "detail.latencyVantages", 8);
+  if (raw.profileOverride !== undefined && raw.profileOverride !== null && !isRecord(raw.profileOverride)) {
+    throw new AdminValidationError("detail.profileOverride must be an object or null.");
+  }
+  const profile = isRecord(raw.profileOverride) ? raw.profileOverride : undefined;
+  if (profile?.physicalCpuCores !== undefined) {
+    const cores = Number(profile.physicalCpuCores);
+    if (!Number.isFinite(cores) || cores <= 0) {
+      throw new AdminValidationError("detail.profileOverride.physicalCpuCores must be positive.");
+    }
+  }
+  return normalizeDetail(raw);
+}
+
 function cleanMutation(raw: unknown): AdminNodeMutation {
   if (!isRecord(raw)) throw new AdminValidationError("Request body must be an object.");
   const input: AdminNodeMutation = {};
@@ -123,6 +161,7 @@ function cleanMutation(raw: unknown): AdminNodeMutation {
   if ("clientVersion" in raw) input.clientVersion = optionalString(raw.clientVersion);
   if ("privateNotes" in raw) input.privateNotes = optionalString(raw.privateNotes);
   if ("billing" in raw) input.billing = normalizeBilling(raw.billing);
+  if ("detail" in raw) input.detail = normalizeDetailMutation(raw.detail);
   return input;
 }
 
@@ -158,7 +197,8 @@ function createNodeEntry(input: AdminNodeMutation, nodes: NodeConfigEntry[]): No
     ipAddress: input.ipAddress,
     clientVersion: input.clientVersion,
     privateNotes: input.privateNotes,
-    billing: input.billing
+    billing: input.billing,
+    detail: input.detail
   };
 }
 
@@ -177,7 +217,8 @@ function patchNodeEntry(existing: NodeConfigEntry, input: AdminNodeMutation): No
     ipAddress: "ipAddress" in input ? input.ipAddress : existing.ipAddress,
     clientVersion: "clientVersion" in input ? input.clientVersion : existing.clientVersion,
     privateNotes: "privateNotes" in input ? input.privateNotes : existing.privateNotes,
-    billing: "billing" in input ? input.billing : existing.billing
+    billing: "billing" in input ? input.billing : existing.billing,
+    detail: "detail" in input ? input.detail : existing.detail
   };
 }
 
@@ -197,6 +238,7 @@ function toAdminNode(node: StatusNode, registry?: NodeConfigEntry): AdminNode {
     clientVersion: registry?.clientVersion,
     privateNotes: registry?.privateNotes,
     billing: registry?.billing,
+    detail: registry?.detail,
     online: node.online,
     status: node.status,
     updatedAt: node.updatedAt
@@ -266,6 +308,7 @@ export async function registerAdminRoutes(
           return created;
         });
         clearStatusCache();
+        clearNodeDetailCache();
         auditService.record({
           actor: request.user!.id,
           action: "node.created",
@@ -317,6 +360,7 @@ export async function registerAdminRoutes(
           await saveNodeRegistry(reordered, env.nodeConfigPath);
         });
         clearStatusCache();
+        clearNodeDetailCache();
         auditService.record({
           actor: request.user!.id,
           action: "node.reordered",
@@ -353,6 +397,7 @@ export async function registerAdminRoutes(
           return updated;
         });
         clearStatusCache();
+        clearNodeDetailCache();
         auditService.record({
           actor: request.user!.id,
           action: "node.updated",
@@ -388,6 +433,7 @@ export async function registerAdminRoutes(
           return deleted;
         });
         clearStatusCache();
+        clearNodeDetailCache();
         auditService.record({
           actor: request.user!.id,
           action: "node.deleted",

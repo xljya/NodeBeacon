@@ -99,24 +99,42 @@ describe("admin routes (owner-only)", () => {
           ipAddress: "10.77.0.9:9100",
           clientVersion: "1.2.3",
           privateNotes: "owner-only",
-          billing: { price: 6, currency: "USD", cycleDays: 30 }
+          billing: { price: 6, currency: "USD", cycleDays: 30 },
+          detail: {
+            enabled: true,
+            visibility: "safe",
+            networkDevices: ["eth0"],
+            diskMounts: ["/"],
+            latencyVantages: ["rs1000"],
+            profileOverride: { virtualization: "kvm" }
+          }
         }
       });
       expect(create.statusCode).toBe(200);
-      expect(create.json().node).toMatchObject({ id: "new-node", group: "Edge" });
+      expect(create.json().node).toMatchObject({
+        id: "new-node",
+        group: "Edge",
+        detail: { enabled: true, visibility: "safe", networkDevices: ["eth0"] }
+      });
 
       const update = await mutableApp.inject({
         method: "PATCH",
         url: "/api/admin/nodes/new-node",
         cookies: mutableCookies,
-        payload: { group: "Core", privateNotes: "updated" }
+        payload: { group: "Core", privateNotes: "updated", detail: { visibility: "full", diskMounts: ["/", "/mnt/data"] } }
       });
       expect(update.statusCode).toBe(200);
-      expect(update.json().node).toMatchObject({ id: "new-node", group: "Core", privateNotes: "updated" });
+      expect(update.json().node).toMatchObject({
+        id: "new-node",
+        group: "Core",
+        privateNotes: "updated",
+        detail: { visibility: "full", diskMounts: ["/", "/mnt/data"] }
+      });
 
       const contentAfterUpdate = await readFile(registryPath, "utf8");
       expect(contentAfterUpdate).toContain("new-node");
       expect(contentAfterUpdate).toContain("privateNotes: updated");
+      expect(contentAfterUpdate).toContain("/mnt/data");
 
       const remove = await mutableApp.inject({
         method: "DELETE",
@@ -130,5 +148,16 @@ describe("admin routes (owner-only)", () => {
       await mutableApp.close();
       await rm(dir, { recursive: true, force: true });
     }
+  });
+
+  it("rejects invalid detail mutations", async () => {
+    const res = await app.inject({
+      method: "PATCH",
+      url: "/api/admin/nodes/rs1000",
+      cookies,
+      payload: { detail: { visibility: "public" } }
+    });
+    expect(res.statusCode).toBe(400);
+    expect(res.json().error.code).toBe("invalid_node");
   });
 });

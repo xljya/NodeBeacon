@@ -1,0 +1,69 @@
+# Example additionalScrapeConfigs entry for the NodeBeacon detail page.
+#
+# This file is intentionally not referenced by the kustomization: the
+# kube-prometheus-stack release owns Prometheus scrape configuration. Merge the
+# entry into the live Helm values after reviewing target discovery and the
+# installed node_exporter collectors. The RS1000 target is discovered from the
+# existing Kubernetes node-exporter Service; the four external targets reuse
+# the verified WireGuard addresses from the existing external-vps-node job.
+- job_name: node-detail-fast
+  scrape_interval: 5s
+  scrape_timeout: 4s
+  params:
+    collect[]:
+      - cpu
+      - meminfo
+      - loadavg
+      - filesystem
+      - netdev
+      - stat
+      - sockstat
+  kubernetes_sd_configs:
+    - role: endpoints
+      namespaces:
+        names: [monitoring]
+  relabel_configs:
+    # Keep the existing node-exporter Service target. Empty matches let the
+    # static external targets below pass through the same scrape job.
+    - source_labels: [__meta_kubernetes_service_name]
+      regex: "^(monitoring-prometheus-node-exporter)?$"
+      action: keep
+    - source_labels: [__meta_kubernetes_endpoint_port_name]
+      regex: "^(http-metrics)?$"
+      action: keep
+    - source_labels: [__meta_kubernetes_endpoint_ready]
+      regex: "^(true)?$"
+      action: keep
+    - source_labels: [__meta_kubernetes_endpoint_address_target_kind]
+      regex: "^(Pod)?$"
+      action: keep
+    - source_labels: [__meta_kubernetes_service_name]
+      regex: "^monitoring-prometheus-node-exporter$"
+      target_label: node_id
+      replacement: rs1000
+  static_configs:
+    # Reuse the existing WireGuard targets. Do not replace these with public
+    # addresses in a committed configuration.
+    - targets: ["10.77.0.2:9100"]
+      labels:
+        node_id: dmit-uswest
+    - targets: ["10.77.0.3:9100"]
+      labels:
+        node_id: hostbrr-4t
+    - targets: ["10.77.0.4:9100"]
+      labels:
+        node_id: netcup-1o
+    - targets: ["10.77.0.5:9100"]
+      labels:
+        node_id: huawei-2c1g
+  metric_relabel_configs:
+    - source_labels: [__name__]
+      regex: >-
+        node_(cpu_seconds_total|memory_(MemTotal|MemAvailable|SwapTotal|SwapFree)_bytes|filesystem_(size|avail|free)_bytes|load(1|5|15)|network_(receive|transmit)_bytes_total|boot_time_seconds|time_seconds|sockstat_(TCP_alloc|TCP_inuse|UDP_inuse|sockets_used)|procs_(running|blocked))
+      action: keep
+    - source_labels: [device]
+      regex: "(?:lo|docker.*|veth.*|br-.*|cni.*|flannel.*|podman.*|virbr.*|vmbr.*|fwbr.*|fwpr.*|wg.*|tailscale.*|tun.*|tap.*)"
+      action: drop
+    - source_labels: [fstype]
+      regex: "(?:tmpfs|devtmpfs|overlay|squashfs|nsfs)"
+      action: drop

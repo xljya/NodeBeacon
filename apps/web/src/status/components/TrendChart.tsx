@@ -19,6 +19,18 @@ const SERIES_COLORS: Record<string, string> = {
 function fmtValue(value: number, unit: TrendUnit): string {
   if (unit === "percent") return `${value.toFixed(value >= 10 ? 0 : 1)}%`;
   if (unit === "bytes_per_second") return fmtRate(value);
+  if (unit === "bytes") {
+    const units = ["B", "KB", "MB", "GB", "TB"];
+    let scaled = Math.max(0, value);
+    let index = 0;
+    while (scaled >= 1024 && index < units.length - 1) {
+      scaled /= 1024;
+      index += 1;
+    }
+    return `${scaled.toFixed(scaled >= 10 ? 0 : 2)} ${units[index]}`;
+  }
+  if (unit === "milliseconds") return `${value.toFixed(value >= 10 ? 0 : 1)} ms`;
+  if (unit === "count") return value.toFixed(value >= 10 ? 0 : 1);
   return value.toFixed(2);
 }
 

@@ -30,6 +30,11 @@ nodes:
     tags:
       - k3s
       - prometheus
+    detail:
+      enabled: true
+      visibility: safe
+      networkDevices:
+        - eth0
 
   - id: dmit-uswest
     name: dmit-uswest
@@ -47,6 +52,13 @@ nodes:
     tags:
       - ingress
       - public
+    detail:
+      enabled: true
+      visibility: safe
+      networkDevices:
+        - eth0
+      latencyVantages:
+        - rs1000
 
   - id: hostbrr-4t
     name: hostbrr-4t
@@ -63,6 +75,16 @@ nodes:
       instance: hostbrr-4t
     tags:
       - storage
+    detail:
+      enabled: true
+      visibility: safe
+      networkDevices:
+        - eth0
+      diskMounts:
+        - /
+        - /mnt/data
+      latencyVantages:
+        - rs1000
 
   - id: netcup-1o
     name: netcup-1o
@@ -79,6 +101,13 @@ nodes:
       instance: netcup-1o
     tags:
       - vps
+    detail:
+      enabled: true
+      visibility: safe
+      networkDevices:
+        - eth0
+      latencyVantages:
+        - rs1000
 
   - id: huawei-2c1g
     name: huawei-2c1g
@@ -95,3 +124,10 @@ nodes:
       instance: huawei-2c1g
     tags:
       - vps
+    detail:
+      enabled: true
+      visibility: safe
+      networkDevices:
+        - eth0
+      latencyVantages:
+        - rs1000

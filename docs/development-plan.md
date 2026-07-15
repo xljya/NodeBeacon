@@ -1,6 +1,9 @@
 # NodeBeacon 开发文档
 
-最后更新：2026-07-10
+最后更新：2026-07-15
+
+节点详情页 V2 的当前实现状态、真实生产 target 核验、逐 gate 发布命令、测试标准和
+回滚步骤见 [Node Detail V2 实施方案](node-detail-v2-implementation-plan.md)。
 
 ## 决策记录
 

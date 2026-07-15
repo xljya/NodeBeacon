@@ -16,6 +16,28 @@ export interface NodeConfigEntry {
   clientVersion?: string;
   privateNotes?: string;
   billing?: NodeBilling;
+  /** Optional data/display policy for the V2 node detail page. */
+  detail?: NodeDetailConfig;
+}
+
+export type NodeDetailVisibility = "safe" | "full" | "authenticated";
+
+export interface NodeDetailProfileOverride {
+  cpuModel?: string;
+  physicalCpuCores?: number;
+  virtualization?: string;
+  gpuModel?: string;
+}
+
+export interface NodeDetailConfig {
+  enabled?: boolean;
+  visibility?: NodeDetailVisibility;
+  /** Explicit physical devices prevent bridge/veth traffic double counting. */
+  networkDevices?: string[];
+  /** Real mountpoints to show; the server still applies filesystem excludes. */
+  diskMounts?: string[];
+  profileOverride?: NodeDetailProfileOverride;
+  latencyVantages?: string[];
 }
 
 export interface NodeBilling {
@@ -133,7 +155,7 @@ export type TrendMetric = (typeof TREND_METRICS)[number];
 export const TREND_RANGES = ["1h", "4h", "24h", "7d"] as const;
 export type TrendRange = (typeof TREND_RANGES)[number];
 
-export type TrendUnit = "percent" | "bytes_per_second" | "load";
+export type TrendUnit = "percent" | "bytes" | "bytes_per_second" | "load" | "count" | "milliseconds";
 
 export interface TrendSeries {
   /** "value" for single-series metrics; "rx" / "tx" for network. */
@@ -150,6 +172,108 @@ export interface ApiNodeRangeResponse {
   unit: TrendUnit;
   generatedAt: string;
   series: TrendSeries[];
+}
+
+// --- Node detail V2 ---
+
+export const DETAIL_CHART_METRICS = [
+  "cpu",
+  "memory",
+  "swap",
+  "disk",
+  "network",
+  "latency",
+  "connections"
+] as const;
+export type DetailChartMetric = (typeof DETAIL_CHART_METRICS)[number];
+
+export const DETAIL_TIME_RANGES = ["realtime", "1d", "7d", "30d", "60d", "custom"] as const;
+export type DetailTimeRange = (typeof DETAIL_TIME_RANGES)[number];
+
+export const DETAIL_AGGREGATIONS = ["avg", "max", "p95"] as const;
+export type DetailAggregation = (typeof DETAIL_AGGREGATIONS)[number];
+
+export type DetailUnit = "percent" | "bytes" | "bytes_per_second" | "load" | "count" | "milliseconds";
+
+export interface NodeDetailCapabilities {
+  realtime: boolean;
+  cpuModel: boolean;
+  gpu: boolean;
+  swap: boolean;
+  multiDisk: boolean;
+  processTotal: boolean;
+  latency: boolean;
+}
+
+export interface NodeDetailSystemProfile {
+  osName: string | null;
+  osVersion: string | null;
+  kernelVersion: string | null;
+  arch: string | null;
+  virtualization: string | null;
+  cpuModel: string | null;
+  logicalCpuCores: number | null;
+  physicalCpuCores: number | null;
+  gpuModel: string | null;
+}
+
+export interface NodeDetailDiskMetric {
+  id: string;
+  label: string;
+  mountpoint?: string;
+  usedBytes: number | null;
+  totalBytes: number | null;
+  usedPercent: number | null;
+}
+
+export interface NodeDetailLiveMetrics {
+  cpuPercent: number | null;
+  load1: number | null;
+  load5: number | null;
+  load15: number | null;
+  memoryUsedBytes: number | null;
+  memoryTotalBytes: number | null;
+  swapUsedBytes: number | null;
+  swapTotalBytes: number | null;
+  disks: NodeDetailDiskMetric[];
+  networkRxBytesPerSecond: number | null;
+  networkTxBytesPerSecond: number | null;
+  networkRxBytesTotal: number | null;
+  networkTxBytesTotal: number | null;
+  tcpConnections: number | null;
+  udpConnections: number | null;
+  processRunning: number | null;
+  processBlocked: number | null;
+  processTotal: number | null;
+  uptimeSeconds: number | null;
+  lastReportAt: string | null;
+}
+
+export interface ApiNodeDetailV2Response {
+  generatedAt: string;
+  node: NodeMeta;
+  profile: NodeDetailSystemProfile;
+  capabilities: NodeDetailCapabilities;
+  live: NodeDetailLiveMetrics;
+}
+
+export interface NodeDetailSeries {
+  metric: DetailChartMetric;
+  key: string;
+  unit: DetailUnit;
+  labels?: Record<string, string>;
+  points: Array<[number, number | null]>;
+}
+
+export interface ApiNodeDetailSeriesResponse {
+  nodeId: string;
+  from: string;
+  to: string;
+  dataFrom: string | null;
+  dataTo: string | null;
+  stepSeconds: number;
+  aggregation: DetailAggregation;
+  series: NodeDetailSeries[];
 }
 
 // --- Blackbox probe latency (public) ---
@@ -242,6 +366,7 @@ export interface AdminNode {
   clientVersion?: string;
   privateNotes?: string;
   billing?: NodeBilling;
+  detail?: NodeDetailConfig;
   online: boolean;
   status: NodeHealthStatus;
   updatedAt: string;

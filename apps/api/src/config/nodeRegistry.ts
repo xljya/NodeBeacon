@@ -2,7 +2,7 @@ import { copyFile, mkdir, readFile, rename, writeFile } from "node:fs/promises";
 import { dirname } from "node:path";
 import { fileURLToPath } from "node:url";
 import { parse, stringify } from "yaml";
-import type { NodeBilling, NodeConfigEntry } from "@nodebeacon/shared";
+import type { NodeBilling, NodeConfigEntry, NodeDetailConfig, NodeDetailProfileOverride } from "@nodebeacon/shared";
 
 interface NodeRegistryFile {
   nodes?: NodeConfigEntry[];
@@ -71,6 +71,41 @@ function normalizeBilling(raw: unknown): NodeBilling | undefined {
   return Object.keys(billing).length > 0 ? billing : undefined;
 }
 
+export function normalizeDetail(raw: unknown): NodeDetailConfig | undefined {
+  if (!isRecord(raw)) return undefined;
+
+  const profileRaw = isRecord(raw.profileOverride) ? raw.profileOverride : undefined;
+  const profile: NodeDetailProfileOverride = {};
+  const cpuModel = optionalString(profileRaw?.cpuModel);
+  const virtualization = optionalString(profileRaw?.virtualization);
+  const gpuModel = optionalString(profileRaw?.gpuModel);
+  const physicalCpuCores = finiteNumber(profileRaw?.physicalCpuCores);
+  if (cpuModel) profile.cpuModel = cpuModel;
+  if (virtualization) profile.virtualization = virtualization;
+  if (gpuModel) profile.gpuModel = gpuModel;
+  if (physicalCpuCores !== undefined && physicalCpuCores > 0) profile.physicalCpuCores = physicalCpuCores;
+
+  const networkDevices = Array.isArray(raw.networkDevices)
+    ? raw.networkDevices.map(String).map((value) => value.trim()).filter(Boolean).slice(0, 8)
+    : undefined;
+  const diskMounts = Array.isArray(raw.diskMounts)
+    ? raw.diskMounts.map(String).map((value) => value.trim()).filter(Boolean).slice(0, 16)
+    : undefined;
+  const latencyVantages = Array.isArray(raw.latencyVantages)
+    ? raw.latencyVantages.map(String).map((value) => value.trim()).filter(Boolean).slice(0, 8)
+    : undefined;
+  const visibility = raw.visibility === "full" || raw.visibility === "authenticated" ? raw.visibility : raw.visibility === "safe" ? "safe" : undefined;
+
+  const detail: NodeDetailConfig = {};
+  if (raw.enabled !== undefined) detail.enabled = Boolean(raw.enabled);
+  if (visibility) detail.visibility = visibility;
+  if (networkDevices?.length) detail.networkDevices = networkDevices;
+  if (diskMounts?.length) detail.diskMounts = diskMounts;
+  if (latencyVantages?.length) detail.latencyVantages = latencyVantages;
+  if (Object.keys(profile).length) detail.profileOverride = profile;
+  return Object.keys(detail).length ? detail : undefined;
+}
+
 function normalizeNode(raw: unknown): NodeConfigEntry {
   if (!isRecord(raw)) {
     throw new Error("Each node entry must be an object.");
@@ -94,7 +129,8 @@ function normalizeNode(raw: unknown): NodeConfigEntry {
     ipAddress: optionalString(raw.ipAddress ?? raw.ipv4 ?? raw.ip),
     clientVersion: optionalString(raw.clientVersion ?? raw.version),
     privateNotes: optionalString(raw.privateNotes ?? raw.remark),
-    billing: normalizeBilling(raw.billing)
+    billing: normalizeBilling(raw.billing),
+    detail: normalizeDetail(raw.detail)
   };
 }
 

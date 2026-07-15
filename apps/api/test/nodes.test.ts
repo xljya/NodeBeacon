@@ -1,4 +1,7 @@
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
+import { mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
+import { join } from "node:path";
+import { tmpdir } from "node:os";
 import type { FastifyInstance } from "fastify";
 import { buildTestApp, loginOwner } from "./helpers.js";
 
@@ -41,6 +44,57 @@ describe("node routes without Prometheus configured", () => {
     const res = await app.inject({ method: "GET", url: "/api/nodes/nope", cookies });
     expect(res.statusCode).toBe(404);
     expect(res.json().error.code).toBe("node_not_found");
+  });
+
+  it("public V2 detail exposes safe profile data without a session", async () => {
+    const res = await app.inject({ method: "GET", url: "/api/public/nodes/rs1000/detail" });
+    expect(res.statusCode).toBe(200);
+    const body = res.json();
+    expect(body.node.id).toBe("rs1000");
+    expect(body).toHaveProperty("profile");
+    expect(body).toHaveProperty("capabilities");
+    expect(body).toHaveProperty("live");
+    expect(body.node).not.toHaveProperty("labels");
+  });
+
+  it("public V2 detail hides unknown nodes", async () => {
+    const res = await app.inject({ method: "GET", url: "/api/public/nodes/nope/detail" });
+    expect(res.statusCode).toBe(404);
+    expect(res.json().error.code).toBe("node_not_found");
+  });
+
+  it("public V2 detail hides nodes configured for authenticated visibility", async () => {
+    const dir = await mkdtemp(join(tmpdir(), "nodebeacon-public-detail-"));
+    const registryPath = join(dir, "nodes.yaml");
+    const seed = await readFile(new URL("../../../config/nodes.example.yaml", import.meta.url), "utf8");
+    await writeFile(registryPath, seed.replace("visibility: safe", "visibility: authenticated"), "utf8");
+    const privateApp = await buildTestApp({ NODEBEACON_NODE_CONFIG: registryPath });
+    try {
+      const res = await privateApp.inject({ method: "GET", url: "/api/public/nodes/rs1000/detail" });
+      expect(res.statusCode).toBe(404);
+      expect(res.json().error.code).toBe("node_not_found");
+    } finally {
+      await privateApp.close();
+      await rm(dir, { recursive: true, force: true });
+    }
+  });
+
+  it("public V2 series validates the fixed metric catalog", async () => {
+    const res = await app.inject({
+      method: "GET",
+      url: "/api/public/nodes/rs1000/series?metrics=rate(evil)&range=1d"
+    });
+    expect(res.statusCode).toBe(400);
+    expect(res.json().error.code).toBe("invalid_metrics");
+  });
+
+  it("public V2 series requires Prometheus for historical data", async () => {
+    const res = await app.inject({
+      method: "GET",
+      url: "/api/public/nodes/rs1000/series?metrics=cpu,memory&range=1d"
+    });
+    expect(res.statusCode).toBe(503);
+    expect(res.json().error.code).toBe("trends_unavailable");
   });
 
   it("range endpoint requires a session", async () => {
