@@ -1687,6 +1687,7 @@ collector 或新的公网端口。它们必须另建方案和安全审计。
 - NodeBeacon release：`1.0.7`，image `nodebeacon:git-4ef7e93c726c`，Deployment revision `43`；release acceptance record 位于 RS1000 worktree 的 `artifacts/deployments/20260715T082715Z-1.0.7-4ef7e93c726c.txt`。
 - Fast scrape：Helm revision `15`、chart `kube-prometheus-stack-86.3.1`；五个 target 全部 `up=1`，30 分钟记录为 30/30，最大 duration `0.669s`、最大 samples `57`、sample-limit/duplicate 增量均为 `0`。
 - G3 evidence：`/root/monitoring-stack/evidence/node-detail-v2-20260715T075343Z-g3`；G2 evidence：`/root/monitoring-stack/evidence/node-detail-v2-20260715T072419Z`。
+- G7 0h evidence：`/root/monitoring-stack/evidence/node-detail-v2-g7-20260715T083359Z-0h`；后续 1h/6h/24h 记录必须追加到同一 evidence 目录体系。
 - Registry：五个 node 的 `detail` 已合并到 `/data/nodes.yaml`；迁移备份为 `/data/nodes.yaml.pre-detail-v2-20260715T082859Z`，并保留现有 `.bak` 链。
 - G5：五个 detail/series API、readyz/healthz、匿名 admin 401、未知 node 404 和 1 分钟 10-client 负载均通过；负载中的 429 为预期 route limit，5xx/网络错误为 0。
 - 下一停止条件：fast scrape 至少稳定 24 小时后，才可按第 32 节独立调整 retention 到 `90d/40GB`；不得与其他 Helm 变更合并。
