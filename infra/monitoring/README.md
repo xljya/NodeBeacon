@@ -37,7 +37,13 @@ changing the existing 30-second historical job. The example configuration is
 part of this kustomization because Prometheus scrape configuration is owned by
 the kube-prometheus-stack Helm release.
 
-Before applying it:
+Deployment status (2026-07-15): the job is live through Helm release revision
+`16` with all five targets healthy. Prometheus retention is `90d` with a
+`40GB` size cap on the existing `60Gi` PVC. The verified rollout and rollback
+evidence is recorded in
+[`docs/node-detail-v2-implementation-plan.md`](../../docs/node-detail-v2-implementation-plan.md).
+
+For a new environment or a future target change:
 
 1. Verify the WireGuard targets and the `collect[]` collector names against the
    installed node_exporter version.
@@ -52,6 +58,14 @@ Before applying it:
    `scrape_duration_seconds`, and `scrape_samples_post_metric_relabeling`.
 4. Roll out the remaining targets only after the sample rate is close to the
    estimate in `docs/node-detail-v2-implementation-plan.md`.
+
+Keep retention changes in a separate Helm revision from fast-scrape changes.
+For the current production release, the following restores the prior
+`30d/40GB` retention while preserving the fast job:
+
+```sh
+helm -n monitoring rollback monitoring 15 --wait --timeout 10m
+```
 
 The NodeBeacon API queries this job by `job="node-detail-fast",node_id="..."`
 and falls back to the normal node selector until the fast job is available.

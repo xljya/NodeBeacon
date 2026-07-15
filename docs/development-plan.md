@@ -36,7 +36,7 @@ NodeBeacon 是给当前五台服务器使用的自托管监控状态页。它不
 - Namespace：`nodebeacon`，和已有 `sre-lab` 学习服务隔离。
 - 入口链路：Cloudflare 橙云代理 -> RS1000 nginx -> RS1000 k3s。
 - 当前源站：Cloudflare `monitor.liucf.com` 的 IPv4 源站指向 RS1000；dmit-uswest 不再承载 monitor 入口。
-- 当前状态（2026-07-13）：NodeBeacon `1.0.0` 进入稳定发布。组件级 readiness、备份新鲜度告警、不可变 Git SHA 发布、隔离 Chromium E2E、产品真实性清理、故障手册与统一只读生产验收均已完成。原计划七天观察期由项目所有者明确批准缩短；发布记录保留实际观察时长，不将其表述为七天。
+- 当前状态（2026-07-15）：NodeBeacon `1.0.7`（不可变镜像 `nodebeacon:git-4ef7e93c726c`，Deployment revision `43`）已发布。节点详情 V2、五节点 5 秒 fast scrape、registry detail 迁移与 Prometheus retention `90d/40GB` 已完成；生产运行基线、回滚路径和未完成的长时观察记录见 [Node Detail V2 实施方案](node-detail-v2-implementation-plan.md)。
 - 第一版目标（已达成）：替换当前轻量 `monitor-status` 应用，保留现有域名和 Cloudflare 安全边界。
 
 ## 2. 总体架构
