@@ -1,12 +1,12 @@
 # NodeBeacon 节点详情页 V2：Komari 截图功能等价实施方案
 
-状态：**Core V2 implemented locally / 核心 V2 已在工作区实现，尚未发布生产**
+状态：**Core V2 deployed / 核心 V2 已发布生产，G2/G3/G4/G5 已完成，G6/G7 观察中**
 文档日期：2026-07-15
 生产基线最后核验：2026-07-15（Asia/Shanghai）
 目标页面：`https://monitor.liucf.com/nodes/:id`
 功能参考：[`https://ss.akz.moe/instance/8832553d-a03f-4312-af8b-c5d9ed959c93`](https://ss.akz.moe/instance/8832553d-a03f-4312-af8b-c5d9ed959c93)
 
-> 本文是给后续开发者或 AI Agent 的可执行交接文档。2026-07-15 已完成核心业务代码、公开 API、图表布局、配置模板和测试；生产环境未执行发布。`node-detail-fast` 仍是需要按真实 Prometheus target discovery 接入的示例模板，不能直接盲目套用。
+> 本文是给后续开发者或 AI Agent 的可执行交接文档。2026-07-15 已完成核心业务代码、公开 API、图表布局、配置模板和测试，并按真实 Prometheus target discovery 完成五节点 fast scrape、NodeBeacon 1.0.7 发布和 registry 迁移。`node-detail-fast` 模板已验证可用，但 retention 90d 和 24 小时观察仍未完成。
 
 ### 本次落地范围
 
@@ -14,7 +14,7 @@
 - 已实现节点画像、实时摘要、历史图表、EWMA、时间范围、拖拽排序、S/M/L、删除/新增图表和 series chip 显隐。
 - 已接入节点安全详情配置，并提供 `infra/monitoring/node-detail-fast.example.yaml` 与接入说明。
 - 已通过 API 全量测试（75 tests）、workspace lint/typecheck/build、Playwright E2E（13/13），并用真实 Prometheus 只读隧道验证 RS1000 的 detail/series API。
-- 尚未执行生产部署；5 秒快速抓取、生产 Helm values 合并、灰度和回滚仍按本文第 17–19 节执行。
+- 生产已运行 NodeBeacon `1.0.7`（应用 commit `4ef7e93c726c`）；5 秒 fast scrape 使用 Helm revision 15，五个 target 均已通过 30 分钟稳定门禁。
 
 ## 1. 交付目标
 
@@ -1672,17 +1672,26 @@ collector 或新的公网端口。它们必须另建方案和安全审计。
 - [x] 完成 G0 的 admin detail、迁移 CLI 和 API tests。
 - [x] 完成 G0 的 E2E fixture 和 load script。
 - [x] 完成 G1 全量本地 gate，版本升至 1.0.7。
-- [ ] 将代码、测试和文档整理为一个可审查 commit，生产构建固定该 SHA。
-- [ ] 保存监控和应用生产基线。
-- [ ] G2 单 target fast canary，观察 30 分钟。
-- [ ] G3 五 target fast rollout，观察至少 24 小时。
-- [ ] G4 发布应用并 dry-run/apply registry 迁移。
-- [ ] G5 API、页面、安全、负载验收。
+- [x] 将代码、测试和文档整理为一个可审查 commit，生产应用固定 SHA `4ef7e93c726c`。
+- [x] 保存监控和应用生产基线。
+- [x] G2 单 target fast canary，观察 30 分钟。
+- [ ] G3 五 target fast rollout，30 分钟门禁已通过，仍需完成至少 24 小时观察。
+- [x] G4 发布应用并 dry-run/apply registry 迁移。
+- [x] G5 API、页面、安全、负载验收。
 - [ ] G6 独立调整 retention 90d/40GB。
-- [ ] G7 保存 0h/1h/6h/24h evidence 并更新文档。
+- [ ] G7 保存 0h/1h/6h/24h evidence 并完成 24 小时观察记录。
 - [ ] 任一 gate 失败时执行对应回滚，不跨 gate 继续。
 
-## 36. 参考资料
+## 36. 2026-07-15 执行记录
+
+- NodeBeacon release：`1.0.7`，image `nodebeacon:git-4ef7e93c726c`，Deployment revision `43`；release acceptance record 位于 RS1000 worktree 的 `artifacts/deployments/20260715T082715Z-1.0.7-4ef7e93c726c.txt`。
+- Fast scrape：Helm revision `15`、chart `kube-prometheus-stack-86.3.1`；五个 target 全部 `up=1`，30 分钟记录为 30/30，最大 duration `0.669s`、最大 samples `57`、sample-limit/duplicate 增量均为 `0`。
+- G3 evidence：`/root/monitoring-stack/evidence/node-detail-v2-20260715T075343Z-g3`；G2 evidence：`/root/monitoring-stack/evidence/node-detail-v2-20260715T072419Z`。
+- Registry：五个 node 的 `detail` 已合并到 `/data/nodes.yaml`；迁移备份为 `/data/nodes.yaml.pre-detail-v2-20260715T082859Z`，并保留现有 `.bak` 链。
+- G5：五个 detail/series API、readyz/healthz、匿名 admin 401、未知 node 404 和 1 分钟 10-client 负载均通过；负载中的 429 为预期 route limit，5xx/网络错误为 0。
+- 下一停止条件：fast scrape 至少稳定 24 小时后，才可按第 32 节独立调整 retention 到 `90d/40GB`；不得与其他 Helm 变更合并。
+
+## 37. 参考资料
 
 - [参考实例页面](https://ss.akz.moe/instance/8832553d-a03f-4312-af8b-c5d9ed959c93)
 - [Komari repository](https://github.com/komari-monitor/komari)
