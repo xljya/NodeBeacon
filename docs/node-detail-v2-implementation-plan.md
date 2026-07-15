@@ -1,6 +1,6 @@
 # NodeBeacon 节点详情页 V2：Komari 截图功能等价实施方案
 
-状态：**Core V2 deployed / 核心 V2 已发布生产，G2/G3/G4/G5 已完成，G6/G7 观察中**
+状态：**Core V2 deployed / 核心 V2 已发布生产，G2、G3 的 30 分钟门禁及 G4/G5 已完成，G3 24 小时观察和 G6/G7 仍在进行**
 文档日期：2026-07-15
 生产基线最后核验：2026-07-15（Asia/Shanghai）
 目标页面：`https://monitor.liucf.com/nodes/:id`
