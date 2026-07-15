@@ -1,12 +1,12 @@
 # NodeBeacon 节点详情页 V2：Komari 截图功能等价实施方案
 
-状态：**Core V2 deployed / 核心 V2 已发布生产，G2、G3 的 30 分钟门禁及 G4/G5 已完成，G3 24 小时观察和 G6/G7 仍在进行**
+状态：**Core V2 deployed / 核心 V2 已发布生产，G2、G3 的 30 分钟门禁、G4/G5、G6 已完成；G3 24 小时观察按用户指示跳过，G7 的长时观察仍未完成**
 文档日期：2026-07-15
 生产基线最后核验：2026-07-15（Asia/Shanghai）
 目标页面：`https://monitor.liucf.com/nodes/:id`
 功能参考：[`https://ss.akz.moe/instance/8832553d-a03f-4312-af8b-c5d9ed959c93`](https://ss.akz.moe/instance/8832553d-a03f-4312-af8b-c5d9ed959c93)
 
-> 本文是给后续开发者或 AI Agent 的可执行交接文档。2026-07-15 已完成核心业务代码、公开 API、图表布局、配置模板和测试，并按真实 Prometheus target discovery 完成五节点 fast scrape、NodeBeacon 1.0.7 发布和 registry 迁移。`node-detail-fast` 模板已验证可用，但 retention 90d 和 24 小时观察仍未完成。
+> 本文是给后续开发者或 AI Agent 的可执行交接文档。2026-07-15 已完成核心业务代码、公开 API、图表布局、配置模板和测试，并按真实 Prometheus target discovery 完成五节点 fast scrape、NodeBeacon 1.0.7 发布、registry 迁移和 retention 90d/40GB 变更。`node-detail-fast` 模板已验证可用；24 小时观察按用户指示跳过，不能将其误记为已完成。
 
 ### 本次落地范围
 
@@ -1110,11 +1110,11 @@ NODE_DETAIL_REALTIME_SOURCE=normal|fast
 | --- | --- |
 | 本地核心实现 | V2 API、页面、固定查询目录和 fast scrape 模板已完成 |
 | 本地验证 | API 75 tests、workspace lint/typecheck/build、Playwright E2E 13/13 已通过 |
-| 生产 NodeBeacon | `1.0.6`，镜像 `nodebeacon:git-c3d061e36ddc` |
-| 生产 Deployment revision | `42` |
-| 监控 Helm release | `monitoring` revision `13` |
+| 生产 NodeBeacon | `1.0.7`，镜像 `nodebeacon:git-4ef7e93c726c` |
+| 生产 Deployment revision | `43` |
+| 监控 Helm release | `monitoring` revision `16` |
 | kube-prometheus-stack | chart `86.3.1`，app `v0.91.0` |
-| Prometheus retention | `30d` + `40GB` size cap，PVC `60Gi` |
+| Prometheus retention | `90d` + `40GB` size cap，PVC `60Gi`（实际 TSDB 约 6.2G） |
 | 普通抓取 | 五个 node_exporter target 均 up，`30s` / timeout `10s` |
 | RS1000 target | Kubernetes ServiceMonitor 动态发现，当前 `152.53.171.134:9100` |
 | 外部 target | `10.77.0.2:9100` 至 `10.77.0.5:9100` |
@@ -1594,8 +1594,8 @@ rate(nodebeacon_prometheus_queries_total{outcome!="success"}[5m])
 
 ## 32. G6：Retention 单独从 30d 调整到 90d
 
-只有 fast job 五节点稳定运行至少 24 小时后才执行。单独创建一个新的 candidate values，
-只修改：
+标准流程要求 fast job 五节点稳定运行至少 24 小时后才执行。2026-07-15 本次按用户明确指示跳过等待窗口，
+仍保持“只改一个变量”的边界：单独创建 candidate values，只修改：
 
 ```yaml
 prometheus:
@@ -1675,11 +1675,11 @@ collector 或新的公网端口。它们必须另建方案和安全审计。
 - [x] 将代码、测试和文档整理为一个可审查 commit，生产应用固定 SHA `4ef7e93c726c`。
 - [x] 保存监控和应用生产基线。
 - [x] G2 单 target fast canary，观察 30 分钟。
-- [ ] G3 五 target fast rollout，30 分钟门禁已通过，仍需完成至少 24 小时观察。
+- [ ] G3 五 target fast rollout，30 分钟门禁已通过；24 小时观察按用户指示跳过，未宣称完成。
 - [x] G4 发布应用并 dry-run/apply registry 迁移。
 - [x] G5 API、页面、安全、负载验收。
-- [ ] G6 独立调整 retention 90d/40GB。
-- [ ] G7 保存 0h/1h/6h/24h evidence 并完成 24 小时观察记录。
+- [x] G6 独立调整 retention 90d/40GB（Helm revision 16）。
+- [ ] G7 保存 0h/1h/6h/24h evidence 并完成 24 小时观察记录；本次仅保存 0h，后续长时记录仍待补做。
 - [ ] 任一 gate 失败时执行对应回滚，不跨 gate 继续。
 
 ## 36. 2026-07-15 执行记录
@@ -1690,7 +1690,9 @@ collector 或新的公网端口。它们必须另建方案和安全审计。
 - G7 0h evidence：`/root/monitoring-stack/evidence/node-detail-v2-g7-20260715T083359Z-0h`；后续 1h/6h/24h 记录必须追加到同一 evidence 目录体系。
 - Registry：五个 node 的 `detail` 已合并到 `/data/nodes.yaml`；迁移备份为 `/data/nodes.yaml.pre-detail-v2-20260715T082859Z`，并保留现有 `.bak` 链。
 - G5：五个 detail/series API、readyz/healthz、匿名 admin 401、未知 node 404 和 1 分钟 10-client 负载均通过；负载中的 429 为预期 route limit，5xx/网络错误为 0。
-- 下一停止条件：fast scrape 至少稳定 24 小时后，才可按第 32 节独立调整 retention 到 `90d/40GB`；不得与其他 Helm 变更合并。
+- G6：2026-07-15 11:12（UTC+2）以独立 Helm revision `16` 将 retention 调为 `90d/40GB`，chart `86.3.1`；dry-run 和 atomic upgrade 通过。Prometheus flags 为 `90d/40GiB`，fast `5/5`、external `4/4`、healthy/ready 通过；PVC 60Gi 中实际目录约 6.2G。证据目录：`/root/monitoring-stack/evidence/node-detail-v2-retention90d-20260715T091246Z`。
+- G6 canonical values 已更新为 `/root/monitoring-stack/values-monitoring.yaml`，变更前备份：`/root/monitoring-stack/values-monitoring.yaml.pre-retention90d-20260715T091412Z`；需要时可执行 `helm -n monitoring rollback monitoring 15 --wait --timeout 10m` 恢复 `30d/40GB`，fast job 不变。
+- 按用户指示跳过 fast scrape 的 24 小时等待窗口；G3 24h、G7 的 1h/6h/24h evidence 仍是未完成项，不能以本次即时验收替代。
 
 ## 37. 参考资料
 
