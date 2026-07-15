@@ -1,0 +1,104 @@
+apiVersion: monitoring.coreos.com/v1
+kind: Probe
+metadata:
+  name: rs1000-public-egress
+  namespace: monitoring
+  labels:
+    release: monitoring
+    app.kubernetes.io/part-of: nodebeacon
+spec:
+  jobName: blackbox-tcp-egress
+  interval: 30s
+  scrapeTimeout: 10s
+  module: tcp_connect_ipv4
+  prober:
+    url: blackbox-exporter.monitoring.svc.cluster.local:9115
+  targets:
+    staticConfig:
+      static:
+        - 1.1.1.1:443
+        - 8.8.8.8:443
+      labels:
+        env: lab
+        node_id: rs1000
+        role: monitoring-egress
+        probe_type: public-ip
+---
+apiVersion: monitoring.coreos.com/v1
+kind: Probe
+metadata:
+  name: rs1000-dns-egress
+  namespace: monitoring
+  labels:
+    release: monitoring
+    app.kubernetes.io/part-of: nodebeacon
+spec:
+  jobName: blackbox-dns-egress
+  interval: 30s
+  scrapeTimeout: 10s
+  module: dns_liucf_ipv4
+  prober:
+    url: blackbox-exporter.monitoring.svc.cluster.local:9115
+  targets:
+    staticConfig:
+      static:
+        - 1.1.1.1:53
+        - 8.8.8.8:53
+      labels:
+        env: lab
+        node_id: rs1000
+        role: monitoring-egress
+        probe_type: dns
+---
+apiVersion: monitoring.coreos.com/v1
+kind: Probe
+metadata:
+  name: rs1000-wireguard-peers
+  namespace: monitoring
+  labels:
+    release: monitoring
+    app.kubernetes.io/part-of: nodebeacon
+spec:
+  jobName: blackbox-tcp-wireguard
+  interval: 30s
+  scrapeTimeout: 10s
+  module: tcp_connect_ipv4
+  prober:
+    url: blackbox-exporter.monitoring.svc.cluster.local:9115
+  targets:
+    staticConfig:
+      static:
+        - 10.77.0.2:9100
+        - 10.77.0.3:9100
+        - 10.77.0.4:9100
+        - 10.77.0.5:9100
+      labels:
+        env: lab
+        node_id: rs1000
+        role: monitoring-egress
+        probe_type: wireguard-peer
+      relabelingConfigs:
+        - action: replace
+          sourceLabels:
+            - __param_target
+          regex: 10\.77\.0\.2:9100
+          replacement: dmit-uswest
+          targetLabel: peer
+        - action: replace
+          sourceLabels:
+            - __param_target
+          regex: 10\.77\.0\.3:9100
+          replacement: hostbrr-4t
+          targetLabel: peer
+        - action: replace
+          sourceLabels:
+            - __param_target
+          regex: 10\.77\.0\.4:9100
+          replacement: netcup-1o
+          targetLabel: peer
+        - action: replace
+          sourceLabels:
+            - __param_target
+          regex: 10\.77\.0\.5:9100
+          replacement: huawei-2c1g
+          targetLabel: peer

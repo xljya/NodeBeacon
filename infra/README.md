@@ -5,6 +5,10 @@ web bundle. Deployed to the RS1000 k3s cluster in the `nodebeacon` namespace and
 exposed on NodePort `31003`, which the existing RS1000 nginx already proxies for
 `monitor.liucf.com`.
 
+RS1000 egress, DNS, and WireGuard-path probes are maintained separately under
+[`monitoring/`](monitoring/README.md). They distinguish a failure of the central
+monitoring vantage point from simultaneous failures of external targets.
+
 ```
 monitor.liucf.com
   -> Cloudflare (proxied)
@@ -175,7 +179,8 @@ For each deployment, expected production checks are:
 - `/nodes/rs1000`: detail page renders header + current metrics; trend charts
   appear after owner sign-in, with a working 1h/4h/24h/7d switch
 - `/api/latency`: `probes` lists the blackbox HTTP targets with latency,
-  24h success rate and cert expiry; the status page shows the probe panel
+  24h success rate and cert expiry; details are available from the admin
+  Latency page and are intentionally omitted from the public status page
 
 After the nightly backup has succeeded, run the read-only acceptance script.
 It archives version/SHA provenance, Pod readiness, health endpoints, five-node

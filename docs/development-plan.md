@@ -387,7 +387,7 @@ P1 验证记录：2026-07-06 已用浏览器在 `https://monitor.liucf.com/` 端
 | 已完成 | 实现 `GET /api/nodes` 和 `GET /api/nodes/:id` | 节点元数据和单节点详情可查询 | `0.4.0`：`/api/nodes` 公开（仅 public 节点、不含 Prometheus label 映射）；`/api/nodes/:id` 登录后返回完整节点 |
 | 已完成 | 实现趋势查询接口 | `query_range` 支持 CPU、内存、磁盘、网络、负载 | `0.4.0`：`GET /api/nodes/:id/range?metric=&range=`；`metric ∈ cpu/memory/disk/network/load`、`range ∈ 1h/4h/24h/7d` 严格枚举，越界 400；按 range 分级缓存；blackbox 延迟指标另行推进 |
 | 已完成 | 节点详情页 | 展示趋势图、近期状态、基础指标和探测结果 | `0.4.0`：`/nodes/:id` 从卡片和表格节点名进入；探测结果随 Blackbox 任务补 |
-| 已完成 | Blackbox 延迟和 HTTP 状态 | 展示公网探测延迟、成功率和 HTTP 状态码 | `0.5.0`：公开 `GET /api/latency` 聚合 `probe_success/duration/http_status_code/ssl_expiry` + 24h 可用率；状态页新增「公网探测」面板；目标由 `PROBE_JOB`（默认 `blackbox-http-public`）从 Prometheus 发现 |
+| 已完成 | Blackbox 延迟和 HTTP 状态 | 管理端展示公网探测延迟、成功率和 HTTP 状态码 | `0.5.0`：公开 `GET /api/latency` 聚合 `probe_success/duration/http_status_code/ssl_expiry` + 24h 可用率；目标由 `PROBE_JOB`（默认 `blackbox-http-public`）从 Prometheus 发现。公开状态页不展示探针面板 |
 | 已完成 | 前端组件化 | 公开状态页从 iframe 原型迁移到原生 React 组件 | `0.3.0` 首页主面板迁移；`0.4.0` 补齐节点详情/趋势视图（手写 SVG 折线图，无图表库依赖） |
 | 已完成 | NodeBeacon 自身 `/metrics` | 暴露 Prometheus 文本指标：请求量、错误率、Prom 查询耗时、缓存命中率 | `0.5.0`：prom-client；`nodebeacon_http_requests_total/…_duration_seconds`（按路由模式，非原始 URL）、`nodebeacon_prometheus_queries_total/…_query_duration_seconds`、`nodebeacon_cache_events_total{cache=status/trend/probe}` + 进程默认指标；公网 nginx 对 `/metrics` 返回 404，仅供集群内抓取 |
 | 已完成 | 基础自动化测试 | 引入 vitest；覆盖 `/api/status`、auth、admin 接口的关键路径 | `0.6.0`：vitest 2（vite 5 兼容），6 个文件 33 个用例：status fixture/摘要、auth（400/401/会话 Cookie/伪造 Cookie/注册关闭）、admin 守卫与节点 YAML 写回 CRUD、nodes/range 参数校验、mock Prometheus 真路径（status/趋势/latency）、`/metrics` 文本与路由模式标签；`pnpm test` 全绿 |
@@ -398,10 +398,10 @@ P2 完成判定：用户可以从总览定位问题节点，进入详情页查�
 
 P2 进展记录：2026-07-11 `0.9.0` 完成 Alertmanager webhook + incident 时间线，P2 全部交付。
 
-- **Blackbox 探测**：核对线上 Prometheus 后确认探测 job 为 `blackbox-http-public`（3 个 HTTPS 目标，instance 为 URL），可用指标含 `probe_success/probe_duration_seconds/probe_http_status_code/probe_ssl_earliest_cert_expiry`。新增 `services/probeService`（按 job 聚合 5 条白名单查询、短缓存 + stale 降级）与公开 `GET /api/latency`；`PROBE_JOB` 可配置、留空禁用。前端状态页节点列表下方新增「公网探测」面板（目标/状态+HTTP 码/延迟/24h 可用率/证书到期天数，窄屏收起后两列），文案 `status.probes.*` 补齐 5 语言。
+- **Blackbox 探测**：核对线上 Prometheus 后确认探测 job 为 `blackbox-http-public`（3 个 HTTPS 目标，instance 为 URL），可用指标含 `probe_success/probe_duration_seconds/probe_http_status_code/probe_ssl_earliest_cert_expiry`。新增 `services/probeService`（按 job 聚合 5 条白名单查询、短缓存 + stale 降级）与公开 `GET /api/latency`；`PROBE_JOB` 可配置、留空禁用。探测明细保留在管理端 Latency 页面；公开状态页不展示该面板。
 - **自身 `/metrics`**：引入 prom-client，`GET /metrics` 暴露请求量/时延（onResponse 钩子，按路由模式标签防基数爆炸）、上游 Prometheus 查询次数/耗时/错误（包在 `PrometheusClient` 请求层）、`status/trend/probe` 三个缓存的 hit/miss/stale 计数,外加进程默认指标。公网入口 nginx 新增 `location = /metrics { return 404; }`（committed 副本与线上同步），指标仅供集群内抓取。
 - **vitest**：apps/api 引入 vitest 2（workspace 的 vite 5 与 vitest 4 peer 不兼容，故锁 2.x），`test/` 下 6 文件 32 用例，含真实 `createApp` + `inject` 与 mock Prometheus（vector/matrix/probe 合成数据）。根 `pnpm test` 先构建 shared 再递归跑测试。
-- **验证**：`pnpm typecheck`/`build`/`test` 全绿；本机 mock 栈浏览器验证探测面板（在线/离线徽章、延迟、可用率、证书天数、暗色主题）与 `/metrics` 输出；生产部署后复验（见 infra/README.md 0.5.0 检查单）。
+- **验证**：`pnpm typecheck`/`build`/`test` 全绿；本机 mock 栈验证 Latency 页面与 `/metrics` 输出；生产部署后复验（见 infra/README.md 0.5.0 检查单）。
 
 P2 进展记录：2026-07-09 `0.4.0` 交付节点详情 + 趋势主线（P2 前三项 + 前端组件化收尾）。
 
@@ -541,6 +541,27 @@ monitor.liucf.com
 - 为 API 添加基础指标：请求量、错误率、Prometheus 查询耗时、缓存命中率。
 - SQLite 需要定期备份，并保留可执行的恢复步骤。
 - 部署文件放 `infra/k8s/`，至少包含 Deployment、Service、Secret 示例和 RS1000 nginx 入口说明。
+- 中心化监控必须同时监测监控视角自身的公网出口、DNS 和 WireGuard 路径；否则不能把多个 `up == 0` 直接判定为多个目标节点同时故障。
+
+### 2026-07-14 监控出口故障与改进
+
+北京时间 03:34:30–03:40:30，所有四台 WireGuard 外部节点的
+`external-vps-node` 指标和三个公网 HTTP 探针几乎同时归零，但 RS1000 本机
+`node-exporter`、k3s 和监控 Pod 均持续正常。RS1000 日志同期记录了多个外部
+DNS 查询超时，且 `eth0`、`wg0` 没有 link-down 或 carrier change。结合仍可在
+外部节点观察到的正常服务流量，本次故障判定为 RS1000 上游网络/路由短暂中断，
+而非多台节点独立宕机。
+
+为避免同类误判，新增独立的 `infra/monitoring/` 清单：
+
+- 两个固定公网 IP 的 TCP 出口探针；
+- 两个独立递归解析器的 `liucf.com` A 记录 DNS 探针；
+- 四个 WireGuard peer 的 `node_exporter` TCP 探针；
+- `RS1000MonitoringEgressDown` 关联告警：多个公网/DNS 探针和多个 peer 同时失败时，优先提示 RS1000 监控出口异常。
+
+上线后八条探针均为 `probe_success = 1`，四条新增告警规则均通过 Prometheus
+校验且处于 inactive 状态。应用、重载与 PromQL 验证步骤见
+[`infra/monitoring/README.md`](../infra/monitoring/README.md)。
 
 ## 12. 多语言（i18n）
 

@@ -1,0 +1,65 @@
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: rs1000-egress-rules
+  namespace: monitoring
+  labels:
+    release: monitoring
+    app.kubernetes.io/part-of: nodebeacon
+spec:
+  groups:
+    - name: rs1000-egress.rules
+      rules:
+        - alert: RS1000MonitoringEgressDown
+          expr: |
+            sum(probe_success{job=~"blackbox-(tcp-egress|dns-egress)"} == 0) >= 2
+              and
+            sum(probe_success{job="blackbox-tcp-wireguard"} == 0) >= 2
+          for: 1m
+          labels:
+            severity: critical
+            team: infra
+            node_id: rs1000
+            role: monitoring-egress
+          annotations:
+            summary: "RS1000 监控出口异常"
+            description: "RS1000 同时无法访问多个公网探针和多个 WireGuard peer。优先检查上游路由、机房网络和本机防火墙，不要先判定所有目标节点同时宕机。"
+        - alert: RS1000PublicEgressDown
+          expr: |
+            sum(probe_success{job="blackbox-tcp-egress"}) == 0
+              or absent(probe_success{job="blackbox-tcp-egress"})
+          for: 2m
+          labels:
+            severity: critical
+            team: infra
+            node_id: rs1000
+            role: monitoring-egress
+          annotations:
+            summary: "RS1000 公网 IP 出口不可用"
+            description: "RS1000 连续 2 分钟无法通过 TCP 连接两个独立公网 IP。检查默认路由、上游丢包和机房网络。"
+        - alert: RS1000DNSResolutionDown
+          expr: |
+            sum(probe_success{job="blackbox-dns-egress"}) == 0
+              or absent(probe_success{job="blackbox-dns-egress"})
+          for: 2m
+          labels:
+            severity: critical
+            team: infra
+            node_id: rs1000
+            role: monitoring-egress
+          annotations:
+            summary: "RS1000 外部 DNS 解析不可用"
+            description: "RS1000 连续 2 分钟无法通过两个独立解析器查询 liucf.com A 记录。检查 UDP/53、上游 DNS 和出口路由。"
+        - alert: RS1000WireGuardPathDegraded
+          expr: |
+            sum(probe_success{job="blackbox-tcp-wireguard"} == 0) >= 2
+              or absent(probe_success{job="blackbox-tcp-wireguard"})
+          for: 2m
+          labels:
+            severity: critical
+            team: infra
+            node_id: rs1000
+            role: monitoring-egress
+          annotations:
+            summary: "RS1000 到多个 WireGuard peer 的路径异常"
+            description: "RS1000 连续 2 分钟无法连接至少两个 peer 的 node_exporter。若公网出口探针也失败，优先判定 RS1000 观测路径故障。"
