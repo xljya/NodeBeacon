@@ -2,7 +2,8 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import type { TrendUnit } from "@nodebeacon/shared";
 import { fmtRate } from "../../lib/format";
 
-const CHART_HEIGHT = 238;
+const MIN_CHART_HEIGHT = 220;
+const MAX_CHART_HEIGHT = 604;
 const PLOT_TOP = 14;
 const PLOT_BOTTOM = 32;
 const AXIS_WIDTH = 58;
@@ -181,9 +182,16 @@ export interface TrendChartProps {
   series: ChartTrendSeries[];
   emptyText: string;
   latestLabel: string;
+  readoutMode?: "footer" | "overlay";
 }
 
-export function TrendChart({ title, series, emptyText, latestLabel }: TrendChartProps) {
+export function TrendChart({
+  title,
+  series,
+  emptyText,
+  latestLabel,
+  readoutMode = "footer"
+}: TrendChartProps) {
   const viewportRef = useRef<HTMLDivElement | null>(null);
   const [width, setWidth] = useState(640);
   const [hoverTimestamp, setHoverTimestamp] = useState<number | null>(null);
@@ -200,10 +208,14 @@ export function TrendChart({ title, series, emptyText, latestLabel }: TrendChart
 
   const scale = useMemo(() => computeScale(series), [series]);
   const hasRightAxis = (scale?.units.length ?? 0) > 1;
+  const chartHeight = Math.max(
+    MIN_CHART_HEIGHT,
+    Math.min(MAX_CHART_HEIGHT, Math.round(width * 9 / 16))
+  );
   const plotLeft = AXIS_WIDTH;
   const plotRight = hasRightAxis ? AXIS_WIDTH : 14;
   const plotWidth = Math.max(1, width - plotLeft - plotRight);
-  const plotHeight = CHART_HEIGHT - PLOT_TOP - PLOT_BOTTOM;
+  const plotHeight = chartHeight - PLOT_TOP - PLOT_BOTTOM;
   const rangeSeconds = scale ? scale.maxTs - scale.minTs : 0;
   const paths = useMemo(() => {
     if (!scale) return [];
@@ -230,13 +242,14 @@ export function TrendChart({ title, series, emptyText, latestLabel }: TrendChart
   return (
     <div className="trend-chart" ref={viewportRef}>
       {!scale ? (
-        <div className="trend-chart-empty">{emptyText}</div>
+        <div className="trend-chart-empty" style={{ height: chartHeight }}>{emptyText}</div>
       ) : (
         <svg
           className="trend-chart-svg"
           width={width}
-          height={CHART_HEIGHT}
-          viewBox={`0 0 ${width} ${CHART_HEIGHT}`}
+          height={chartHeight}
+          viewBox={`0 0 ${width} ${chartHeight}`}
+          style={{ height: chartHeight }}
           onPointerMove={onPointerMove}
           onPointerLeave={() => setHoverTimestamp(null)}
           role="img"
@@ -276,7 +289,7 @@ export function TrendChart({ title, series, emptyText, latestLabel }: TrendChart
               key={fraction}
               className="trend-tick"
               x={plotLeft + plotWidth * fraction}
-              y={CHART_HEIGHT - 8}
+              y={chartHeight - 8}
               textAnchor={fraction === 0 ? "start" : fraction === 1 ? "end" : "middle"}
             >
               {formatTick(scale.minTs + rangeSeconds * fraction, rangeSeconds)}
@@ -308,7 +321,11 @@ export function TrendChart({ title, series, emptyText, latestLabel }: TrendChart
           )}
         </svg>
       )}
-      <div className="trend-chart-readout" aria-live="polite">
+      {(readoutMode === "footer" || hoverTimestamp !== null) && (
+        <div
+          className={`trend-chart-readout${readoutMode === "overlay" ? " trend-chart-readout-overlay" : ""}`}
+          aria-live="polite"
+        >
         {scale && readoutTimestamp > 0 ? (
           <>
             <span className="trend-readout-time">
@@ -328,7 +345,8 @@ export function TrendChart({ title, series, emptyText, latestLabel }: TrendChart
         ) : (
           <span>&nbsp;</span>
         )}
-      </div>
+        </div>
+      )}
     </div>
   );
 }

@@ -20,8 +20,6 @@ import {
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import {
-  Activity,
-  ArrowLeft,
   ChartLine,
   ChevronDown,
   GripHorizontal,
@@ -44,10 +42,15 @@ import {
   type TrendUnit
 } from "@nodebeacon/shared";
 import { apiGet } from "../lib/api";
-import { buildNodeView, type MetricView } from "./nodeView";
+import { buildNodeView } from "./nodeView";
 import { StatusHeader } from "./components/StatusHeader";
 import { OsLogo } from "./components/OsLogo";
-import { TrendChart, trendSeriesColor, type ChartTrendSeries } from "./components/TrendChart";
+import {
+  TrendChart,
+  formatTrendValue,
+  trendSeriesColor,
+  type ChartTrendSeries
+} from "./components/TrendChart";
 import { getStatusSnapshot, loadStatusSnapshot } from "./statusSnapshot";
 import "./status.css";
 
@@ -267,21 +270,6 @@ function smoothSeries(series: ChartTrendSeries[], enabled: boolean): ChartTrendS
   });
 }
 
-function Metric({ label, metric }: { label: string; metric: MetricView }) {
-  return (
-    <div className="metric">
-      <div className="metric-head">
-        <span className="l">{label}</span>
-        <span className="v">{metric.text}</span>
-      </div>
-      <div className="bar">
-        <div className={`bar-fill ${metric.tone}`} style={{ width: `${Math.min(100, Math.max(0, metric.pct))}%` }} />
-      </div>
-      {metric.sub && <span className="metric-sub">{metric.sub}</span>}
-    </div>
-  );
-}
-
 function chartTitle(id: ChartId, t: (key: string) => string): string {
   return t(`status.detail.chart_${id}`);
 }
@@ -296,6 +284,15 @@ function seriesLabel(name: string, t: (key: string) => string): string {
 function isSeriesSelected(chart: ChartConfig, name: string): boolean {
   return chart.defaultSeries.includes(name)
     || (chart.id === "disk" && chart.defaultSeries.includes("disk") && name.startsWith("disk:"));
+}
+
+function latestSeriesSummary(series: ChartTrendSeries[]): string {
+  return series.map((item) => {
+    const point = [...item.points].reverse().find((candidate) => candidate[1] !== null);
+    return `${item.label}: ${point?.[1] !== null && point?.[1] !== undefined
+      ? formatTrendValue(point[1], item.unit)
+      : "—"}`;
+  }).join(" · ");
 }
 
 interface SortableChartCardProps {
@@ -365,10 +362,13 @@ function SortableChartCard({
         >
           <GripHorizontal size={18} aria-hidden="true" />
         </button>
-        <span className="detail-chart-heading">
-          <ChartLine size={18} strokeWidth={2} aria-hidden="true" />
-          <span className="trend-chart-title">{title}</span>
-        </span>
+        <div className="detail-chart-heading-block">
+          <span className="detail-chart-heading">
+            <ChartLine size={18} strokeWidth={2} aria-hidden="true" />
+            <span className="trend-chart-title">{title}</span>
+          </span>
+          <span className="detail-chart-latest">{latestSeriesSummary(renderedSeries)}</span>
+        </div>
         <div className="detail-chart-actions" role="group" aria-label={t("status.detail.chartActions")}>
           {(["s", "m", "l"] as ChartSize[]).map((size) => (
             <button
@@ -418,7 +418,13 @@ function SortableChartCard({
           })}
         </div>
       )}
-      <TrendChart title={title} series={renderedSeries} emptyText={emptyText} latestLabel={latestLabel} />
+      <TrendChart
+        title={title}
+        series={renderedSeries}
+        emptyText={emptyText}
+        latestLabel={latestLabel}
+        readoutMode="overlay"
+      />
     </article>
   );
 }
@@ -620,11 +626,6 @@ export function NodeDetailPage() {
       <div className="status-container detail-layout">
         <StatusHeader theme={theme} onToggleTheme={() => setTheme((previous) => (previous === "light" ? "dark" : "light"))} />
         <div className="status-body">
-          <Link to="/" className="detail-back">
-            <ArrowLeft size={18} strokeWidth={2} aria-hidden="true" />
-            {t("status.detail.back")}
-          </Link>
-
           {statusLoading && !status && !detail ? (
             <div className="status-empty"><div className="status-empty-title">{t("common.loading")}</div></div>
           ) : !detail && !node ? (
@@ -651,7 +652,10 @@ export function NodeDetailPage() {
                         className={`detail-nav-item${candidate.id === id ? " active" : ""}`}
                         aria-current={candidate.id === id ? "page" : undefined}
                       >
-                        <span>{candidate.name}</span>
+                        <span className="detail-nav-flag" aria-hidden="true">
+                          {buildNodeView(candidate, units).flag}
+                        </span>
+                        <span className="detail-nav-name">{candidate.name}</span>
                         <span className={`detail-nav-dot ${candidate.online ? "online" : "offline"}`} />
                       </Link>
                     ))}
@@ -680,63 +684,48 @@ export function NodeDetailPage() {
 
                 {view && (
                   <>
-                    <section className="detail-overview-card">
-                      <div className="detail-head">
-                        <div className="detail-head-main">
-                          <span className="node-flag">{view.flag}</span>
-                          <span className="detail-name">{view.name}</span>
-                          <span className={`status-pill ${view.online ? "online" : "offline"}`}>
-                            {view.online ? t("status.card.online") : t("status.card.offline")}
-                          </span>
-                        </div>
-                        <div className="detail-head-meta">
-                          <span className="detail-meta-item">
-                            <span className="node-os-logo"><OsLogo slug={view.osSlug} /></span>
-                            {detail?.profile.osName ?? view.osText}
-                          </span>
-                          <span className="detail-meta-item">{t("status.card.uptime")}: {detail?.live.uptimeSeconds !== null && detail?.live.uptimeSeconds !== undefined ? formatDuration(detail.live.uptimeSeconds) : view.uptime}</span>
-                          <span className="detail-meta-item">{t("status.card.load")}: {detail?.live.load1?.toFixed(2) ?? view.load1}</span>
-                          <span className="detail-meta-item">{t("status.detail.lastReport")}: {detail?.live.lastReportAt ? new Date(detail.live.lastReportAt).toLocaleString() : view.updatedAt}</span>
-                        </div>
-                        {view.tags.length > 0 && (
-                          <div className="node-tags">
-                            {view.tags.map((tag, index) => <span className="node-tag" key={`${tag}-${index}`}>{tag}</span>)}
-                          </div>
-                        )}
-                      </div>
+                    <div className="detail-node-identity">
+                      <span className="node-flag" aria-hidden="true">{view.flag}</span>
+                      <h1>{view.name}</h1>
+                      <span className={`status-pill ${view.online ? "online" : "offline"}`}>
+                        {view.online ? t("status.card.online") : t("status.card.offline")}
+                      </span>
+                      {view.name !== view.id && <span className="detail-node-id">{view.id}</span>}
+                    </div>
 
+                    <section className="detail-overview-card">
                       {detail && (
                         <div className="detail-profile-card">
-                          <div><b>{t("status.detail.profileCpu")}</b><span>{detail.profile.cpuModel ?? t("status.detail.unknown")}{detail.profile.logicalCpuCores ? ` × ${detail.profile.logicalCpuCores}` : ""}</span></div>
-                          <div><b>{t("status.detail.profileGpu")}</b><span>{detail.profile.gpuModel ?? t("status.detail.unavailable")}</span></div>
-                          <div><b>{t("status.detail.profileArch")}</b><span>{detail.profile.arch ?? "—"}</span></div>
-                          <div><b>{t("status.detail.profileVirtualization")}</b><span>{detail.profile.virtualization ?? "—"}</span></div>
-                          <div><b>{t("status.detail.profileKernel")}</b><span>{detail.profile.kernelVersion ?? "—"}</span></div>
-                          <div><b>{t("status.detail.profileConnections")}</b><span>{detail.live.tcpConnections ?? "—"} / {detail.live.udpConnections ?? "—"}</span></div>
-                          <div><b>{t("status.detail.profileNetwork")}</b><span>{formatBytes(detail.live.networkRxBytesPerSecond)}/s ↓ · {formatBytes(detail.live.networkTxBytesPerSecond)}/s ↑</span></div>
-                          <div><b>{t("status.detail.profileTraffic")}</b><span>↓ {formatBytes(detail.live.networkRxBytesTotal)} · ↑ {formatBytes(detail.live.networkTxBytesTotal)}</span></div>
+                          <div className="detail-profile-cpu">
+                            <b>{t("status.detail.profileCpu")}</b>
+                            <span>{detail.profile.cpuModel ?? t("status.detail.unknown")}{detail.profile.logicalCpuCores ? ` × ${detail.profile.logicalCpuCores}` : ""}</span>
+                          </div>
+                          <div className="detail-profile-arch"><b>{t("status.detail.profileArch")}</b><span>{detail.profile.arch ?? "—"}</span></div>
+                          <div className="detail-profile-virt"><b>{t("status.detail.profileVirtualization")}</b><span>{detail.profile.virtualization ?? "—"}</span></div>
+                          <div className="detail-profile-gpu"><b>{t("status.detail.profileGpu")}</b><span>{detail.profile.gpuModel ?? t("status.detail.unavailable")}</span></div>
+                          <div className="detail-profile-os">
+                            <b>{t("status.detail.profileOs")}</b>
+                            <span className="detail-profile-value-with-icon">
+                              <span className="node-os-logo"><OsLogo slug={view.osSlug} /></span>
+                              {detail.profile.osName ?? view.osText}
+                            </span>
+                            <small>{detail.profile.kernelVersion ?? "—"}</small>
+                          </div>
+                          <div className="detail-profile-network"><b>{t("status.detail.profileNetwork")}</b><span>↑ {formatBytes(detail.live.networkTxBytesPerSecond)}/s · ↓ {formatBytes(detail.live.networkRxBytesPerSecond)}/s</span></div>
+                          <div className="detail-profile-traffic"><b>{t("status.detail.profileTraffic")}</b><span>↑ {formatBytes(detail.live.networkTxBytesTotal)} · ↓ {formatBytes(detail.live.networkRxBytesTotal)}</span></div>
+                          <div className="detail-profile-memory"><b>{t("status.card.ram")}</b><span>{formatBytes(detail.live.memoryUsedBytes)} / {formatBytes(detail.live.memoryTotalBytes)}</span></div>
+                          <div className="detail-profile-swap"><b>{t("status.detail.chart_swap")}</b><span>{formatBytes(detail.live.swapUsedBytes)} / {formatBytes(detail.live.swapTotalBytes)}</span></div>
+                          <div className="detail-profile-disk"><b>{t("status.card.disk")}</b><span>{view.disk.sub ?? view.disk.text}</span></div>
+                          <div className="detail-profile-uptime"><b>{t("status.card.uptime")}</b><span>{detail.live.uptimeSeconds !== null ? formatDuration(detail.live.uptimeSeconds) : view.uptime}</span></div>
+                          <div className="detail-profile-report"><b>{t("status.detail.lastReport")}</b><span>{detail.live.lastReportAt ? new Date(detail.live.lastReportAt).toLocaleString() : view.updatedAt}</span></div>
                         </div>
                       )}
-
-                      <div className="detail-current">
-                        <Metric label={t("status.card.cpu")} metric={view.cpu} />
-                        <Metric label={t("status.card.ram")} metric={view.ram} />
-                        <Metric label={t("status.card.disk")} metric={view.disk} />
-                        <div className="detail-netbox">
-                          <div className="detail-netbox-row"><span className="l">{t("status.card.netSpd")}</span><span className="v">{view.net}</span></div>
-                          <div className="detail-netbox-row"><span className="l">{t("status.card.traffic")}</span><span className="v">{view.traffic}</span></div>
-                        </div>
-                      </div>
                     </section>
 
                     {incidents.length > 0 && <IncidentPanel incidents={incidents} t={t} />}
 
-                    <section className="detail-dashboard" aria-labelledby="detail-trends-title">
-                      <div className="detail-trends-head">
-                        <span className="detail-trends-title" id="detail-trends-title">
-                          <Activity size={20} aria-hidden="true" />
-                          {t("status.detail.trendsTitle")}
-                        </span>
+                    <section className="detail-dashboard" aria-label={t("status.detail.trendsTitle")}>
+                      <div className="detail-range-row">
                         <div className="range-tabs" aria-label={t("status.detail.timeRange")}>
                           {DETAIL_RANGES.map((candidate) => (
                             <button
@@ -760,57 +749,63 @@ export function NodeDetailPage() {
                       )}
 
                       <div className="detail-chart-toolbar">
-                        <span className="detail-toolbar-title"><ChartLine size={18} aria-hidden="true" />{t("status.detail.charts")}</span>
-                        <label>{t("status.detail.aggregation")}
-                          <select value={aggregation} onChange={(event) => setAggregation(event.target.value as DetailAggregation)}>
-                            {DETAIL_AGGREGATIONS.map((candidate) => (
-                              <option key={candidate} value={candidate}>{t(`status.detail.aggregation_${candidate}`)}</option>
-                            ))}
-                          </select>
-                        </label>
-                        <button
-                          type="button"
-                          role="switch"
-                          aria-checked={ewma}
-                          className={`detail-toggle${ewma ? " on" : ""}`}
-                          onClick={() => setEwma((value) => !value)}
-                          title={t("status.detail.ewmaHint")}
-                        >
-                          <span className="detail-switch-track"><span /></span>
-                          EWMA
-                        </button>
-                        <button
-                          type="button"
-                          className="detail-tool-button"
-                          onClick={() => {
-                            const next = defaultLayout();
-                            setCharts(next.charts);
-                            setAggregation(next.aggregation);
-                            setEwma(next.ewma);
-                          }}
-                        >
-                          <RotateCcw size={16} aria-hidden="true" />
-                          {t("status.detail.reset")}
-                        </button>
-                        <label className="detail-add-chart">
-                          <Plus size={16} aria-hidden="true" />
-                          {t("status.detail.addChart")}
-                          <span className="detail-select-wrap">
+                        <div className="detail-toolbar-primary">
+                          <span className="detail-toolbar-title"><ChartLine size={18} aria-hidden="true" />{t("status.detail.charts")}</span>
+                          <label>{t("status.detail.aggregation")}
                             <select
-                              value=""
-                              aria-label={t("status.detail.addChart")}
-                              onChange={(event) => {
-                                if (event.target.value) addChart(event.target.value as ChartId);
-                              }}
+                              value={aggregation}
+                              onChange={(event) => setAggregation(event.target.value as DetailAggregation)}
                             >
-                              <option value="">{t("status.detail.selectChart")}</option>
-                              {CHART_CATALOG.filter((candidate) => !charts.some((current) => current.id === candidate.id)).map((candidate) => (
-                                <option key={candidate.id} value={candidate.id}>{chartTitle(candidate.id, t)}</option>
+                              {DETAIL_AGGREGATIONS.map((candidate) => (
+                                <option key={candidate} value={candidate}>{t(`status.detail.aggregation_${candidate}`)}</option>
                               ))}
                             </select>
-                            <ChevronDown size={14} aria-hidden="true" />
-                          </span>
-                        </label>
+                          </label>
+                          <button
+                            type="button"
+                            role="switch"
+                            aria-checked={ewma}
+                            className={`detail-toggle${ewma ? " on" : ""}`}
+                            onClick={() => setEwma((value) => !value)}
+                            title={t("status.detail.ewmaHint")}
+                          >
+                            <span className="detail-switch-track"><span /></span>
+                            EWMA
+                          </button>
+                        </div>
+                        <div className="detail-toolbar-actions">
+                          <button
+                            type="button"
+                            className="detail-tool-button"
+                            onClick={() => {
+                              const next = defaultLayout();
+                              setCharts(next.charts);
+                              setAggregation(next.aggregation);
+                              setEwma(next.ewma);
+                            }}
+                          >
+                            <RotateCcw size={16} aria-hidden="true" />
+                            {t("status.detail.reset")}
+                          </button>
+                          <label className="detail-add-chart">
+                            <Plus size={16} aria-hidden="true" />
+                            <span className="detail-select-wrap">
+                              <select
+                                value=""
+                                aria-label={t("status.detail.addChart")}
+                                onChange={(event) => {
+                                  if (event.target.value) addChart(event.target.value as ChartId);
+                                }}
+                              >
+                                <option value="">{t("status.detail.addChart")}</option>
+                                {CHART_CATALOG.filter((candidate) => !charts.some((current) => current.id === candidate.id)).map((candidate) => (
+                                  <option key={candidate.id} value={candidate.id}>{chartTitle(candidate.id, t)}</option>
+                                ))}
+                              </select>
+                              <ChevronDown size={14} aria-hidden="true" />
+                            </span>
+                          </label>
+                        </div>
                       </div>
 
                       <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>

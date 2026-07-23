@@ -103,8 +103,8 @@ test("anonymous node detail uses combined charts and polished layout controls", 
   await page.goto("/nodes/rs1000");
   await expect(page.locator(".detail-profile-card")).toBeVisible();
   await expect(page.locator(".detail-chart-card")).toHaveCount(5);
-  await expect(page.locator('[data-chart-id="cpu"]')).toContainText("CPU & Load");
-  await expect(page.locator('[data-chart-id="memory"]')).toContainText("Memory & Swap");
+  await expect(page.locator('[data-chart-id="cpu"]')).toContainText("CPU");
+  await expect(page.locator('[data-chart-id="memory"]')).toContainText("Memory");
   await expect(page.locator('[data-chart-id="cpu"] .trend-axis-right')).toBeVisible();
   await expect(page.locator(".detail-series-chip").first()).toBeVisible();
 
@@ -128,6 +128,39 @@ test("anonymous node detail uses combined charts and polished layout controls", 
   await page.getByRole("button", { name: "Reset" }).click();
   await expect(cpuCard).toHaveClass(/chart-size-s/);
   await expect.poll(async () => page.evaluate(() => JSON.parse(localStorage.getItem("nb-node-detail-layout:v2") ?? "{}").charts?.length)).toBe(5);
+});
+
+test("desktop geometry follows the Komari source layout", async ({ page }) => {
+  await page.setViewportSize({ width: 1920, height: 1080 });
+  await mockNodeDetail(page);
+  await page.goto("/nodes/rs1000");
+  await expect(page.locator(".detail-node-nav")).toBeVisible();
+  await expect(page.locator(".detail-chart-card")).toHaveCount(5);
+
+  const geometry = await page.evaluate(() => {
+    const box = (selector: string) => {
+      const rect = document.querySelector(selector)?.getBoundingClientRect();
+      return rect ? { x: rect.x, y: rect.y, width: rect.width, height: rect.height } : null;
+    };
+    return {
+      sidebar: box(".detail-node-nav"),
+      main: box(".detail-main-content"),
+      overview: box(".detail-overview-card"),
+      toolbar: box(".detail-chart-toolbar"),
+      grid: box(".detail-chart-grid"),
+      cpu: box('[data-chart-id="cpu"]'),
+      network: box('[data-chart-id="network"]')
+    };
+  });
+
+  expect(geometry.sidebar?.width).toBeCloseTo(300, 0);
+  expect(geometry.main?.width).toBeCloseTo(1100, 0);
+  expect((geometry.main?.x ?? 0) - ((geometry.sidebar?.x ?? 0) + (geometry.sidebar?.width ?? 0))).toBeCloseTo(16, 0);
+  expect(geometry.overview?.width).toBeCloseTo(900, 0);
+  expect(geometry.toolbar?.width).toBeCloseTo(1100, 0);
+  expect(geometry.grid?.width).toBeCloseTo(1100, 0);
+  expect(geometry.network?.width).toBeCloseTo(1100, 0);
+  expect(geometry.network?.height ?? 0).toBeGreaterThan((geometry.cpu?.height ?? 0) * 1.8);
 });
 
 test("chart ordering supports the keyboard and persists", async ({ page }) => {

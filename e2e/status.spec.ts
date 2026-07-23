@@ -24,7 +24,7 @@ test("returning from a node detail keeps the previous status snapshot visible", 
 
   await cards.first().click();
   await expect(page).toHaveURL(/\/nodes\/[^/]+$/);
-  await expect(page.locator(".detail-head")).toBeVisible();
+  await expect(page.locator(".detail-node-identity")).toBeVisible();
 
   let delayStatus = true;
   await page.route("**/api/status", async (route) => {
@@ -32,7 +32,7 @@ test("returning from a node detail keeps the previous status snapshot visible", 
     await route.continue();
   });
 
-  await page.locator(".detail-back").click();
+  await page.goBack();
   await expect(page).toHaveURL(/\/$/);
   await expect(cards).toHaveCount(5, { timeout: 300 });
   await expect(page.getByText("No servers configured", { exact: true })).toHaveCount(0);
