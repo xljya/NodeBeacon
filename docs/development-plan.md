@@ -4,6 +4,8 @@
 
 节点详情页 V2 的当前实现状态、真实生产 target 核验、逐 gate 发布命令、测试标准和
 回滚步骤见 [Node Detail V2 实施方案](node-detail-v2-implementation-plan.md)。
+RIPE Atlas 四视角延迟的架构、安全边界、积分门槛和下一步操作见
+[RIPE Atlas 延迟接入手册](ripe-atlas-latency.md)。
 
 ## 决策记录
 
@@ -36,7 +38,7 @@ NodeBeacon 是给当前五台服务器使用的自托管监控状态页。它不
 - Namespace：`nodebeacon`，和已有 `sre-lab` 学习服务隔离。
 - 入口链路：Cloudflare 橙云代理 -> RS1000 nginx -> RS1000 k3s。
 - 当前源站：Cloudflare `monitor.liucf.com` 的 IPv4 源站指向 RS1000；dmit-uswest 不再承载 monitor 入口。
-- 当前状态（2026-07-15）：NodeBeacon `1.0.7`（不可变镜像 `nodebeacon:git-4ef7e93c726c`，Deployment revision `43`）已发布。节点详情 V2、五节点 5 秒 fast scrape、registry detail 迁移与 Prometheus retention `90d/40GB` 已完成；验收证据见 [1.0.7 发布记录](releases/v1.0.7.md)，生产运行基线、回滚路径和未完成的长时观察记录见 [Node Detail V2 实施方案](node-detail-v2-implementation-plan.md)。
+- 当前状态（2026-07-23）：NodeBeacon `1.0.11`（不可变镜像 `nodebeacon:git-264bc280acb1`，Deployment revision `47`）已发布。节点详情 V2、五节点 5 秒 fast scrape、registry detail 迁移与 Prometheus retention `90d/40GB` 已完成；验收证据见 [1.0.11 发布记录](releases/v1.0.11.md)。RIPE Atlas 四视角延迟代码已完成并在 GitHub 留存检查点，但因账户尚未完成首次日结、余额为 0，测量尚未创建且生产仍保持 `1.0.11`；余额达到 `17,280` 后按 [RIPE Atlas 延迟接入手册](ripe-atlas-latency.md)继续。
 - 第一版目标（已达成）：替换当前轻量 `monitor-status` 应用，保留现有域名和 Cloudflare 安全边界。
 
 ## 2. 总体架构

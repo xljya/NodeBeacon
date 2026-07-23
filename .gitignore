@@ -26,6 +26,7 @@ e2e/.tmp/
 # Deployment verification output
 artifacts/deployments/
 artifacts/production-verification/
+artifacts/ripe-atlas/
 
 # Local assistant configuration
 .claude/

@@ -442,14 +442,18 @@ function querySpecs(metricName: DetailChartMetric, node: NodeConfigEntry): Detai
       return [{
         key: "ping",
         unit: "milliseconds",
-        labels: node.id === "rs1000" ? undefined : { vantage: "rs1000" },
-        query: () => `1000 * ${metric(
-          "probe_duration_seconds",
-          { job: "blackbox-tcp-wireguard", node_id: "rs1000" },
-          node.id === "rs1000"
-            ? []
-            : [{ name: "peer", operator: "=", value: node.id }]
-        )}`
+        query: () => {
+          const ripeAtlas = metric("nodebeacon_ripe_atlas_rtt_milliseconds", { node_id: node.id });
+          if (node.id === "rs1000") return ripeAtlas;
+          const rs1000 = `1000 * ${metric(
+            "probe_duration_seconds",
+            { job: "blackbox-tcp-wireguard", node_id: "rs1000" },
+            [{ name: "peer", operator: "=", value: node.id }]
+          )}`;
+          // Preserve the existing RS1000 blackbox series only until RIPE Atlas
+          // has produced at least one real vantage result for this node.
+          return `${ripeAtlas} or (${rs1000} unless on() ${ripeAtlas})`;
+        }
       }];
     case "connections":
       return [
@@ -517,7 +521,18 @@ export async function getNodeDetailSeries(
         const labels = {
           ...spec.labels,
           ...Object.fromEntries(
-          Object.entries(result.metric).filter(([name]) => name === "mountpoint" || name === "device" || name === "peer")
+          Object.entries(result.metric).filter(([name]) => [
+            "mountpoint",
+            "device",
+            "peer",
+            "vantage",
+            "vantage_name",
+            "provider",
+            "probe_id",
+            "asn",
+            "city",
+            "measurement_id"
+          ].includes(name))
           )
         };
         series.push({ metric: metricName, key: spec.key, unit: spec.unit, labels, points: matrixPoints(result) });

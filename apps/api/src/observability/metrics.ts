@@ -68,6 +68,58 @@ export const alertmanagerReadDurationSeconds = new Histogram({
   registers: [metricsRegistry]
 });
 
+const ripeAtlasLabels = [
+  "node_id",
+  "vantage",
+  "vantage_name",
+  "provider",
+  "probe_id",
+  "asn",
+  "city",
+  "measurement_id"
+] as const;
+
+export const ripeAtlasRttMilliseconds = new Gauge({
+  name: "nodebeacon_ripe_atlas_rtt_milliseconds",
+  help: "Latest successful RIPE Atlas ICMP round-trip time in milliseconds.",
+  labelNames: ripeAtlasLabels,
+  registers: [metricsRegistry]
+});
+
+export const ripeAtlasProbeSuccess = new Gauge({
+  name: "nodebeacon_ripe_atlas_probe_success",
+  help: "Whether the latest RIPE Atlas ping result received replies.",
+  labelNames: ripeAtlasLabels,
+  registers: [metricsRegistry]
+});
+
+export const ripeAtlasResultTimestampSeconds = new Gauge({
+  name: "nodebeacon_ripe_atlas_result_timestamp_seconds",
+  help: "Unix timestamp of the latest RIPE Atlas ping result.",
+  labelNames: ripeAtlasLabels,
+  registers: [metricsRegistry]
+});
+
+export const ripeAtlasCollectionRequestsTotal = new Counter({
+  name: "nodebeacon_ripe_atlas_collection_requests_total",
+  help: "RIPE Atlas result collection requests, by outcome.",
+  labelNames: ["outcome"] as const,
+  registers: [metricsRegistry]
+});
+
+export const ripeAtlasCollectionDurationSeconds = new Histogram({
+  name: "nodebeacon_ripe_atlas_collection_duration_seconds",
+  help: "Duration of one RIPE Atlas result collection cycle.",
+  buckets: [0.05, 0.1, 0.25, 0.5, 1, 2, 5, 10],
+  registers: [metricsRegistry]
+});
+
+export const ripeAtlasLastCollectionSuccessTimestampSeconds = new Gauge({
+  name: "nodebeacon_ripe_atlas_last_collection_success_timestamp_seconds",
+  help: "Unix timestamp of the last fully successful RIPE Atlas collection cycle.",
+  registers: [metricsRegistry]
+});
+
 let backupSuccessTimestampPath: string | undefined;
 
 export const backupLastSuccessTimestampSeconds = new Gauge({

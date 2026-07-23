@@ -74,6 +74,13 @@ spec:
             # Blackbox HTTP probe job shown on /api/latency ("" disables it).
             - name: PROBE_JOB
               value: "blackbox-http-public"
+            # Public RIPE Atlas measurement IDs and Zhejiang probe metadata.
+            # The optional ConfigMap is created after the one-time setup script;
+            # no RIPE API key is stored in the application.
+            - name: RIPE_ATLAS_CONFIG_PATH
+              value: "/ripe-atlas/measurements.json"
+            - name: RIPE_ATLAS_TIMEOUT_MS
+              value: "10000"
             # Only this GitHub login is accepted as owner (not a secret).
             - name: GITHUB_OWNER_LOGIN
               value: "xljya"
@@ -119,6 +126,9 @@ spec:
             - name: node-config
               mountPath: /config
               readOnly: true
+            - name: ripe-atlas-config
+              mountPath: /ripe-atlas
+              readOnly: true
             # Runtime YAML registry plus SQLite sessions and audit events.
             - name: data
               mountPath: /data
@@ -129,6 +139,10 @@ spec:
         - name: node-config
           configMap:
             name: nodebeacon-nodes
+        - name: ripe-atlas-config
+          configMap:
+            name: nodebeacon-ripe-atlas
+            optional: true
         - name: data
           persistentVolumeClaim:
             claimName: nodebeacon-data

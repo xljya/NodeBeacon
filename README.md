@@ -188,6 +188,7 @@ Cloudflare
 - [`infra/cloudflare.md`](infra/cloudflare.md)：生产缓存、安全响应头、HSTS 与登录限速策略
 - [`docs/cross-platform-sync.md`](docs/cross-platform-sync.md)：Windows/macOS/Linux Git 配置和换行符排查
 - [`docs/development-plan.md`](docs/development-plan.md)：当前开发计划
+- [`docs/ripe-atlas-latency.md`](docs/ripe-atlas-latency.md)：RIPE Atlas 四视角延迟接入与续接手册
 - [`docs/adr/`](docs/adr)：架构决策记录
 - [`docs/reference/legacy-monitor-status/`](docs/reference/legacy-monitor-status)：旧轻量状态页的参考副本
 - [`screenshots/`](screenshots)：UI 参考截图

@@ -407,7 +407,7 @@ function buildSeriesMap(
     const qualifier = item.metric === "disk"
       ? item.labels?.mountpoint
       : item.metric === "latency"
-        ? item.labels?.peer ?? item.labels?.vantage
+        ? item.labels?.vantage_name ?? item.labels?.peer ?? item.labels?.vantage
         : undefined;
     const name = qualifier ? `${item.key}:${qualifier}` : item.key;
     list.push({
@@ -583,7 +583,15 @@ function SortableChartCard({
           <div className="detail-series-chips">
             {selectedSeries.map((item) => {
               const colorIndex = allSeries.findIndex((candidate) => candidate.name === item.name);
-              const source = item.labels?.peer ?? item.labels?.vantage;
+              const source = item.labels?.vantage_name
+                ? [
+                    item.labels.vantage_name,
+                    item.labels.city,
+                    item.labels.provider,
+                    item.labels.asn,
+                    item.labels.probe_id ? `Probe ${item.labels.probe_id}` : undefined
+                  ].filter(Boolean).join(" · ")
+                : item.labels?.peer ?? item.labels?.vantage;
               return (
                 <span key={item.name} className="detail-series-chip active">
                   <span

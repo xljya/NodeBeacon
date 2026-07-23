@@ -26,6 +26,7 @@ import { createAuditService } from "./services/auditService.js";
 import { createAlertmanagerService } from "./services/alertmanagerService.js";
 import { createIncidentService } from "./services/incidentService.js";
 import { registerAlertRoutes } from "./routes/alerts.js";
+import { startRipeAtlasCollector } from "./services/ripeAtlasCollector.js";
 
 const webDistPath = fileURLToPath(new URL("../../web/dist/", import.meta.url));
 
@@ -79,9 +80,11 @@ export async function createApp() {
   pruneState();
   const retentionTimer = setInterval(pruneState, 6 * 60 * 60 * 1000);
   retentionTimer.unref();
+  const stopRipeAtlasCollector = startRipeAtlasCollector(env, app.log);
   registerAuthGuard(app, env, authService, sessionService);
   app.addHook("onClose", async () => {
     clearInterval(retentionTimer);
+    stopRipeAtlasCollector();
     database.close();
   });
 

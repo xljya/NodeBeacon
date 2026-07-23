@@ -72,14 +72,25 @@ describe("real-Prometheus paths against a mock upstream", () => {
     expect(body.series.length).toBeGreaterThan(3);
   });
 
-  it("public V2 latency exposes each real probe peer as a separate series", async () => {
+  it("public V2 latency exposes each real Zhejiang probe as a separate series", async () => {
     const res = await app.inject({
       method: "GET",
       url: "/api/public/nodes/rs1000/series?metrics=latency&range=realtime&aggregation=avg"
     });
     expect(res.statusCode).toBe(200);
     const body = res.json() as ApiNodeDetailSeriesResponse;
-    expect(body.series.map((item) => item.labels?.peer)).toEqual(["dmit-uswest", "hostbrr-4t"]);
+    expect(body.series.map((item) => item.labels?.vantage_name)).toEqual([
+      "Ping",
+      "浙江移动",
+      "浙江联通",
+      "浙江电信"
+    ]);
+    expect(body.series.map((item) => item.labels?.probe_id)).toEqual([
+      "1016690",
+      "1009298",
+      "1009966",
+      "55328"
+    ]);
     expect(body.series.every((item) => item.key === "ping")).toBe(true);
   });
 

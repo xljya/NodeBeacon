@@ -8,6 +8,9 @@ exposed on NodePort `31003`, which the existing RS1000 nginx already proxies for
 RS1000 egress, DNS, and WireGuard-path probes are maintained separately under
 [`monitoring/`](monitoring/README.md). They distinguish a failure of the central
 monitoring vantage point from simultaneous failures of external targets.
+The optional RIPE Atlas four-vantage latency integration and its credit-gated
+activation procedure are documented in
+[`../docs/ripe-atlas-latency.md`](../docs/ripe-atlas-latency.md).
 
 ```
 monitor.liucf.com
@@ -31,6 +34,7 @@ monitor.liucf.com
 | `k8s/restore-pod.example.yaml` | One-shot PVC mount used only during a restore drill |
 | `k8s/kustomization.yaml` | `kubectl apply -k k8s` (Secret excluded on purpose) |
 | `nginx/monitor.liucf.com.conf` | Committed copy of the live RS1000 nginx entry |
+| `../scripts/setup-ripe-atlas-measurements.ps1` | One-time, credit-gated RIPE Atlas measurement creation helper |
 
 ## Prometheus label mapping (verified against live RS1000)
 

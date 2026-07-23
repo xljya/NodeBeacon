@@ -79,11 +79,11 @@ test("the IP address column hides exporter ports", async ({ ownerPage: page }) =
   expect(await addressCells.allTextContents()).toEqual(["10.77.0.1", "10.77.0.2", "10.77.0.3", "10.77.0.4", "10.77.0.5"]);
 });
 
-test("API responses are no-store and another session can be revoked", async ({ ownerPage: page, playwright }) => {
+test("API responses are no-store and another session can be revoked", async ({ ownerPage: page, playwright, baseURL }) => {
   const status = await page.request.get("/api/status");
   expect(status.headers()["cache-control"]).toContain("no-store");
 
-  const other = await playwright.request.newContext({ baseURL: "http://localhost:5173" });
+  const other = await playwright.request.newContext({ baseURL });
   try {
     const login = await other.post("/api/auth/login", {
       data: { email: "owner@e2e.test", password: "e2e-test-password-123" }

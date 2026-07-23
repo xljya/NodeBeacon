@@ -78,8 +78,10 @@ const series: ApiNodeDetailSeriesResponse = {
     { metric: "network", key: "tx", unit: "bytes_per_second", points: [[1_752_560_000, 8_000], [1_752_560_300, 9_000], [1_752_560_600, 8_000]] },
     { metric: "network", key: "rxTotal", unit: "bytes", points: [[1_752_560_000, 2e9], [1_752_560_300, 2.1e9], [1_752_560_600, 2.2e9]] },
     { metric: "network", key: "txTotal", unit: "bytes", points: [[1_752_560_000, 3e9], [1_752_560_300, 3.1e9], [1_752_560_600, 3.2e9]] },
-    { metric: "latency", key: "ping", unit: "milliseconds", labels: { peer: "dmit-uswest" }, points: [[1_752_560_000, 25], [1_752_560_300, 27], [1_752_560_600, 26]] },
-    { metric: "latency", key: "ping", unit: "milliseconds", labels: { peer: "hostbrr-4t" }, points: [[1_752_560_000, 18], [1_752_560_300, 19], [1_752_560_600, 18]] },
+    { metric: "latency", key: "ping", unit: "milliseconds", labels: { vantage: "ping", vantage_name: "Ping", provider: "NodeBeacon Huawei Cloud", probe_id: "1016690", asn: "AS55990", city: "Shanghai" }, points: [[1_752_560_000, 25], [1_752_560_300, 27], [1_752_560_600, 26]] },
+    { metric: "latency", key: "ping", unit: "milliseconds", labels: { vantage: "zhejiang_mobile", vantage_name: "浙江移动", provider: "China Mobile", probe_id: "1009298", asn: "AS56041", city: "Zhejiang" }, points: [[1_752_560_000, 18], [1_752_560_300, 19], [1_752_560_600, 18]] },
+    { metric: "latency", key: "ping", unit: "milliseconds", labels: { vantage: "zhejiang_unicom", vantage_name: "浙江联通", provider: "China Unicom", probe_id: "1009966", asn: "AS4837", city: "Zhejiang" }, points: [[1_752_560_000, 22], [1_752_560_300, 21], [1_752_560_600, 23]] },
+    { metric: "latency", key: "ping", unit: "milliseconds", labels: { vantage: "zhejiang_telecom", vantage_name: "浙江电信", provider: "China Telecom", probe_id: "55328", asn: "AS4134", city: "Hangzhou, Zhejiang" }, points: [[1_752_560_000, 16], [1_752_560_300, 17], [1_752_560_600, 16]] },
     { metric: "connections", key: "tcp", unit: "count", points: [[1_752_560_000, 12], [1_752_560_300, 13], [1_752_560_600, 12]] },
     { metric: "connections", key: "udp", unit: "count", points: [[1_752_560_000, 4], [1_752_560_300, 5], [1_752_560_600, 4]] }
   ]
@@ -109,7 +111,9 @@ test("anonymous node detail uses combined charts and polished layout controls", 
   await expect(page.locator('[data-chart-id="cpu"] .trend-axis-right')).toBeVisible();
   await expect(page.locator(".detail-series-chip").first()).toBeVisible();
   await expect(page.locator('[data-chart-id="network"] .detail-series-chip')).toHaveCount(4);
-  await expect(page.locator('[data-chart-id="latency"] .detail-series-chip')).toHaveCount(2);
+  const latencyChips = page.locator('[data-chart-id="latency"] .detail-series-chip');
+  await expect(latencyChips).toHaveCount(4);
+  await expect(latencyChips).toContainText(["Ping", "浙江移动", "浙江联通", "浙江电信"]);
   await expect(page.locator(".detail-chart-toolbar select").first().locator("option")).toHaveCount(9);
 
   const initialRequests = seriesRequests.length;
@@ -300,7 +304,7 @@ test("standard V2 layouts migrate to the source-complete default tags", async ({
   await page.goto("/nodes/rs1000");
 
   await expect(page.locator('[data-chart-id="network"] .detail-series-chip')).toHaveCount(4);
-  await expect(page.locator('[data-chart-id="latency"] .detail-series-chip')).toHaveCount(2);
+  await expect(page.locator('[data-chart-id="latency"] .detail-series-chip')).toHaveCount(4);
   await expect.poll(async () => page.evaluate(() => JSON.parse(
     localStorage.getItem("nb-node-detail-layout:v3") ?? "{}"
   ).charts?.find((chart: { id: string }) => chart.id === "network")?.defaultSeries)).toEqual([

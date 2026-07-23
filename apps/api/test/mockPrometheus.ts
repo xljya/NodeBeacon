@@ -63,12 +63,32 @@ export async function startMockPrometheus(): Promise<MockPrometheus> {
       for (let ts = start; ts <= end; ts += step) {
         values.push([ts, String(instantValue(query))]);
       }
-      const result = query.includes("blackbox-tcp-wireguard")
-        ? ["dmit-uswest", "hostbrr-4t"].map((peer) => ({
+      const ripeAtlas = [
+        { key: "ping", label: "Ping", probeId: "1016690", asn: "AS55990" },
+        { key: "zhejiang_mobile", label: "浙江移动", probeId: "1009298", asn: "AS56041" },
+        { key: "zhejiang_unicom", label: "浙江联通", probeId: "1009966", asn: "AS4837" },
+        { key: "zhejiang_telecom", label: "浙江电信", probeId: "55328", asn: "AS4134" }
+      ].map((probe) => ({
+        metric: {
+          node_id: "rs1000",
+          vantage: probe.key,
+          vantage_name: probe.label,
+          provider: probe.label,
+          probe_id: probe.probeId,
+          asn: probe.asn,
+          city: "Zhejiang",
+          measurement_id: "9000001"
+        },
+        values
+      }));
+      const result = query.includes("nodebeacon_ripe_atlas_rtt_milliseconds")
+        ? ripeAtlas
+        : query.includes("blackbox-tcp-wireguard")
+          ? ["dmit-uswest", "hostbrr-4t"].map((peer) => ({
             metric: { peer, node_id: "rs1000", job: "blackbox-tcp-wireguard" },
             values
           }))
-        : [{ metric: {}, values }];
+          : [{ metric: {}, values }];
       res.end(JSON.stringify({ status: "success", data: { resultType: "matrix", result } }));
       return;
     }
