@@ -78,7 +78,8 @@ const series: ApiNodeDetailSeriesResponse = {
     { metric: "network", key: "tx", unit: "bytes_per_second", points: [[1_752_560_000, 8_000], [1_752_560_300, 9_000], [1_752_560_600, 8_000]] },
     { metric: "network", key: "rxTotal", unit: "bytes", points: [[1_752_560_000, 2e9], [1_752_560_300, 2.1e9], [1_752_560_600, 2.2e9]] },
     { metric: "network", key: "txTotal", unit: "bytes", points: [[1_752_560_000, 3e9], [1_752_560_300, 3.1e9], [1_752_560_600, 3.2e9]] },
-    { metric: "latency", key: "tcp", unit: "milliseconds", points: [[1_752_560_000, 25], [1_752_560_300, 27], [1_752_560_600, 26]] },
+    { metric: "latency", key: "ping", unit: "milliseconds", labels: { peer: "dmit-uswest" }, points: [[1_752_560_000, 25], [1_752_560_300, 27], [1_752_560_600, 26]] },
+    { metric: "latency", key: "ping", unit: "milliseconds", labels: { peer: "hostbrr-4t" }, points: [[1_752_560_000, 18], [1_752_560_300, 19], [1_752_560_600, 18]] },
     { metric: "connections", key: "tcp", unit: "count", points: [[1_752_560_000, 12], [1_752_560_300, 13], [1_752_560_600, 12]] },
     { metric: "connections", key: "udp", unit: "count", points: [[1_752_560_000, 4], [1_752_560_300, 5], [1_752_560_600, 4]] }
   ]
@@ -107,14 +108,42 @@ test("anonymous node detail uses combined charts and polished layout controls", 
   await expect(page.locator('[data-chart-id="memory"]')).toContainText("Memory");
   await expect(page.locator('[data-chart-id="cpu"] .trend-axis-right')).toBeVisible();
   await expect(page.locator(".detail-series-chip").first()).toBeVisible();
+  await expect(page.locator('[data-chart-id="network"] .detail-series-chip')).toHaveCount(4);
+  await expect(page.locator('[data-chart-id="latency"] .detail-series-chip')).toHaveCount(2);
+  await expect(page.locator(".detail-chart-toolbar select").first().locator("option")).toHaveCount(9);
 
   const initialRequests = seriesRequests.length;
   await page.getByRole("button", { name: "1 day", exact: true }).click();
   await expect.poll(() => seriesRequests.length).toBeGreaterThan(initialRequests);
 
-  const ewmaRequests = seriesRequests.length;
+  const perChartRequests = seriesRequests.length;
+  await page.locator('[data-chart-id="network"]').getByLabel("Chart time range").selectOption("realtime");
+  await expect.poll(() => seriesRequests.length).toBeGreaterThan(perChartRequests);
+  await expect.poll(() => seriesRequests.some((url) => url.includes("range=realtime"))).toBe(true);
+
+  const aggregationRequests = seriesRequests.length;
+  await page.locator(".detail-chart-toolbar select").first().selectOption("stddev");
+  await expect.poll(() => seriesRequests.length).toBeGreaterThan(aggregationRequests);
+  await expect.poll(() => seriesRequests.some((url) => url.includes("aggregation=stddev"))).toBe(true);
+
   await page.getByRole("switch", { name: "EWMA" }).click();
-  await expect.poll(() => seriesRequests.length).toBe(ewmaRequests);
+  await expect(page.getByRole("switch", { name: "EWMA" })).toBeChecked();
+  expect(seriesRequests.every((url) => !url.includes("ewma="))).toBe(true);
+
+  const networkCard = page.locator('[data-chart-id="network"]');
+  await networkCard.getByRole("button", { name: "Remove Total Upload" }).click();
+  await expect(networkCard.locator(".detail-series-chip")).toHaveCount(3);
+  await networkCard.getByLabel("Add series").selectOption("series:txTotal");
+  await expect(networkCard.locator(".detail-series-chip")).toHaveCount(4);
+  await networkCard.getByRole("button", { name: "Hide all series" }).click();
+  await expect(networkCard.locator(".detail-series-chip")).toHaveCount(0);
+  await expect.poll(async () => page.evaluate(() => JSON.parse(
+    localStorage.getItem("nb-node-detail-layout:v3") ?? "{}"
+  ).charts?.find((chart: { id: string }) => chart.id === "network")?.defaultSeries)).toEqual([]);
+  await page.reload();
+  await expect(networkCard.locator(".detail-series-chip")).toHaveCount(0);
+  await networkCard.getByRole("button", { name: "Show all series" }).click();
+  await expect(networkCard.locator(".detail-series-chip")).toHaveCount(4);
 
   const cpuCard = page.locator('[data-chart-id="cpu"]');
   await cpuCard.getByRole("button", { name: "Medium chart" }).click();
@@ -127,7 +156,25 @@ test("anonymous node detail uses combined charts and polished layout controls", 
 
   await page.getByRole("button", { name: "Reset" }).click();
   await expect(cpuCard).toHaveClass(/chart-size-s/);
-  await expect.poll(async () => page.evaluate(() => JSON.parse(localStorage.getItem("nb-node-detail-layout:v2") ?? "{}").charts?.length)).toBe(5);
+  await expect.poll(async () => page.evaluate(() => JSON.parse(localStorage.getItem("nb-node-detail-layout:v3") ?? "{}").charts?.length)).toBe(5);
+});
+
+test("a chart can add and persist a compatible metric group", async ({ page }) => {
+  await page.route("**/api/public/nodes/rs1000/detail", (route) => route.fulfill({ json: detail }));
+  await page.route("**/api/public/nodes/rs1000/series**", async (route) => {
+    await route.fulfill({ json: series });
+  });
+
+  await page.goto("/nodes/rs1000");
+  const networkCard = page.locator('[data-chart-id="network"]');
+  await networkCard.getByLabel("Add series").selectOption("metric:disk");
+  await expect(networkCard.getByRole("button", { name: "Remove /" })).toBeVisible();
+  await expect.poll(async () => page.evaluate(() => JSON.parse(
+    localStorage.getItem("nb-node-detail-layout:v3") ?? "{}"
+  ).charts?.find((chart: { id: string }) => chart.id === "network")?.metrics)).toEqual(["network", "disk"]);
+
+  await page.reload();
+  await expect(networkCard.getByRole("button", { name: "Remove /" })).toBeVisible();
 });
 
 test("desktop geometry follows the Komari source layout", async ({ page }) => {
@@ -173,7 +220,7 @@ test("chart ordering supports the keyboard and persists", async ({ page }) => {
   await page.keyboard.press("Alt+ArrowRight");
 
   await expect.poll(async () => page.locator(".detail-chart-card").first().getAttribute("data-chart-id")).toBe("memory");
-  await expect.poll(async () => page.evaluate(() => JSON.parse(localStorage.getItem("nb-node-detail-layout:v2") ?? "{}").charts?.[0]?.id)).toBe("memory");
+  await expect.poll(async () => page.evaluate(() => JSON.parse(localStorage.getItem("nb-node-detail-layout:v3") ?? "{}").charts?.[0]?.id)).toBe("memory");
 });
 
 test.describe("touch chart sorting", () => {
@@ -207,6 +254,7 @@ test.describe("touch chart sorting", () => {
 
 test("custom V1 layouts migrate merged metrics without losing chart choices", async ({ page }) => {
   await page.addInitScript(() => {
+    localStorage.removeItem("nb-node-detail-layout:v3");
     localStorage.removeItem("nb-node-detail-layout:v2");
     localStorage.setItem("nb-node-detail-layout:v1", JSON.stringify({
       aggregation: "p95",
@@ -228,9 +276,39 @@ test("custom V1 layouts migrate merged metrics without losing chart choices", as
   await expect.poll(async () => page.locator(".detail-chart-card").evaluateAll((cards) => cards.map((card) => card.getAttribute("data-chart-id"))))
     .toEqual(["network", "cpu", "memory", "connections"]);
   await expect(page.locator('[data-chart-id="cpu"]')).toHaveClass(/chart-size-m/);
-  await expect(page.locator('[data-chart-id="cpu"] .detail-series-chip[aria-pressed="true"]')).toHaveCount(2);
+  await expect(page.locator('[data-chart-id="cpu"] .detail-series-chip')).toHaveCount(2);
   await expect(page.locator(".detail-chart-toolbar select").first()).toHaveValue("p95");
   await expect(page.getByRole("switch", { name: "EWMA" })).toHaveAttribute("aria-checked", "true");
+});
+
+test("standard V2 layouts migrate to the source-complete default tags", async ({ page }) => {
+  await page.addInitScript(() => {
+    localStorage.removeItem("nb-node-detail-layout:v3");
+    localStorage.setItem("nb-node-detail-layout:v2", JSON.stringify({
+      aggregation: "avg",
+      ewma: false,
+      charts: [
+        { id: "cpu", metrics: ["cpu"], size: "s", defaultSeries: ["cpu", "load1"] },
+        { id: "memory", metrics: ["memory", "swap"], size: "s", defaultSeries: ["ram", "swap"] },
+        { id: "disk", metrics: ["disk"], size: "s", defaultSeries: ["disk"] },
+        { id: "network", metrics: ["network"], size: "l", defaultSeries: ["rx", "tx"] },
+        { id: "latency", metrics: ["latency"], size: "l", defaultSeries: ["tcp"] }
+      ]
+    }));
+  });
+  await mockNodeDetail(page);
+  await page.goto("/nodes/rs1000");
+
+  await expect(page.locator('[data-chart-id="network"] .detail-series-chip')).toHaveCount(4);
+  await expect(page.locator('[data-chart-id="latency"] .detail-series-chip')).toHaveCount(2);
+  await expect.poll(async () => page.evaluate(() => JSON.parse(
+    localStorage.getItem("nb-node-detail-layout:v3") ?? "{}"
+  ).charts?.find((chart: { id: string }) => chart.id === "network")?.defaultSeries)).toEqual([
+    "rx",
+    "tx",
+    "rxTotal",
+    "txTotal"
+  ]);
 });
 
 test("mobile detail uses a node selector and keeps chart text readable", async ({ page }) => {

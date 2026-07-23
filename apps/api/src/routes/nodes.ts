@@ -107,7 +107,10 @@ export async function registerNodeRoutes(app: FastifyInstance, env: ApiEnv): Pro
     async (request, reply) => {
       const aggregation = request.query.aggregation ?? "avg";
       if (!(DETAIL_AGGREGATIONS as readonly string[]).includes(aggregation)) {
-        return reply.code(400).send(buildApiError("invalid_aggregation", "aggregation must be avg, max, or p95."));
+        return reply.code(400).send(buildApiError(
+          "invalid_aggregation",
+          `aggregation must be one of: ${DETAIL_AGGREGATIONS.join(", ")}.`
+        ));
       }
       const metricNames = (request.query.metrics ?? "cpu,memory,swap,disk,network")
         .split(",")

@@ -729,6 +729,189 @@
   }
 }
 
+/* Node detail V5: source-complete chart editor controls. */
+.detail-aggregation-control {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.detail-aggregation-control > span {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  white-space: nowrap;
+}
+
+.detail-aggregation-help {
+  display: inline-flex;
+  align-items: center;
+  color: var(--text-mute);
+}
+
+.detail-chart-range {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  height: 28px;
+  margin-left: 6px;
+}
+
+.detail-chart-range select {
+  width: auto;
+  max-width: 92px;
+  height: 28px;
+  min-height: 28px;
+  padding: 0 24px 0 8px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  color: var(--text-mute);
+  background: var(--surface);
+  font-size: 12px;
+  appearance: none;
+}
+
+.detail-chart-range > svg {
+  position: absolute;
+  right: 6px;
+  color: var(--text-mute);
+  pointer-events: none;
+}
+
+.detail-series-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+  min-height: 30px;
+}
+
+.detail-series-visibility {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  color: var(--text-mute);
+  background: transparent;
+  border: 0;
+  border-radius: 6px;
+}
+
+.detail-series-visibility:hover {
+  color: var(--text);
+  background: var(--surface-2);
+}
+
+.detail-series-chips {
+  align-items: center;
+  flex: 1;
+}
+
+.detail-series-chip {
+  cursor: default;
+}
+
+.detail-series-chip > span:not(.detail-series-dot),
+.detail-series-chip .detail-series-info {
+  font-size: 13px;
+  line-height: 1.2;
+}
+
+.detail-series-chip > button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  min-height: 22px;
+  margin: -2px -5px -2px 0;
+  padding: 0;
+  color: var(--text-mute);
+  background: transparent;
+  border: 0;
+  border-radius: 4px;
+}
+
+.detail-series-chip > button:hover {
+  color: var(--text);
+  background: var(--surface-2);
+}
+
+.detail-series-info {
+  display: inline-flex;
+  align-items: center;
+  color: var(--text-mute);
+}
+
+.detail-add-series {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+  width: 58px;
+  height: 28px;
+  padding: 0 8px;
+  color: var(--text-mute);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.detail-add-series:hover {
+  color: var(--text);
+  border-color: color-mix(in srgb, var(--accent) 48%, var(--border));
+  background: var(--surface-2);
+}
+
+.detail-add-series select {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 0;
+  cursor: pointer;
+}
+
+.detail-add-series.is-disabled {
+  opacity: 0.46;
+  cursor: not-allowed;
+}
+
+.detail-add-series.is-disabled:hover {
+  color: var(--text-mute);
+  background: var(--surface);
+  border-color: var(--border);
+}
+
+.detail-add-series select:disabled {
+  cursor: not-allowed;
+}
+
+.detail-series-visibility:active,
+.detail-series-chip > button:active,
+.detail-add-series:active {
+  transform: scale(0.97);
+}
+
+@media (max-width: 720px) {
+  .detail-chart-range {
+    margin-left: 4px;
+  }
+
+  .detail-chart-range select {
+    max-width: 74px;
+    padding-left: 6px;
+  }
+
+  .detail-series-row {
+    gap: 4px;
+  }
+}
+
 /* ---------- Node detail page ---------- */
 
 .node-name-link {

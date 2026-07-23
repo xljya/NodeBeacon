@@ -190,7 +190,17 @@ export type DetailChartMetric = (typeof DETAIL_CHART_METRICS)[number];
 export const DETAIL_TIME_RANGES = ["realtime", "1d", "7d", "30d", "60d", "custom"] as const;
 export type DetailTimeRange = (typeof DETAIL_TIME_RANGES)[number];
 
-export const DETAIL_AGGREGATIONS = ["avg", "max", "p95"] as const;
+export const DETAIL_AGGREGATIONS = [
+  "avg",
+  "min",
+  "max",
+  "first",
+  "last",
+  "stddev",
+  "p70",
+  "p95",
+  "p99"
+] as const;
 export type DetailAggregation = (typeof DETAIL_AGGREGATIONS)[number];
 
 export type DetailUnit = "percent" | "bytes" | "bytes_per_second" | "load" | "count" | "milliseconds";

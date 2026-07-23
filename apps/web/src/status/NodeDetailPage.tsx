@@ -20,8 +20,11 @@ import {
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import {
+  CircleHelp,
   ChartLine,
   ChevronDown,
+  Eye,
+  EyeOff,
   GripHorizontal,
   Plus,
   RotateCcw,
@@ -35,6 +38,7 @@ import {
   type ApiNodeDetailSeriesResponse,
   type ApiNodeDetailV2Response,
   type ApiStatusResponse,
+  DETAIL_CHART_METRICS,
   type DetailAggregation,
   type DetailChartMetric,
   type DetailTimeRange,
@@ -64,6 +68,7 @@ interface ChartConfig {
   metrics: DetailChartMetric[];
   size: ChartSize;
   defaultSeries: string[];
+  range?: DetailTimeRange;
 }
 
 interface LegacyChartConfig {
@@ -81,7 +86,8 @@ type LayoutState = {
 
 const SNAPSHOT_REFRESH_MS = 20_000;
 const DETAIL_REFRESH_MS = 5_000;
-const LAYOUT_KEY = "nb-node-detail-layout:v2";
+const LAYOUT_KEY = "nb-node-detail-layout:v3";
+const V2_LAYOUT_KEY = "nb-node-detail-layout:v2";
 const LEGACY_LAYOUT_KEY = "nb-node-detail-layout:v1";
 
 const DETAIL_RANGES: DetailTimeRange[] = ["realtime", "1d", "7d", "30d", "60d", "custom"];
@@ -90,10 +96,20 @@ const CHART_CATALOG: ChartConfig[] = [
   { id: "cpu", metrics: ["cpu"], size: "s", defaultSeries: ["cpu", "load1"] },
   { id: "memory", metrics: ["memory", "swap"], size: "s", defaultSeries: ["ram", "swap"] },
   { id: "disk", metrics: ["disk"], size: "s", defaultSeries: ["disk"] },
-  { id: "network", metrics: ["network"], size: "l", defaultSeries: ["rx", "tx"] },
-  { id: "latency", metrics: ["latency"], size: "l", defaultSeries: ["tcp"] },
+  { id: "network", metrics: ["network"], size: "l", defaultSeries: ["rx", "tx", "rxTotal", "txTotal"] },
+  { id: "latency", metrics: ["latency"], size: "l", defaultSeries: ["ping"] },
   { id: "connections", metrics: ["connections"], size: "s", defaultSeries: ["tcp", "udp"] }
 ];
+
+const METRIC_UNITS: Record<DetailChartMetric, TrendUnit[]> = {
+  cpu: ["percent", "load"],
+  memory: ["bytes"],
+  swap: ["bytes"],
+  disk: ["bytes"],
+  network: ["bytes_per_second", "bytes"],
+  latency: ["milliseconds"],
+  connections: ["count"]
+};
 
 const DEFAULT_CHART_IDS: ChartId[] = ["cpu", "memory", "disk", "network", "latency"];
 
@@ -132,7 +148,18 @@ function isChartId(value: unknown): value is ChartId {
 function safeSeries(value: unknown, fallback: string[]): string[] {
   if (!Array.isArray(value)) return [...fallback];
   const series = value.filter((item): item is string => typeof item === "string" && item.length > 0 && item.length < 80);
-  return series.length > 0 ? [...new Set(series)] : [...fallback];
+  return [...new Set(series)];
+}
+
+function safeMetrics(value: unknown, fallback: DetailChartMetric[]): DetailChartMetric[] {
+  if (!Array.isArray(value)) return [...fallback];
+  const metrics = value.filter((item): item is DetailChartMetric =>
+    DETAIL_CHART_METRICS.includes(item as DetailChartMetric));
+  return metrics.length > 0 ? [...new Set(metrics)] : [...fallback];
+}
+
+function chartUnitCount(metrics: DetailChartMetric[]): number {
+  return new Set(metrics.flatMap((metric) => METRIC_UNITS[metric])).size;
 }
 
 function safeSize(value: unknown, fallback: ChartSize): ChartSize {
@@ -143,7 +170,13 @@ function safeAggregation(value: unknown): DetailAggregation {
   return DETAIL_AGGREGATIONS.includes(value as DetailAggregation) ? value as DetailAggregation : "avg";
 }
 
-function parseV2Layout(value: unknown): LayoutState | null {
+function safeRange(value: unknown): DetailTimeRange | undefined {
+  return DETAIL_RANGES.includes(value as DetailTimeRange) && value !== "custom"
+    ? value as DetailTimeRange
+    : undefined;
+}
+
+function parseLayout(value: unknown): LayoutState | null {
   if (!value || typeof value !== "object") return null;
   const raw = value as Partial<LayoutState>;
   if (!Array.isArray(raw.charts)) return null;
@@ -156,14 +189,55 @@ function parseV2Layout(value: unknown): LayoutState | null {
     seen.add(candidate.id);
     charts.push({
       ...base,
+      metrics: safeMetrics(candidate.metrics, base.metrics),
       size: safeSize(candidate.size, base.size),
-      defaultSeries: safeSeries(candidate.defaultSeries, base.defaultSeries)
+      defaultSeries: safeSeries(candidate.defaultSeries, base.defaultSeries),
+      range: safeRange(candidate.range)
     });
   }
   return {
     charts,
     aggregation: safeAggregation(raw.aggregation),
     ewma: Boolean(raw.ewma)
+  };
+}
+
+function isStandardV2Layout(layout: LayoutState): boolean {
+  const oldDefaults: Array<[ChartId, ChartSize, string[]]> = [
+    ["cpu", "s", ["cpu", "load1"]],
+    ["memory", "s", ["ram", "swap"]],
+    ["disk", "s", ["disk"]],
+    ["network", "l", ["rx", "tx"]],
+    ["latency", "l", ["tcp"]]
+  ];
+  return layout.charts.length === oldDefaults.length && layout.charts.every((chart, index) => {
+    const expected = oldDefaults[index];
+    return expected
+      && chart.id === expected[0]
+      && chart.size === expected[1]
+      && chart.defaultSeries.length === expected[2].length
+      && chart.defaultSeries.every((series, seriesIndex) => series === expected[2][seriesIndex]);
+  });
+}
+
+function migrateV2Layout(value: unknown): LayoutState | null {
+  const parsed = parseLayout(value);
+  if (!parsed) return null;
+  if (isStandardV2Layout(parsed)) {
+    return {
+      ...defaultLayout(),
+      aggregation: parsed.aggregation,
+      ewma: parsed.ewma
+    };
+  }
+  return {
+    ...parsed,
+    charts: parsed.charts.map((chart) => chart.id === "latency"
+      ? {
+          ...chart,
+          defaultSeries: chart.defaultSeries.map((series) => series === "tcp" ? "ping" : series)
+        }
+      : chart)
   };
 }
 
@@ -217,8 +291,13 @@ function loadLayout(): LayoutState {
   try {
     const stored = localStorage.getItem(LAYOUT_KEY);
     if (stored) {
-      const parsed = parseV2Layout(JSON.parse(stored));
+      const parsed = parseLayout(JSON.parse(stored));
       if (parsed) return parsed;
+    }
+    const v2 = localStorage.getItem(V2_LAYOUT_KEY);
+    if (v2) {
+      const migrated = migrateV2Layout(JSON.parse(v2));
+      if (migrated) return migrated;
     }
     const legacy = localStorage.getItem(LEGACY_LAYOUT_KEY);
     if (legacy) {
@@ -276,14 +355,71 @@ function chartTitle(id: ChartId, t: (key: string) => string): string {
 
 function seriesLabel(name: string, t: (key: string) => string): string {
   if (name.startsWith("disk:")) return name.slice(5) || "/";
+  if (name.startsWith("ping:")) return name.slice(5) || t("status.detail.series_ping");
   const key = name.split(":")[0];
-  const known = ["cpu", "load1", "ram", "swap", "rx", "tx", "rxTotal", "txTotal", "tcp", "udp", "running"];
+  const known = ["cpu", "load1", "ram", "swap", "rx", "tx", "rxTotal", "txTotal", "ping", "tcp", "udp", "running"];
   return known.includes(key ?? "") ? t(`status.detail.series_${key}`) : name;
 }
 
 function isSeriesSelected(chart: ChartConfig, name: string): boolean {
   return chart.defaultSeries.includes(name)
-    || (chart.id === "disk" && chart.defaultSeries.includes("disk") && name.startsWith("disk:"));
+    || (chart.defaultSeries.includes("disk") && name.startsWith("disk:"))
+    || (chart.defaultSeries.includes("ping") && name.startsWith("ping:"));
+}
+
+const RANGE_SECONDS: Record<Exclude<DetailTimeRange, "custom">, number> = {
+  realtime: 15 * 60,
+  "1d": 24 * 60 * 60,
+  "7d": 7 * 24 * 60 * 60,
+  "30d": 30 * 24 * 60 * 60,
+  "60d": 60 * 24 * 60 * 60
+};
+
+function availableChartRanges(
+  globalRange: DetailTimeRange,
+  customFrom: string,
+  customTo: string
+): Array<Exclude<DetailTimeRange, "custom">> {
+  const globalSeconds = globalRange === "custom"
+    ? Math.max(0, (Date.parse(`${customTo}T23:59:59.999Z`) - Date.parse(`${customFrom}T00:00:00.000Z`)) / 1000)
+    : RANGE_SECONDS[globalRange];
+  return (Object.keys(RANGE_SECONDS) as Array<Exclude<DetailTimeRange, "custom">>)
+    .filter((candidate) => RANGE_SECONDS[candidate] < globalSeconds);
+}
+
+function effectiveChartRange(
+  chart: ChartConfig,
+  globalRange: DetailTimeRange,
+  available: Array<Exclude<DetailTimeRange, "custom">>
+): DetailTimeRange {
+  return chart.range && available.includes(chart.range as Exclude<DetailTimeRange, "custom">)
+    ? chart.range
+    : globalRange;
+}
+
+function buildSeriesMap(
+  response: ApiNodeDetailSeriesResponse | undefined,
+  t: (key: string) => string
+): Map<DetailChartMetric, ChartTrendSeries[]> {
+  const map = new Map<DetailChartMetric, ChartTrendSeries[]>();
+  for (const item of response?.series ?? []) {
+    const list = map.get(item.metric) ?? [];
+    const qualifier = item.metric === "disk"
+      ? item.labels?.mountpoint
+      : item.metric === "latency"
+        ? item.labels?.peer ?? item.labels?.vantage
+        : undefined;
+    const name = qualifier ? `${item.key}:${qualifier}` : item.key;
+    list.push({
+      name,
+      label: seriesLabel(name, t),
+      unit: item.unit as TrendUnit,
+      labels: item.labels,
+      points: item.points
+    });
+    map.set(item.metric, list);
+  }
+  return map;
 }
 
 function latestSeriesSummary(series: ChartTrendSeries[]): string {
@@ -299,13 +435,18 @@ interface SortableChartCardProps {
   chart: ChartConfig;
   allSeries: ChartTrendSeries[];
   renderedSeries: ChartTrendSeries[];
+  availableRanges: Array<Exclude<DetailTimeRange, "custom">>;
   emptyText: string;
   latestLabel: string;
   title: string;
-  t: (key: string) => string;
+  t: (key: string, options?: Record<string, unknown>) => string;
   onResize: (size: ChartSize) => void;
+  onRangeChange: (range: DetailTimeRange | undefined) => void;
   onRemove: () => void;
-  onToggleSeries: (name: string) => void;
+  onToggleAllSeries: () => void;
+  addableMetricGroups: Array<{ id: ChartId; title: string }>;
+  onAddOption: (value: string) => void;
+  onRemoveSeries: (name: string) => void;
   onKeyboardMove: (offset: -1 | 1) => void;
 }
 
@@ -313,13 +454,18 @@ function SortableChartCard({
   chart,
   allSeries,
   renderedSeries,
+  availableRanges,
   emptyText,
   latestLabel,
   title,
   t,
   onResize,
+  onRangeChange,
   onRemove,
-  onToggleSeries,
+  onToggleAllSeries,
+  addableMetricGroups,
+  onAddOption,
+  onRemoveSeries,
   onKeyboardMove
 }: SortableChartCardProps) {
   const {
@@ -330,6 +476,10 @@ function SortableChartCard({
     isDragging
   } = useSortable({ id: chart.id, transition: null });
   const style: CSSProperties = { transform: CSS.Transform.toString(transform) };
+  const selectedSeries = allSeries.filter((item) => isSeriesSelected(chart, item.name));
+  const availableSeries = allSeries.filter((item) => !isSeriesSelected(chart, item.name));
+  const hasAddOptions = availableSeries.length > 0 || addableMetricGroups.length > 0;
+  const allHidden = allSeries.length > 0 && selectedSeries.length === 0;
 
   return (
     <article
@@ -383,6 +533,31 @@ function SortableChartCard({
               {size.toUpperCase()}
             </button>
           ))}
+          {availableRanges.length > 0 && (
+            <label className="detail-chart-range">
+              <span className="sr-only">{t("status.detail.chartRange")}</span>
+              <select
+                value={chart.range && availableRanges.includes(chart.range as Exclude<DetailTimeRange, "custom">)
+                  ? chart.range
+                  : ""}
+                aria-label={t("status.detail.chartRange")}
+                title={t("status.detail.chartRange")}
+                onChange={(event) => onRangeChange(
+                  event.target.value
+                    ? event.target.value as DetailTimeRange
+                    : undefined
+                )}
+              >
+                <option value="">{t("status.detail.rangeGlobal")}</option>
+                {availableRanges.map((candidate) => (
+                  <option key={candidate} value={candidate}>
+                    {t(`status.detail.range_${candidate}`)}
+                  </option>
+                ))}
+              </select>
+              <ChevronDown size={13} aria-hidden="true" />
+            </label>
+          )}
           <button
             type="button"
             className="detail-icon-action detail-remove-chart"
@@ -395,27 +570,77 @@ function SortableChartCard({
         </div>
       </div>
       {allSeries.length > 0 && (
-        <div className="detail-series-chips">
-          {allSeries.map((item, index) => {
-            const selected = isSeriesSelected(chart, item.name);
-            return (
-              <button
-                key={item.name}
-                type="button"
-                className={`detail-series-chip${selected ? " active" : ""}`}
-                aria-pressed={selected}
-                onClick={() => onToggleSeries(item.name)}
-              >
-                <span
-                  className="detail-series-dot"
-                  style={selected ? { background: trendSeriesColor(item.name, index) } : undefined}
-                  aria-hidden="true"
-                />
-                <span>{item.label}</span>
-                {selected ? <X size={14} aria-hidden="true" /> : <Plus size={14} aria-hidden="true" />}
-              </button>
-            );
-          })}
+        <div className="detail-series-row">
+          <button
+            type="button"
+            className="detail-series-visibility"
+            aria-label={allHidden ? t("status.detail.showAllSeries") : t("status.detail.hideAllSeries")}
+            title={allHidden ? t("status.detail.showAllSeries") : t("status.detail.hideAllSeries")}
+            onClick={onToggleAllSeries}
+          >
+            {allHidden ? <Eye size={18} aria-hidden="true" /> : <EyeOff size={18} aria-hidden="true" />}
+          </button>
+          <div className="detail-series-chips">
+            {selectedSeries.map((item) => {
+              const colorIndex = allSeries.findIndex((candidate) => candidate.name === item.name);
+              const source = item.labels?.peer ?? item.labels?.vantage;
+              return (
+                <span key={item.name} className="detail-series-chip active">
+                  <span
+                    className="detail-series-dot"
+                    style={{ background: trendSeriesColor(item.name, Math.max(0, colorIndex)) }}
+                    aria-hidden="true"
+                  />
+                  <span>{item.label}</span>
+                  {item.unit === "milliseconds" && source && (
+                    <span
+                      className="detail-series-info"
+                      role="img"
+                      aria-label={t("status.detail.seriesSource", { source })}
+                      title={t("status.detail.seriesSource", { source })}
+                    >
+                      <CircleHelp size={14} aria-hidden="true" />
+                    </span>
+                  )}
+                  <button
+                    type="button"
+                    aria-label={t("status.detail.removeSeries", { series: item.label })}
+                    title={t("status.detail.removeSeries", { series: item.label })}
+                    onClick={() => onRemoveSeries(item.name)}
+                  >
+                    <X size={14} aria-hidden="true" />
+                  </button>
+                </span>
+              );
+            })}
+            <label
+              className={`detail-add-series${hasAddOptions ? "" : " is-disabled"}`}
+              title={hasAddOptions ? t("status.detail.addSeries") : t("status.detail.noCompatibleSeries")}
+            >
+                <Plus size={15} aria-hidden="true" />
+                <select
+                  value=""
+                  aria-label={t("status.detail.addSeries")}
+                  title={hasAddOptions ? t("status.detail.addSeries") : t("status.detail.noCompatibleSeries")}
+                  disabled={!hasAddOptions}
+                  onChange={(event) => {
+                    if (event.target.value) onAddOption(event.target.value);
+                    event.target.value = "";
+                  }}
+                >
+                  <option value="">{t("status.detail.addSeries")}</option>
+                  {availableSeries.map((item) => (
+                    <option key={item.name} value={`series:${item.name}`}>{item.label}</option>
+                  ))}
+                  {addableMetricGroups.map((item) => (
+                    <option key={item.id} value={`metric:${item.id}`}>
+                      {t("status.detail.addMetricGroup", { metric: item.title })}
+                    </option>
+                  ))}
+                </select>
+                <ChevronDown size={13} aria-hidden="true" />
+              </label>
+          </div>
         </div>
       )}
       <TrendChart
@@ -439,7 +664,7 @@ export function NodeDetailPage() {
   const [statusLoading, setStatusLoading] = useState(!getStatusSnapshot());
   const [detail, setDetail] = useState<ApiNodeDetailV2Response | null>(null);
   const [detailError, setDetailError] = useState(false);
-  const [series, setSeries] = useState<ApiNodeDetailSeriesResponse | null>(null);
+  const [seriesByChart, setSeriesByChart] = useState<Record<string, ApiNodeDetailSeriesResponse>>({});
   const [seriesState, setSeriesState] = useState<SeriesState>("loading");
   const [incidents, setIncidents] = useState<ApiIncidentsResponse["incidents"]>([]);
   const [range, setRange] = useState<DetailTimeRange>("realtime");
@@ -522,43 +747,78 @@ export function NodeDetailPage() {
     };
   }, [id]);
 
+  const chartRanges = useMemo(
+    () => availableChartRanges(range, customFrom, customTo),
+    [customFrom, customTo, range]
+  );
+  const chartQuerySignature = JSON.stringify(charts.map((chart) => ({
+    id: chart.id,
+    metrics: chart.metrics,
+    range: effectiveChartRange(chart, range, chartRanges)
+  })));
+
   const loadSeries = useCallback(async () => {
-    if (!id || charts.length === 0) {
-      setSeries(null);
+    const queryCharts = JSON.parse(chartQuerySignature) as Array<{
+      id: ChartId;
+      metrics: DetailChartMetric[];
+      range: DetailTimeRange;
+    }>;
+    if (!id || queryCharts.length === 0) {
+      setSeriesByChart({});
       setSeriesState("ready");
       return;
     }
-    const metrics = [...new Set(charts.flatMap((chart) => chart.metrics))].join(",");
-    const params = new URLSearchParams({ metrics, aggregation });
-    if (range === "custom") {
-      params.set("range", "custom");
-      params.set("from", `${customFrom}T00:00:00.000Z`);
-      params.set("to", `${customTo}T23:59:59.999Z`);
-    } else {
-      params.set("range", range);
+
+    const groups = new Map<string, typeof queryCharts>();
+    for (const chart of queryCharts) {
+      const key = chart.range;
+      const group = groups.get(key) ?? [];
+      group.push(chart);
+      groups.set(key, group);
     }
+
     setSeriesState("loading");
     try {
-      const response = await apiGet<ApiNodeDetailSeriesResponse>(`/api/public/nodes/${encodeURIComponent(id)}/series?${params.toString()}`);
+      const results = await Promise.all([...groups.entries()].map(async ([groupRange, groupCharts]) => {
+        const metrics = [...new Set(groupCharts.flatMap((chart) => chart.metrics))].join(",");
+        const params = new URLSearchParams({ metrics, aggregation });
+        if (groupRange === "custom") {
+          params.set("range", "custom");
+          params.set("from", `${customFrom}T00:00:00.000Z`);
+          params.set("to", `${customTo}T23:59:59.999Z`);
+        } else {
+          params.set("range", groupRange);
+        }
+        const response = await apiGet<ApiNodeDetailSeriesResponse>(
+          `/api/public/nodes/${encodeURIComponent(id)}/series?${params.toString()}`
+        );
+        return { groupCharts, response };
+      }));
       if (mounted.current) {
-        setSeries(response);
+        const next: Record<string, ApiNodeDetailSeriesResponse> = {};
+        for (const { groupCharts, response } of results) {
+          for (const chart of groupCharts) next[chart.id] = response;
+        }
+        setSeriesByChart(next);
         setSeriesState("ready");
       }
     } catch {
       if (mounted.current) {
-        setSeries(null);
+        setSeriesByChart({});
         setSeriesState("error");
       }
     }
-  }, [aggregation, charts, customFrom, customTo, id, range]);
+  }, [aggregation, chartQuerySignature, customFrom, customTo, id]);
 
   useEffect(() => {
     void loadSeries();
+    const hasRealtimeChart = (JSON.parse(chartQuerySignature) as Array<{ range: DetailTimeRange }>)
+      .some((chart) => chart.range === "realtime");
     const timer = window.setInterval(() => {
       if (!document.hidden) void loadSeries();
-    }, range === "realtime" ? DETAIL_REFRESH_MS : 60_000);
+    }, hasRealtimeChart ? DETAIL_REFRESH_MS : 60_000);
     return () => window.clearInterval(timer);
-  }, [loadSeries, range]);
+  }, [chartQuerySignature, loadSeries]);
 
   const node: StatusNode | undefined = useMemo(
     () => status?.nodes.find((candidate) => candidate.id === id),
@@ -573,36 +833,43 @@ export function NodeDetailPage() {
     (groups[candidate.group] ??= []).push(candidate);
     return groups;
   }, {}), [status]);
-  const seriesByMetric = useMemo(() => {
-    const map = new Map<DetailChartMetric, ChartTrendSeries[]>();
-    for (const item of series?.series ?? []) {
-      const list = map.get(item.metric) ?? [];
-      const suffix = item.metric === "disk" && item.labels?.mountpoint ? `:${item.labels.mountpoint}` : "";
-      const name = `${item.key}${suffix}`;
-      list.push({
-        name,
-        label: seriesLabel(name, t),
-        unit: item.unit as TrendUnit,
-        points: item.points
-      });
-      map.set(item.metric, list);
-    }
-    return map;
-  }, [series, t]);
-
-  const toggleSeries = (chartId: ChartId, name: string, available: ChartTrendSeries[]) => {
+  const setSelectedSeries = (
+    chartId: ChartId,
+    updater: (selected: string[], available: ChartTrendSeries[]) => string[],
+    available: ChartTrendSeries[]
+  ) => {
     setCharts((current) => current.map((chart) => {
       if (chart.id !== chartId) return chart;
       const selected = available.filter((item) => isSeriesSelected(chart, item.name)).map((item) => item.name);
-      const next = selected.includes(name) ? selected.filter((item) => item !== name) : [...selected, name];
-      return next.length > 0 ? { ...chart, defaultSeries: next } : chart;
+      return { ...chart, defaultSeries: [...new Set(updater(selected, available))] };
     }));
+  };
+
+  const setChartRange = (chartId: ChartId, nextRange: DetailTimeRange | undefined) => {
+    setCharts((current) => current.map((chart) => chart.id === chartId
+      ? { ...chart, range: nextRange }
+      : chart));
   };
 
   const addChart = (chartId: ChartId) => {
     const candidate = chartFromCatalog(chartId);
     if (!candidate || charts.some((chart) => chart.id === chartId)) return;
     setCharts((current) => [...current, candidate]);
+  };
+
+  const addMetricGroup = (chartId: ChartId, candidateId: ChartId) => {
+    const candidate = chartFromCatalog(candidateId);
+    if (!candidate) return;
+    setCharts((current) => current.map((chart) => {
+      if (chart.id !== chartId) return chart;
+      const metrics = [...new Set([...chart.metrics, ...candidate.metrics])];
+      if (metrics.length === chart.metrics.length || chartUnitCount(metrics) > 2) return chart;
+      return {
+        ...chart,
+        metrics,
+        defaultSeries: [...new Set([...chart.defaultSeries, ...candidate.defaultSeries])]
+      };
+    }));
   };
 
   const handleDragEnd = ({ active, over }: DragEndEvent) => {
@@ -751,7 +1018,18 @@ export function NodeDetailPage() {
                       <div className="detail-chart-toolbar">
                         <div className="detail-toolbar-primary">
                           <span className="detail-toolbar-title"><ChartLine size={18} aria-hidden="true" />{t("status.detail.charts")}</span>
-                          <label>{t("status.detail.aggregation")}
+                          <label className="detail-aggregation-control">
+                            <span>
+                              {t("status.detail.aggregation")}
+                              <span
+                                className="detail-aggregation-help"
+                                aria-label={t("status.detail.aggregationHint")}
+                                title={t("status.detail.aggregationHint")}
+                                role="img"
+                              >
+                                <CircleHelp size={15} aria-hidden="true" />
+                              </span>
+                            </span>
                             <select
                               value={aggregation}
                               onChange={(event) => setAggregation(event.target.value as DetailAggregation)}
@@ -812,21 +1090,59 @@ export function NodeDetailPage() {
                         <SortableContext items={charts.map((chart) => chart.id)} strategy={rectSortingStrategy}>
                           <div className="trend-grid detail-chart-grid">
                             {charts.map((chart) => {
+                              const seriesByMetric = buildSeriesMap(seriesByChart[chart.id], t);
                               const allSeries = chart.metrics.flatMap((metric) => seriesByMetric.get(metric) ?? []);
                               const selected = allSeries.filter((item) => isSeriesSelected(chart, item.name));
+                              const addableMetricGroups = CHART_CATALOG
+                                .filter((candidate) => candidate.metrics.some((metric) => !chart.metrics.includes(metric)))
+                                .filter((candidate) => chartUnitCount([
+                                  ...new Set([...chart.metrics, ...candidate.metrics])
+                                ]) <= 2)
+                                .map((candidate) => ({
+                                  id: candidate.id,
+                                  title: chartTitle(candidate.id, t)
+                                }));
                               return (
                                 <SortableChartCard
                                   key={chart.id}
                                   chart={chart}
                                   allSeries={allSeries}
                                   renderedSeries={smoothSeries(selected, ewma)}
+                                  availableRanges={chartRanges}
                                   emptyText={emptyText}
                                   latestLabel={t("status.detail.latest")}
                                   title={chartTitle(chart.id, t)}
                                   t={t}
                                   onResize={(size) => setCharts((current) => current.map((item) => item.id === chart.id ? { ...item, size } : item))}
+                                  onRangeChange={(nextRange) => setChartRange(chart.id, nextRange)}
                                   onRemove={() => setCharts((current) => current.filter((item) => item.id !== chart.id))}
-                                  onToggleSeries={(name) => toggleSeries(chart.id, name, allSeries)}
+                                  onToggleAllSeries={() => setSelectedSeries(
+                                    chart.id,
+                                    (current, available) => current.length > 0
+                                      ? []
+                                      : available.map((item) => item.name),
+                                    allSeries
+                                  )}
+                                  addableMetricGroups={addableMetricGroups}
+                                  onAddOption={(value) => {
+                                    if (value.startsWith("series:")) {
+                                      const name = value.slice("series:".length);
+                                      setSelectedSeries(
+                                        chart.id,
+                                        (current) => [...current, name],
+                                        allSeries
+                                      );
+                                      return;
+                                    }
+                                    if (value.startsWith("metric:")) {
+                                      addMetricGroup(chart.id, value.slice("metric:".length) as ChartId);
+                                    }
+                                  }}
+                                  onRemoveSeries={(name) => setSelectedSeries(
+                                    chart.id,
+                                    (current) => current.filter((item) => item !== name),
+                                    allSeries
+                                  )}
                                   onKeyboardMove={(offset) => setCharts((current) => {
                                     const from = current.findIndex((item) => item.id === chart.id);
                                     const to = Math.max(0, Math.min(current.length - 1, from + offset));

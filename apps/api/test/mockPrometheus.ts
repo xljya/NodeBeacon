@@ -63,7 +63,13 @@ export async function startMockPrometheus(): Promise<MockPrometheus> {
       for (let ts = start; ts <= end; ts += step) {
         values.push([ts, String(instantValue(query))]);
       }
-      res.end(JSON.stringify({ status: "success", data: { resultType: "matrix", result: [{ metric: {}, values }] } }));
+      const result = query.includes("blackbox-tcp-wireguard")
+        ? ["dmit-uswest", "hostbrr-4t"].map((peer) => ({
+            metric: { peer, node_id: "rs1000", job: "blackbox-tcp-wireguard" },
+            values
+          }))
+        : [{ metric: {}, values }];
+      res.end(JSON.stringify({ status: "success", data: { resultType: "matrix", result } }));
       return;
     }
 

@@ -16,8 +16,8 @@ const SERIES_COLORS: Record<string, string> = {
   swap: "var(--warn)",
   rx: "var(--ok)",
   tx: "var(--accent)",
-  rxTotal: "var(--ok)",
-  txTotal: "var(--accent)",
+  rxTotal: "#8b5cf6",
+  txTotal: "#06b6d4",
   tcp: "var(--accent)",
   udp: "var(--warn)"
 };
@@ -35,6 +35,7 @@ export interface ChartTrendSeries {
   name: string;
   label: string;
   unit: TrendUnit;
+  labels?: Record<string, string>;
   points: Array<[number, number | null]>;
 }
 

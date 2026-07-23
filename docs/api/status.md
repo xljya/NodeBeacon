@@ -103,3 +103,32 @@ All API errors should use the same JSON envelope:
   counters since the current host boot; they reset when the host or counter
   resets. Container, bridge, tunnel and WireGuard interfaces are excluded to
   avoid counting the same traffic twice.
+
+## Public Node Detail V2
+
+`GET /api/public/nodes/:id/detail` returns the public-safe system profile,
+capabilities, and current metrics for a public node whose detail view is
+enabled. It returns `404` for hidden, disabled, or authenticated-only nodes and
+`503 node_detail_unavailable` when the server-side metric query fails.
+
+`GET /api/public/nodes/:id/series` is the batched trend endpoint. Supported
+query parameters are:
+
+- `metrics`: comma-separated whitelist of at most eight values from
+  `cpu,memory,swap,disk,network,latency,connections`.
+- `range`: `realtime`, `1d`, `7d`, `30d`, `60d`, or `custom`.
+- `from` and `to`: required ISO timestamps for `custom`; the server enforces the
+  allowed retention window.
+- `aggregation`: `avg`, `min`, `max`, `first`, `last`, `stddev`, `p70`, `p95`,
+  or `p99`; default is `avg`.
+
+The response includes `nodeId`, requested/data coverage timestamps,
+`stepSeconds`, the selected aggregation, and a list of typed series. Network
+returns separate rate (`rx`, `tx`) and cumulative (`rxTotal`, `txTotal`)
+series. Disk series carry `mountpoint`/`device` labels. Latency series use the
+`ping` key and carry the real `peer` or `vantage` label discovered from the
+server-owned `blackbox-tcp-wireguard` query; clients must display those labels
+instead of inventing probe names.
+
+Both endpoints preserve the BFF boundary: the browser may choose only the
+documented enums and never submits PromQL, selectors, or arbitrary labels.

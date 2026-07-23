@@ -1,19 +1,20 @@
 # NodeBeacon 节点详情页 V2：Komari 截图功能等价实施方案
 
-状态：**Core V2 deployed / 核心 V2 已发布生产；v1.0.10 已按 Komari 保存页面与官方源码对齐布局；G2、G3 的 30 分钟门禁、G4/G5、G6 已完成；G3 24 小时观察按用户指示跳过，G7 的长时观察仍未完成**
+状态：**Core V2 deployed / 核心 V2 已发布生产；v1.0.11 候选版本已按 Komari 最新 `radix` 源码补齐默认标签和完整图表控件，等待生产发布；G2、G3 的 30 分钟门禁、G4/G5、G6 已完成；G3 24 小时观察按用户指示跳过，G7 的长时观察仍未完成**
 文档日期：2026-07-15
 生产基线最后核验：2026-07-23（Asia/Shanghai）
 目标页面：`https://monitor.liucf.com/nodes/:id`
 功能参考：[`https://ss.akz.moe/instance/8832553d-a03f-4312-af8b-c5d9ed959c93`](https://ss.akz.moe/instance/8832553d-a03f-4312-af8b-c5d9ed959c93)
 
-> 本文是给后续开发者或 AI Agent 的可执行交接文档。2026-07-15 已完成核心业务代码、公开 API、图表布局、配置模板和测试，并按真实 Prometheus target discovery 完成五节点 fast scrape、registry 迁移和 retention 90d/40GB 变更。2026-07-23 已发布 NodeBeacon 1.0.10：默认五图表组合、统一 Lucide 图标和控件、真实像素响应式坐标轴、双轴指标、dnd-kit 触控与键盘排序、移动端节点选择器、v2 布局迁移，以及按 Komari 保存页面与官方源码对齐的 300px + 16px + 1100px 桌面布局均已完成。`node-detail-fast` 模板已验证可用；24 小时观察按用户指示跳过，不能将其误记为已完成。
+> 本文是给后续开发者或 AI Agent 的可执行交接文档。2026-07-15 已完成核心业务代码、公开 API、图表布局、配置模板和测试，并按真实 Prometheus target discovery 完成五节点 fast scrape、registry 迁移和 retention 90d/40GB 变更。2026-07-23 已发布 NodeBeacon 1.0.10：默认五图表组合、统一 Lucide 图标和控件、真实像素响应式坐标轴、双轴指标、dnd-kit 触控与键盘排序、移动端节点选择器、v2 布局迁移，以及按 Komari 保存页面与官方源码对齐的 300px + 16px + 1100px 桌面布局均已完成。随后按 Komari Web `radix` commit `c5709caa40f88ce6ac303025385e4abcc7c641ab` 完成 v1.0.11 候选：九种聚合算法、网络四个默认标签、RS1000 到真实 WireGuard peer 的动态延迟标签、标签信息/增删/全部显隐、单卡时间范围和兼容指标组追加。`node-detail-fast` 模板已验证可用；24 小时观察按用户指示跳过，不能将其误记为已完成。
 
 ### 本次落地范围
 
-- 已实现 `ApiNodeDetailV2Response`、批量趋势查询、自动步长、平均值/最大值/P95、缓存和公开节点鉴权边界。
-- 已实现节点画像、实时摘要、历史图表、EWMA、时间范围、拖拽排序、S/M/L、删除/新增图表和 series chip 显隐。
+- 已实现 `ApiNodeDetailV2Response`、批量趋势查询、自动步长、九种白名单聚合算法、缓存和公开节点鉴权边界。
+- 已实现节点画像、实时摘要、历史图表、EWMA、全局/单卡时间范围、拖拽排序、S/M/L、删除/新增图表、series chip 增删/全部显隐和兼容指标组追加。
+- 默认 Network 为 Download、Upload、Total Download、Total Upload；Latency 从 `blackbox-tcp-wireguard` 动态生成真实 peer 标签并标明探针来源，不伪造参考站的探针名称。
 - 已接入节点安全详情配置，并提供 `infra/monitoring/node-detail-fast.example.yaml` 与接入说明。
-- 已通过 API 全量测试（75 tests）、workspace lint/typecheck/build、Playwright E2E（19/19），并用真实 Prometheus 只读隧道验证 RS1000 的 detail/series API。
+- v1.0.11 候选已通过 API 全量测试（85 tests）、workspace lint/typecheck/build、Playwright Chromium E2E（21/21），并用真实 Prometheus 只读隧道验证 RS1000 的九种聚合表达式和动态 latency 查询。
 - 生产已运行 NodeBeacon `1.0.10`（应用 commit `68f4a01f5d1e1ca14fd39b95fe6a2b97ff4a14e1`，Deployment revision 46）；5 秒 fast scrape 使用 Helm revision 15，五个 target 均已通过 30 分钟稳定门禁。
 
 ## 1. 交付目标
@@ -161,7 +162,7 @@ RS1000 的 Pod/宿主机地址。
 | 最后上报 | 是 | 最后有效 node metric 时间 | target down 时保持最后一次真实样本时间 |
 | 实时 | 是 | 5 秒快速抓取 | 正常数据新鲜度不超过 10–12 秒 |
 | 1 天/7 天/60 天/自定义 | 是 | 普通 30 秒数据 | 自定义最大 90 天，图上说明实际数据覆盖范围 |
-| 平均/最大/P95 | 是 | 服务端聚合 | 只能选择白名单算法 |
+| 平均/最小/最大/首值/末值/标准差/P70/P95/P99 | 是 | 服务端聚合 | 只能选择白名单算法；Prometheus 未启用实验性 `first_over_time` 时由等价的 offset 窗口表达式实现首值 |
 | EWMA | 是 | 前端变换 | 切换无需重新请求 Prometheus |
 | 重置 | 是 | localStorage | 恢复默认图表、顺序、尺寸和 series |
 | 新增图表 | 是 | chart catalog | 只能添加系统定义的图表 |

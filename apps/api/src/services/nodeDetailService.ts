@@ -358,12 +358,36 @@ function rangePreset(range: string): { startSeconds: number; endSeconds: number;
   return { startSeconds: endSeconds - seconds, endSeconds, stepSeconds: Math.max(5, Math.ceil(seconds / TARGET_POINTS)) };
 }
 
-function aggregationExpression(expression: string, aggregation: DetailAggregation, stepSeconds: number): string {
-  if (aggregation === "avg") return expression;
+export function aggregationExpression(
+  expression: string,
+  aggregation: DetailAggregation,
+  stepSeconds: number
+): string {
   const window = Math.max(stepSeconds * 2, 30);
-  const fn = aggregation === "max" ? "max_over_time" : "quantile_over_time(0.95,";
-  if (aggregation === "max") return `${fn}((${expression})[${window}s:${stepSeconds}s])`;
-  return `${fn} (${expression})[${window}s:${stepSeconds}s])`;
+  const rangeVector = `(${expression})[${window}s:${stepSeconds}s]`;
+  switch (aggregation) {
+    case "avg":
+      return `avg_over_time(${rangeVector})`;
+    case "min":
+      return `min_over_time(${rangeVector})`;
+    case "max":
+      return `max_over_time(${rangeVector})`;
+    case "first":
+      // first_over_time is still experimental in the production Prometheus
+      // version. Sample the beginning of the reduction window with an offset
+      // and use the stable last_over_time function for the narrow edge window.
+      return `last_over_time((${expression})[${stepSeconds}s:${stepSeconds}s] offset ${window - stepSeconds}s)`;
+    case "last":
+      return `last_over_time(${rangeVector})`;
+    case "stddev":
+      return `stddev_over_time(${rangeVector})`;
+    case "p70":
+      return `quantile_over_time(0.70, ${rangeVector})`;
+    case "p95":
+      return `quantile_over_time(0.95, ${rangeVector})`;
+    case "p99":
+      return `quantile_over_time(0.99, ${rangeVector})`;
+  }
 }
 
 interface DetailQuerySpec {
@@ -416,9 +440,16 @@ function querySpecs(metricName: DetailChartMetric, node: NodeConfigEntry): Detai
       ];
     case "latency":
       return [{
-        key: "tcp",
+        key: "ping",
         unit: "milliseconds",
-        query: (labels) => `1000 * probe_duration_seconds{job="blackbox-tcp-wireguard",node_id="rs1000",peer="${node.id}"}`
+        labels: node.id === "rs1000" ? undefined : { vantage: "rs1000" },
+        query: () => `1000 * ${metric(
+          "probe_duration_seconds",
+          { job: "blackbox-tcp-wireguard", node_id: "rs1000" },
+          node.id === "rs1000"
+            ? []
+            : [{ name: "peer", operator: "=", value: node.id }]
+        )}`
       }];
     case "connections":
       return [
@@ -483,9 +514,12 @@ export async function getNodeDetailSeries(
     }));
     for (const { spec, matrix } of results) {
       for (const result of matrix) {
-        const labels = Object.fromEntries(
+        const labels = {
+          ...spec.labels,
+          ...Object.fromEntries(
           Object.entries(result.metric).filter(([name]) => name === "mountpoint" || name === "device" || name === "peer")
-        );
+          )
+        };
         series.push({ metric: metricName, key: spec.key, unit: spec.unit, labels, points: matrixPoints(result) });
       }
       if (!matrix.length) {
