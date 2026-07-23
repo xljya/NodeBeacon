@@ -70,6 +70,7 @@ function withRegistryMetadata(
     provider: node.provider,
     group: node.group,
     region: node.region,
+    countryCode: node.countryCode,
     location: node.location,
     displayOrder: node.displayOrder,
     public: node.public,

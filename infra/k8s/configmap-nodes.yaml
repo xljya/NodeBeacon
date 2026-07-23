@@ -4,7 +4,8 @@
 # The `labels` selectors below are verified against the live RS1000 Prometheus:
 #   - rs1000 -> job="node-exporter" (in-cluster DaemonSet; single-node cluster)
 #   - the four VPS -> job="external-vps-node", instance=<friendly name>
-# This is display + query metadata only. No secrets.
+# This is display + query metadata only. `region` is a broad display region;
+# `countryCode` is the ISO two-letter code used for the national flag. No secrets.
 apiVersion: v1
 kind: ConfigMap
 metadata:
@@ -20,7 +21,8 @@ data:
         provider: netcup
         group: Core
         region: EU
-        location: Germany
+        countryCode: US
+        location: United States
         displayOrder: 10
         public: true
         ipAddress: 10.77.0.1
@@ -41,6 +43,7 @@ data:
         provider: DMIT
         group: Edge
         region: US
+        countryCode: US
         location: US West
         displayOrder: 20
         public: true
@@ -65,6 +68,7 @@ data:
         provider: HostBrr
         group: Storage
         region: EU
+        countryCode: DE
         location: Germany
         displayOrder: 30
         public: true
@@ -91,6 +95,7 @@ data:
         provider: netcup
         group: Compute
         region: EU
+        countryCode: DE
         location: Germany
         displayOrder: 40
         public: true
@@ -114,6 +119,7 @@ data:
         provider: Huawei Cloud
         group: CN
         region: CN
+        countryCode: CN
         location: China
         displayOrder: 50
         public: true

@@ -149,6 +149,7 @@
       "fProvider": "Provider",
       "fGroup": "Group",
       "fRegion": "Region",
+      "fCountryCode": "Country code",
       "fOrder": "Order",
       "fTags": "Tags",
       "fVisibility": "Visibility",

@@ -41,9 +41,9 @@ export function formatUptime(seconds: number, u: UptimeUnits): string | null {
   return `${minutes}${u.m}`;
 }
 
-/** Flag emoji for a region code (matches the prototype's mapping, extended a little). */
-export function regionFlag(region: string | undefined): string {
-  const r = String(region || "").toUpperCase();
+/** Flag emoji for an ISO country code, falling back to a legacy region code. */
+export function countryFlag(countryCode: string | undefined, region: string | undefined): string {
+  const r = String(countryCode || region || "").toUpperCase();
   const map: Record<string, string> = {
     CN: "🇨🇳",
     HK: "🇭🇰",

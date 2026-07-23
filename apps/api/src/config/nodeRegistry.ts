@@ -115,12 +115,18 @@ function normalizeNode(raw: unknown): NodeConfigEntry {
     Object.entries(raw.labels).map(([key, value]) => [key, String(value)])
   ) : {};
 
+  const countryCode = optionalString(raw.countryCode)?.toUpperCase();
+  if (countryCode && !/^[A-Z]{2}$/.test(countryCode)) {
+    throw new Error("countryCode must be a two-letter ISO country code.");
+  }
+
   return {
     id: String(raw.id ?? ""),
     name: String(raw.name ?? raw.id ?? ""),
     provider: String(raw.provider ?? "unknown"),
     group: String(raw.group ?? "default"),
     region: String(raw.region ?? "unknown"),
+    countryCode,
     location: raw.location ? String(raw.location) : undefined,
     displayOrder: Number(raw.displayOrder ?? 999),
     public: Boolean(raw.public ?? true),

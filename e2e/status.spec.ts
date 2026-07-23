@@ -3,6 +3,8 @@ import { test, expect } from "./fixtures";
 test("public status page renders without signing in", async ({ page }) => {
   await page.goto("/");
   await expect(page.getByText("Current Time")).toBeVisible();
+  await expect(page.locator(".node-card", { hasText: "RS1000" }).locator(".node-flag")).toHaveText("🇺🇸");
+  await expect(page.locator(".node-card", { hasText: "hostbrr-4t" }).locator(".node-flag")).toHaveText("🇩🇪");
 });
 
 test("the whole node card opens its detail page and hides the live badge", async ({ page }) => {

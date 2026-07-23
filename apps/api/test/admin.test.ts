@@ -92,6 +92,7 @@ describe("admin routes (owner-only)", () => {
           provider: "Test",
           group: "Edge",
           region: "US",
+          countryCode: "de",
           displayOrder: 20,
           public: true,
           labels: { job: "external-vps-node", instance: "new-node" },
@@ -114,6 +115,7 @@ describe("admin routes (owner-only)", () => {
       expect(create.json().node).toMatchObject({
         id: "new-node",
         group: "Edge",
+        countryCode: "DE",
         detail: { enabled: true, visibility: "safe", networkDevices: ["eth0"] }
       });
 

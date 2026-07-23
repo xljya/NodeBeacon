@@ -6,6 +6,8 @@ export interface NodeConfigEntry {
   provider: string;
   group: string;
   region: string;
+  /** ISO 3166-1 alpha-2 country code used for the node flag. */
+  countryCode?: string;
   location?: string;
   displayOrder: number;
   public: boolean;
@@ -72,6 +74,7 @@ export interface StatusNode {
   provider: string;
   group: string;
   region: string;
+  countryCode?: string;
   location?: string;
   displayOrder: number;
   public: boolean;
@@ -129,6 +132,7 @@ export interface NodeMeta {
   provider: string;
   group: string;
   region: string;
+  countryCode?: string;
   location?: string;
   displayOrder: number;
   tags: string[];
@@ -367,6 +371,7 @@ export interface AdminNode {
   provider: string;
   group: string;
   region: string;
+  countryCode?: string;
   location?: string;
   displayOrder: number;
   public: boolean;
@@ -507,7 +512,8 @@ export const statusFixture: ApiStatusResponse = {
       provider: "netcup",
       group: "Core",
       region: "EU",
-      location: "Germany",
+      countryCode: "US",
+      location: "United States",
       displayOrder: 10,
       public: true,
       labels: { job: "node-exporter", instance: "10.77.0.1:9100" },
@@ -538,6 +544,7 @@ export const statusFixture: ApiStatusResponse = {
       provider: "DMIT",
       group: "Edge",
       region: "US",
+      countryCode: "US",
       location: "US West",
       displayOrder: 20,
       public: true,
@@ -569,6 +576,7 @@ export const statusFixture: ApiStatusResponse = {
       provider: "HostBrr",
       group: "Storage",
       region: "EU",
+      countryCode: "DE",
       location: "Germany",
       displayOrder: 30,
       public: true,
@@ -600,6 +608,7 @@ export const statusFixture: ApiStatusResponse = {
       provider: "netcup",
       group: "Compute",
       region: "EU",
+      countryCode: "DE",
       location: "Germany",
       displayOrder: 40,
       public: true,
@@ -631,6 +640,7 @@ export const statusFixture: ApiStatusResponse = {
       provider: "Huawei Cloud",
       group: "CN",
       region: "CN",
+      countryCode: "CN",
       location: "China",
       displayOrder: 50,
       public: true,

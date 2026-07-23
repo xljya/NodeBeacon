@@ -31,7 +31,8 @@ backend owns PromQL, caching, error handling, and node metadata mapping.
       "provider": "netcup",
       "group": "Core",
       "region": "EU",
-      "location": "Germany",
+      "countryCode": "US",
+      "location": "United States",
       "displayOrder": 10,
       "public": true,
       "labels": {
@@ -86,6 +87,9 @@ All API errors should use the same JSON envelope:
 
 - `group` is a manual display group from `config/nodes.example.yaml`; it is not
   inferred from metrics.
+- `region` is a broader display/filtering region. `countryCode` is an optional
+  ISO 3166-1 alpha-2 country code used to render the national flag; it must not
+  be inferred from `region` (for example, `EU` is not a country).
 - `displayOrder` controls stable ordering on the public page and later in the
   admin node table.
 - `labels` are the server-side Prometheus label mapping. The browser receives

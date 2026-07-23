@@ -149,6 +149,7 @@
       "fProvider": "供应商",
       "fGroup": "分组",
       "fRegion": "区域",
+      "fCountryCode": "国家代码",
       "fOrder": "排序",
       "fTags": "标签",
       "fVisibility": "可见性",

@@ -42,6 +42,7 @@ interface NodeFormState {
   provider: string;
   group: string;
   region: string;
+  countryCode: string;
   location: string;
   displayOrder: string;
   public: boolean;
@@ -76,6 +77,7 @@ const EMPTY_FORM: NodeFormState = {
   provider: "",
   group: "default",
   region: "unknown",
+  countryCode: "",
   location: "",
   displayOrder: "",
   public: true,
@@ -137,6 +139,7 @@ export function NodesPage() {
         node.provider,
         node.group,
         node.region,
+        node.countryCode ?? "",
         node.ipAddress ?? "",
         node.clientVersion ?? "",
         node.privateNotes ?? "",
@@ -520,6 +523,9 @@ function NodeEditor({
           <Field label={t("admin.nodes.fRegion")}>
             <input value={form.region} onChange={(event) => setForm({ ...form, region: event.target.value })} />
           </Field>
+          <Field label={t("admin.nodes.fCountryCode")}>
+            <input value={form.countryCode} maxLength={2} onChange={(event) => setForm({ ...form, countryCode: event.target.value.toUpperCase() })} placeholder="US" />
+          </Field>
           <Field label={t("admin.nodes.location")}>
             <input value={form.location} onChange={(event) => setForm({ ...form, location: event.target.value })} />
           </Field>
@@ -702,6 +708,7 @@ function formFromNode(node: AdminNode): NodeFormState {
     provider: node.provider,
     group: node.group,
     region: node.region,
+    countryCode: node.countryCode ?? "",
     location: node.location ?? "",
     displayOrder: String(node.displayOrder),
     public: node.public,
@@ -720,6 +727,7 @@ function mutationFromForm(form: NodeFormState): AdminNodeMutation {
     provider: form.provider.trim() || "unknown",
     group: form.group.trim() || "default",
     region: form.region.trim() || "unknown",
+    countryCode: form.countryCode.trim() || undefined,
     location: form.location.trim() || undefined,
     displayOrder: form.displayOrder ? Number(form.displayOrder) : undefined,
     public: form.public,
@@ -784,6 +792,7 @@ function toNodeConfigSnippet(node: AdminNode): string {
     `  provider: ${node.provider}`,
     `  group: ${node.group}`,
     `  region: ${node.region}`,
+    ...(node.countryCode ? [`  countryCode: ${node.countryCode}`] : []),
     `  displayOrder: ${node.displayOrder}`,
     `  public: ${node.public}`,
     "  labels:"

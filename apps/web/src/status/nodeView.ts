@@ -5,7 +5,7 @@ import {
   formatUptime,
   osSlug,
   percentTone,
-  regionFlag,
+  countryFlag,
   type OsSlug,
   type UptimeUnits
 } from "../lib/format";
@@ -68,7 +68,7 @@ export function buildNodeView(node: StatusNode, units: UptimeUnits): NodeView {
     id: node.id,
     name: node.name || node.id,
     group: node.group || "",
-    flag: regionFlag(node.region),
+    flag: countryFlag(node.countryCode, node.region),
     online: !!node.online,
     osSlug: osSlug(node.os?.name),
     osText: `${node.os?.name ?? "Linux"} / ${node.os?.arch ?? "amd64"}`,

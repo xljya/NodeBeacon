@@ -134,6 +134,7 @@
       "fProvider": "供應商",
       "fGroup": "分組",
       "fRegion": "區域",
+      "fCountryCode": "國家代碼",
       "fOrder": "排序",
       "fTags": "標籤",
       "fVisibility": "可見性",

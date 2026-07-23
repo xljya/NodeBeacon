@@ -68,6 +68,14 @@ function optionalBoolean(value: unknown): boolean | undefined {
   return Boolean(value);
 }
 
+function optionalCountryCode(value: unknown): string | undefined {
+  const countryCode = optionalString(value)?.toUpperCase();
+  if (countryCode && !/^[A-Z]{2}$/.test(countryCode)) {
+    throw new AdminValidationError("countryCode must be a two-letter ISO country code.");
+  }
+  return countryCode;
+}
+
 function normalizeLabels(value: unknown): Record<string, string> | undefined {
   if (value === undefined) return undefined;
   if (!isRecord(value)) throw new AdminValidationError("labels must be an object.");
@@ -152,6 +160,7 @@ function cleanMutation(raw: unknown): AdminNodeMutation {
   if ("provider" in raw) input.provider = optionalString(raw.provider);
   if ("group" in raw) input.group = optionalString(raw.group);
   if ("region" in raw) input.region = optionalString(raw.region);
+  if ("countryCode" in raw) input.countryCode = optionalCountryCode(raw.countryCode);
   if ("location" in raw) input.location = optionalString(raw.location);
   if ("displayOrder" in raw) input.displayOrder = optionalNumber(raw.displayOrder);
   if ("public" in raw) input.public = optionalBoolean(raw.public);
@@ -189,6 +198,7 @@ function createNodeEntry(input: AdminNodeMutation, nodes: NodeConfigEntry[]): No
     provider: input.provider ?? "unknown",
     group: input.group ?? "default",
     region: input.region ?? "unknown",
+    countryCode: input.countryCode,
     location: input.location,
     displayOrder: input.displayOrder ?? nextDisplayOrder(nodes),
     public: input.public ?? true,
@@ -209,6 +219,7 @@ function patchNodeEntry(existing: NodeConfigEntry, input: AdminNodeMutation): No
     provider: input.provider ?? existing.provider,
     group: input.group ?? existing.group,
     region: input.region ?? existing.region,
+    countryCode: "countryCode" in input ? input.countryCode : existing.countryCode,
     location: "location" in input ? input.location : existing.location,
     displayOrder: input.displayOrder ?? existing.displayOrder,
     public: input.public ?? existing.public,
@@ -229,6 +240,7 @@ function toAdminNode(node: StatusNode, registry?: NodeConfigEntry): AdminNode {
     provider: node.provider,
     group: node.group,
     region: node.region,
+    countryCode: node.countryCode,
     location: node.location,
     displayOrder: node.displayOrder,
     public: node.public,

@@ -55,6 +55,7 @@ function nodeMeta(node: StatusNode): NodeMeta {
     provider: node.provider,
     group: node.group,
     region: node.region,
+    countryCode: node.countryCode,
     location: node.location,
     displayOrder: node.displayOrder,
     tags: node.tags,
