@@ -55,12 +55,21 @@
 
 ## 本机与远端执行边界
 
-- 本机是 Windows 11，命令使用 PowerShell 7。使用 PowerShell cmdlet 和语法，不要在
-  本机命令中使用 Bash 的 `&&`、heredoc、`grep`、`sed`、`awk`、`rm` 或 `find`。
-- 优先使用 `rg`；若不可用，再使用 `Get-ChildItem`、`Select-String` 等 PowerShell
-  工具。
+- 执行本机命令前先确认宿主系统和当前 shell，不要假设所有协作者都使用同一平台；
+  命令、路径、引号、环境变量和脚本调用必须符合当前环境。
+- Windows 11 默认使用 PowerShell 7：使用 PowerShell cmdlet 和语法，不要在本机命令中
+  使用 Bash 的 `&&`、heredoc、`grep`、`sed`、`awk`、`rm` 或 `find`。
+- macOS 默认使用 `zsh`，Linux 默认使用当前可用的 POSIX shell（通常为 `bash` 或
+  `sh`）；可使用对应的 POSIX 语法和工具，不要强行套用 PowerShell cmdlet 或 Windows
+  路径格式。
+- 搜索文本和文件时各平台都优先使用 `rg` / `rg --files`；若不可用，Windows 使用
+  `Get-ChildItem`、`Select-String`，macOS/Linux 使用当前平台的标准只读搜索工具。
+- `.ps1` 脚本需要 PowerShell 7（`pwsh`）；`.sh` 脚本在 macOS/Linux 或 SSH 远端使用。
+  不要仅为跨平台调用临时改写脚本，先查看 `docs/cross-platform-sync.md` 和脚本自身说明。
 - `ssh RS1000 '...'` 的远端命令运行在 Linux，可使用 POSIX/Bash 语法。保持远端命令
-  范围明确，避免把本地变量或秘密意外展开到输出中。
+  范围明确，并按本机 shell 正确处理外层引号，避免把本地变量或秘密意外展开到输出中。
+- 保持 `.gitattributes` 定义的换行符策略，不因 Windows `CRLF`、macOS/Linux `LF`
+  差异制造整文件无意义变更；出现差异时按 `docs/cross-platform-sync.md` 排查。
 - 生产位于 RS1000 的 `nodebeacon` namespace，流量路径和 NodePort 以
   `infra/README.md` 为准，不要另造部署方式或使用 `latest` 镜像。
 
@@ -76,7 +85,7 @@
   `infra/README.md` 的专门流程处理。
 - 修改后运行与风险相称的测试。生产发布的标准本地门禁为：
 
-```powershell
+```text
 pnpm lint
 pnpm typecheck
 pnpm test
