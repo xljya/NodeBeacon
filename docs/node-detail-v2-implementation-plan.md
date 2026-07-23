@@ -1,20 +1,20 @@
 # NodeBeacon 节点详情页 V2：Komari 截图功能等价实施方案
 
-状态：**Core V2 deployed / 核心 V2 已发布生产；v1.0.9 专业化视觉与交互重构已上线；G2、G3 的 30 分钟门禁、G4/G5、G6 已完成；G3 24 小时观察按用户指示跳过，G7 的长时观察仍未完成**
+状态：**Core V2 deployed / 核心 V2 已发布生产；v1.0.10 已按 Komari 保存页面与官方源码对齐布局；G2、G3 的 30 分钟门禁、G4/G5、G6 已完成；G3 24 小时观察按用户指示跳过，G7 的长时观察仍未完成**
 文档日期：2026-07-15
 生产基线最后核验：2026-07-23（Asia/Shanghai）
 目标页面：`https://monitor.liucf.com/nodes/:id`
 功能参考：[`https://ss.akz.moe/instance/8832553d-a03f-4312-af8b-c5d9ed959c93`](https://ss.akz.moe/instance/8832553d-a03f-4312-af8b-c5d9ed959c93)
 
-> 本文是给后续开发者或 AI Agent 的可执行交接文档。2026-07-15 已完成核心业务代码、公开 API、图表布局、配置模板和测试，并按真实 Prometheus target discovery 完成五节点 fast scrape、registry 迁移和 retention 90d/40GB 变更。2026-07-23 已发布 NodeBeacon 1.0.9：默认五图表组合、统一 Lucide 图标和控件、真实像素响应式坐标轴、双轴指标、dnd-kit 触控与键盘排序、移动端节点选择器及 v2 布局迁移均已完成。`node-detail-fast` 模板已验证可用；24 小时观察按用户指示跳过，不能将其误记为已完成。
+> 本文是给后续开发者或 AI Agent 的可执行交接文档。2026-07-15 已完成核心业务代码、公开 API、图表布局、配置模板和测试，并按真实 Prometheus target discovery 完成五节点 fast scrape、registry 迁移和 retention 90d/40GB 变更。2026-07-23 已发布 NodeBeacon 1.0.10：默认五图表组合、统一 Lucide 图标和控件、真实像素响应式坐标轴、双轴指标、dnd-kit 触控与键盘排序、移动端节点选择器、v2 布局迁移，以及按 Komari 保存页面与官方源码对齐的 300px + 16px + 1100px 桌面布局均已完成。`node-detail-fast` 模板已验证可用；24 小时观察按用户指示跳过，不能将其误记为已完成。
 
 ### 本次落地范围
 
 - 已实现 `ApiNodeDetailV2Response`、批量趋势查询、自动步长、平均值/最大值/P95、缓存和公开节点鉴权边界。
 - 已实现节点画像、实时摘要、历史图表、EWMA、时间范围、拖拽排序、S/M/L、删除/新增图表和 series chip 显隐。
 - 已接入节点安全详情配置，并提供 `infra/monitoring/node-detail-fast.example.yaml` 与接入说明。
-- 已通过 API 全量测试（75 tests）、workspace lint/typecheck/build、Playwright E2E（18/18），并用真实 Prometheus 只读隧道验证 RS1000 的 detail/series API。
-- 生产已运行 NodeBeacon `1.0.9`（应用 commit `2fbcb007aa2f5c3683df743db0c81e138e5f90ab`，Deployment revision 45）；5 秒 fast scrape 使用 Helm revision 15，五个 target 均已通过 30 分钟稳定门禁。
+- 已通过 API 全量测试（75 tests）、workspace lint/typecheck/build、Playwright E2E（19/19），并用真实 Prometheus 只读隧道验证 RS1000 的 detail/series API。
+- 生产已运行 NodeBeacon `1.0.10`（应用 commit `68f4a01f5d1e1ca14fd39b95fe6a2b97ff4a14e1`，Deployment revision 46）；5 秒 fast scrape 使用 Helm revision 15，五个 target 均已通过 30 分钟稳定门禁。
 
 ## 1. 交付目标
 
