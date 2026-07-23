@@ -1,6 +1,6 @@
 # NodeBeacon 节点详情页 V2：Komari 截图功能等价实施方案
 
-状态：**Core V2 deployed / 核心 V2 已发布生产；v1.0.11 候选版本已按 Komari 最新 `radix` 源码补齐默认标签和完整图表控件，等待生产发布；G2、G3 的 30 分钟门禁、G4/G5、G6 已完成；G3 24 小时观察按用户指示跳过，G7 的长时观察仍未完成**
+状态：**Core V2 deployed / 核心 V2 已发布生产；v1.0.11 已按 Komari 最新 `radix` 源码补齐默认标签和完整图表控件并通过生产验收；G2、G3 的 30 分钟门禁、G4/G5、G6 已完成；G3 24 小时观察按用户指示跳过，G7 的长时观察仍未完成**
 文档日期：2026-07-15
 生产基线最后核验：2026-07-23（Asia/Shanghai）
 目标页面：`https://monitor.liucf.com/nodes/:id`
@@ -14,8 +14,8 @@
 - 已实现节点画像、实时摘要、历史图表、EWMA、全局/单卡时间范围、拖拽排序、S/M/L、删除/新增图表、series chip 增删/全部显隐和兼容指标组追加。
 - 默认 Network 为 Download、Upload、Total Download、Total Upload；Latency 从 `blackbox-tcp-wireguard` 动态生成真实 peer 标签并标明探针来源，不伪造参考站的探针名称。
 - 已接入节点安全详情配置，并提供 `infra/monitoring/node-detail-fast.example.yaml` 与接入说明。
-- v1.0.11 候选已通过 API 全量测试（85 tests）、workspace lint/typecheck/build、Playwright Chromium E2E（21/21），并用真实 Prometheus 只读隧道验证 RS1000 的九种聚合表达式和动态 latency 查询。
-- 生产已运行 NodeBeacon `1.0.10`（应用 commit `68f4a01f5d1e1ca14fd39b95fe6a2b97ff4a14e1`，Deployment revision 46）；5 秒 fast scrape 使用 Helm revision 15，五个 target 均已通过 30 分钟稳定门禁。
+- v1.0.11 已通过 API 全量测试（85 tests）、workspace lint/typecheck/build、Playwright Chromium E2E（21/21），并用真实生产端点验证 RS1000 的九种聚合表达式、Network 四序列和四个动态 latency peer。
+- 生产已运行 NodeBeacon `1.0.11`（应用 commit `264bc280acb111b35970b1415cee33693f473f81`，Deployment revision 47）；5 秒 fast scrape 使用 Helm revision 15，五个 target 均已通过 30 分钟稳定门禁。
 
 ## 1. 交付目标
 
