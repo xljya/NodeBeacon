@@ -19,6 +19,9 @@
   新提交，必须在保留本地改动的前提下先完成拉取、合并、冲突处理和必要验证，确认本地
   基线已与协作者同步后再继续开发。提交或推送前再次检查远端，禁止跳过同步、覆盖他人
   提交或使用强制推送。
+- 这是个人项目，默认直接以 `main` 作为唯一开发与同步分支：开始任务时切换到
+  `main` 并与 `origin/main` 同步，不要自动创建 `codex/*`、`agent/*` 或其他功能
+  分支。只有用户明确要求隔离开发、PR 或专用分支时才能新建分支。
 - 不输出 Secret、Cookie、OAuth 凭据、备份密钥、数据库内容或其他敏感信息。
 
 ## 项目结构
@@ -107,7 +110,7 @@ pnpm exec playwright test --project=chromium
    - `infra/k8s/deployment.yaml` 的 `nodebeacon:<version>`；
    - `infra/k8s/restore-pod.example.yaml` 的 `nodebeacon:<version>`。
 3. 完成全部本地门禁与 diff 检查。
-4. 提交发布代码并推送当前分支。不要擅自合并到 `main`，不要强推。
+4. 提交发布代码并推送 `main`；推送前再次同步 `origin/main`，不要强推。
 5. 在 RS1000 使用包含 `.git` 的干净检出目录同步该精确提交。优先使用 Git；若 RS1000
    无法访问 GitHub，可用 `git bundle` 传输，但仍须保留可验证的 Git SHA 和干净工作树。
 6. 在远端仓库根目录先运行 `./scripts/deploy.sh --plan`，核对版本、完整 SHA、版本镜像和
@@ -143,3 +146,28 @@ pnpm exec playwright test --project=chromium
 - 遇到失败要立即说明具体阶段、影响范围和下一步；不要用“完成”掩盖未部署或未验收。
 - 最终答复必须自包含，并优先报告结果：改了什么、部署版本与 SHA、生产状态、测试与
   验收结果、发布记录位置、任何剩余风险。
+
+## Cursor Cloud specific instructions
+
+面向后续 Cloud Agent 的启动与运行说明（依赖安装由启动脚本 `pnpm install` +
+`pnpm exec playwright install chromium` 自动完成，此处不重复安装步骤）。标准命令见
+`README.md`、根 `package.json` scripts 与本文件“实施与验证”一节。
+
+- 本地开发不需要 Prometheus/Alertmanager。未设置 `PROMETHEUS_URL` 时 API 正常启动，
+  返回退化/占位指标（`/api/*/series` 等会返回 503，属预期），公共状态页仍展示节点。
+- API 不读取 `.env` 文件（`env.ts` 只读 `process.env`）。本地跑 `pnpm dev` 无需任何
+  配置即可启动（`COOKIE_SECRET` 有 dev 兜底、SQLite 落在 `./data/nodebeacon.db`）。
+- 要演示登录/管理端，必须在启动 `pnpm dev` 的同一 shell 里显式导出 owner 凭据等
+  环境变量，例如 `INITIAL_OWNER_EMAIL` / `INITIAL_OWNER_PASSWORD`，并把
+  `NODEBEACON_NODE_CONFIG` 指向一个可写的 YAML（编辑节点会写回该文件；不要直接写
+  `config/nodes.example.yaml`，先复制一份）。参考 `playwright.config.ts` 的
+  `webServer.env` 注入方式。
+- 登录接口 `/api/auth/login` 限速 5 次/分钟；手动或脚本反复登录容易触发 429/401，
+  Playwright 因此 `workers: 1` 串行执行。
+- Playwright 需单独指定单一项目：本地/CI 门禁用 `pnpm exec playwright test
+  --project=chromium`。`pnpm test:e2e` 默认用 `edge`（msedge channel），Cloud VM 内
+  一般只装了 chromium，跑 e2e 请用 `--project=chromium`。Playwright 会自行拉起 API
+  (3001) 和 web (4173) 两个 webServer，无需先手动启动 `pnpm dev`。
+- `pnpm lint` 实为 `tsc --noEmit` 类型检查（无 ESLint）。`better-sqlite3` 是原生模块，
+  由 `pnpm install` 在 `onlyBuiltDependencies` 下自动编译（镜像已带 gcc/g++/make/
+  python3）。

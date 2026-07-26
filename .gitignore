@@ -33,3 +33,6 @@ artifacts/ripe-atlas/
 
 # Runtime SQLite state
 apps/api/data/
+
+# Local dev-run scratch (owner-provisioned SQLite + writable node registry)
+.devrun/
