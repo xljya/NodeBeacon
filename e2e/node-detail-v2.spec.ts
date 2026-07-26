@@ -423,6 +423,7 @@ test("touch latency statistics stay above the chart stack and can be closed", as
   const statsDialog = page.getByRole("dialog", { name: "浙江移动 latency statistics" });
   await expect(statsDialog).toBeVisible();
   await expect(statsDialog).toHaveCSS("position", "fixed");
+  await expect(statsDialog).not.toHaveCSS("background-color", "rgba(0, 0, 0, 0)");
   await expect.poll(async () => (await statsDialog.boundingBox())?.width ?? 0).toBeGreaterThan(300);
   await statsDialog.getByRole("button", { name: "Close latency statistics" }).tap();
   await expect(statsButton).toHaveAttribute("aria-expanded", "false");

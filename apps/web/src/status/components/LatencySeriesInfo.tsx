@@ -245,7 +245,8 @@ export function LatencySeriesInfo({ nodeId, series, t }: LatencySeriesInfoProps)
           )}
         </span>
         );
-        return mobileLayout ? createPortal(content, document.body) : content;
+        const portalRoot = document.querySelector<HTMLElement>(".status-page") ?? document.body;
+        return mobileLayout ? createPortal(content, portalRoot) : content;
       })()}
     </span>
   );
