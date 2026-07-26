@@ -56,6 +56,7 @@ import {
   type ChartTrendSeries
 } from "./components/TrendChart";
 import { getStatusSnapshot, loadStatusSnapshot } from "./statusSnapshot";
+import { LatencySeriesInfo } from "./components/LatencySeriesInfo";
 import "./status.css";
 
 type Theme = "light" | "dark";
@@ -445,6 +446,7 @@ function latestSeriesSummary(series: ChartTrendSeries[]): string {
 }
 
 interface SortableChartCardProps {
+  nodeId: string;
   chart: ChartConfig;
   allSeries: ChartTrendSeries[];
   renderedSeries: ChartTrendSeries[];
@@ -464,6 +466,7 @@ interface SortableChartCardProps {
 }
 
 function SortableChartCard({
+  nodeId,
   chart,
   allSeries,
   renderedSeries,
@@ -596,15 +599,6 @@ function SortableChartCard({
           <div className="detail-series-chips">
             {selectedSeries.map((item) => {
               const colorIndex = allSeries.findIndex((candidate) => candidate.name === item.name);
-              const source = item.labels?.vantage_name
-                ? [
-                    item.labels.vantage_name,
-                    item.labels.city,
-                    item.labels.provider,
-                    item.labels.asn,
-                    item.labels.probe_id ? `Probe ${item.labels.probe_id}` : undefined
-                  ].filter(Boolean).join(" · ")
-                : item.labels?.peer ?? item.labels?.vantage;
               return (
                 <span key={item.name} className="detail-series-chip active">
                   <span
@@ -613,15 +607,8 @@ function SortableChartCard({
                     aria-hidden="true"
                   />
                   <span>{item.label}</span>
-                  {item.unit === "milliseconds" && source && (
-                    <span
-                      className="detail-series-info"
-                      role="img"
-                      aria-label={t("status.detail.seriesSource", { source })}
-                      title={t("status.detail.seriesSource", { source })}
-                    >
-                      <CircleHelp size={14} aria-hidden="true" />
-                    </span>
+                  {item.unit === "milliseconds" && item.labels?.vantage && (
+                    <LatencySeriesInfo nodeId={nodeId} series={item} t={t} />
                   )}
                   <button
                     type="button"
@@ -1126,6 +1113,7 @@ export function NodeDetailPage() {
                               return (
                                 <SortableChartCard
                                   key={chart.id}
+                                  nodeId={id}
                                   chart={chart}
                                   allSeries={allSeries}
                                   renderedSeries={smoothSeries(selected, ewma)}

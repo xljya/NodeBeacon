@@ -729,6 +729,214 @@
   }
 }
 
+.detail-series-info-wrap {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+}
+
+.detail-series-info-wrap .detail-series-info {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  min-height: 22px;
+  padding: 0;
+  color: var(--text-mute);
+  background: transparent;
+  border: 0;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: color 140ms ease, background-color 140ms ease, transform 120ms var(--ease-out, cubic-bezier(0.23, 1, 0.32, 1));
+}
+
+.detail-series-info-wrap .detail-series-info:hover,
+.detail-series-info-wrap .detail-series-info[aria-expanded="true"] {
+  color: var(--text);
+  background: var(--surface-2);
+}
+
+.detail-series-info-wrap .detail-series-info:active {
+  transform: scale(0.97);
+}
+
+.detail-latency-stats-popover {
+  position: absolute;
+  top: calc(100% + 10px);
+  left: 50%;
+  z-index: 80;
+  display: block;
+  width: min(324px, calc(100vw - 32px));
+  padding: 14px;
+  color: var(--text);
+  background: color-mix(in srgb, var(--panel) 98%, var(--bg));
+  border: 1px solid color-mix(in srgb, var(--border) 84%, var(--text-mute));
+  border-radius: 12px;
+  box-shadow: 0 18px 48px rgba(0, 0, 0, 0.24), var(--shadow);
+  font-size: 13px;
+  line-height: 1.35;
+  transform: translateX(-50%);
+  transform-origin: top center;
+}
+
+.detail-latency-stats-head,
+.detail-latency-stats-head > span,
+.detail-latency-stats-state,
+.detail-latency-stats-grid,
+.detail-latency-stats-row,
+.detail-latency-stats-foot {
+  display: flex;
+}
+
+.detail-latency-stats-head {
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.detail-latency-stats-head > span {
+  min-width: 0;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.detail-latency-stats-head strong {
+  font-size: 15px;
+  line-height: 20px;
+}
+
+.detail-latency-stats-head small,
+.detail-latency-stats-source,
+.detail-latency-stats-foot {
+  color: var(--text-mute);
+  font-size: 11px;
+}
+
+.detail-latency-stats-head > button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  color: var(--text-mute);
+  background: transparent;
+  border: 0;
+  border-radius: 6px;
+}
+
+.detail-latency-stats-head > button:hover {
+  color: var(--text);
+  background: var(--surface-2);
+}
+
+.detail-latency-stats-source {
+  display: block;
+  margin-top: 9px;
+  padding-bottom: 10px;
+  overflow-wrap: anywhere;
+  border-bottom: 1px solid var(--border);
+}
+
+.detail-latency-stats-state {
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 132px;
+  color: var(--text-mute);
+}
+
+.detail-latency-stats-state > svg {
+  animation: detail-stats-spin 900ms linear infinite;
+}
+
+.detail-latency-stats-state.is-error {
+  flex-direction: column;
+  color: var(--crit);
+}
+
+.detail-latency-stats-state > button {
+  min-height: 30px;
+  padding: 0 10px;
+  color: var(--text);
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+}
+
+.detail-latency-stats-grid {
+  flex-direction: column;
+  gap: 7px;
+  padding: 11px 2px 2px;
+}
+
+.detail-latency-stats-row {
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.detail-latency-stats-row > span {
+  color: var(--text-mute);
+}
+
+.detail-latency-stats-row > strong {
+  color: var(--text);
+  font-family: "JetBrains Mono", ui-monospace, monospace;
+  font-size: 13px;
+  font-weight: 600;
+  text-align: right;
+}
+
+.detail-latency-stats-foot {
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px solid var(--border);
+}
+
+.detail-latency-stats-foot > span {
+  min-width: 0;
+}
+
+.detail-latency-stats-foot > a {
+  display: inline-flex;
+  align-items: center;
+  flex: none;
+  gap: 4px;
+  color: var(--accent2);
+  text-decoration: none;
+}
+
+@keyframes detail-stats-spin {
+  to { transform: rotate(360deg); }
+}
+
+@media (max-width: 720px) {
+  .detail-latency-stats-popover {
+    position: fixed;
+    top: 50%;
+    right: 12px;
+    left: 12px;
+    width: auto;
+    max-height: calc(100dvh - 32px);
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    transform: translateY(-50%);
+    transform-origin: center;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .detail-latency-stats-state > svg {
+    animation: none;
+  }
+}
+
 /* Node detail V5: source-complete chart editor controls. */
 .detail-aggregation-control {
   display: inline-flex;

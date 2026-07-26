@@ -6,6 +6,7 @@ import {
   TREND_METRICS,
   TREND_RANGES,
   type ApiNodeDetailResponse,
+  type ApiNodeLatencyStatsResponse,
   type DetailAggregation,
   type DetailChartMetric,
   type ApiNodesResponse,
@@ -20,6 +21,8 @@ import { getStatus } from "../services/statusService.js";
 import { getNodeTrend } from "../services/trendService.js";
 import { createPrometheusClient } from "../services/prometheusClient.js";
 import { calculateDetailRange, getNodeDetail, getNodeDetailSeries } from "../services/nodeDetailService.js";
+import { loadRipeAtlasConfig } from "../services/ripeAtlasCollector.js";
+import { getRipeAtlasLatencyStats } from "../services/ripeAtlasStatsService.js";
 
 function toNodeMeta(node: StatusNode): NodeMeta {
   return {
@@ -149,6 +152,40 @@ export async function registerNodeRoutes(app: FastifyInstance, env: ApiEnv): Pro
       } catch (error) {
         request.log.error({ error, nodeId: request.params.id }, "failed to query public node detail series");
         return reply.code(503).send(buildApiError("trends_unavailable", "Trend data is temporarily unavailable."));
+      }
+    }
+  );
+
+  app.get<{ Params: { id: string }; Querystring: { vantage?: string } }>(
+    "/api/public/nodes/:id/latency-stats",
+    { config: { rateLimit: { max: 30, timeWindow: "1 minute" } } },
+    async (request, reply): Promise<ApiNodeLatencyStatsResponse | void> => {
+      const vantage = request.query.vantage?.trim();
+      if (!vantage || !/^[a-z0-9_]{1,64}$/.test(vantage)) {
+        return reply.code(400).send(buildApiError("invalid_vantage", "A valid latency vantage is required."));
+      }
+      try {
+        const registry = await loadNodeRegistry(env.nodeConfigPath, env.nodeConfigSeedPath, request.log);
+        const configNode = registry.find((candidate) => candidate.id === request.params.id);
+        if (!configNode || !configNode.public || configNode.detail?.enabled === false || configNode.detail?.visibility === "authenticated") {
+          return reply.code(404).send(buildApiError("node_not_found", "Unknown public node id."));
+        }
+        if (!env.ripeAtlasConfigPath) {
+          return reply.code(503).send(buildApiError("latency_stats_unavailable", "Latency statistics are not configured."));
+        }
+        const stats = await getRipeAtlasLatencyStats(
+          loadRipeAtlasConfig(env.ripeAtlasConfigPath),
+          configNode.id,
+          vantage,
+          { timeoutMs: env.ripeAtlasTimeoutMs }
+        );
+        if (!stats) {
+          return reply.code(404).send(buildApiError("latency_source_not_found", "Unknown latency source."));
+        }
+        return stats;
+      } catch (error) {
+        request.log.error({ error, nodeId: request.params.id, vantage }, "failed to query public latency statistics");
+        return reply.code(503).send(buildApiError("latency_stats_unavailable", "Latency statistics are temporarily unavailable."));
       }
     }
   );

@@ -1,5 +1,9 @@
 import { test, expect } from "./fixtures";
-import type { ApiNodeDetailSeriesResponse, ApiNodeDetailV2Response } from "@nodebeacon/shared";
+import type {
+  ApiNodeDetailSeriesResponse,
+  ApiNodeDetailV2Response,
+  ApiNodeLatencyStatsResponse
+} from "@nodebeacon/shared";
 
 const detail: ApiNodeDetailV2Response = {
   generatedAt: "2026-07-15T06:00:00.000Z",
@@ -87,6 +91,38 @@ const series: ApiNodeDetailSeriesResponse = {
   ]
 };
 
+const latencyStats: ApiNodeLatencyStatsResponse = {
+  nodeId: "rs1000",
+  vantage: "zhejiang_mobile",
+  vantageName: "浙江移动",
+  source: {
+    provider: "China Mobile",
+    probeId: 1009298,
+    asn: "AS56041",
+    city: "Zhejiang",
+    measurementId: 193845936
+  },
+  windowSeconds: 86_400,
+  intervalSeconds: 300,
+  type: "ICMP",
+  measuredFrom: "2026-07-14T06:00:00.000Z",
+  measuredTo: "2026-07-15T06:00:00.000Z",
+  updatedAt: "2026-07-15T06:00:00.000Z",
+  packetLossPercent: 2.546,
+  minimumMs: 13,
+  maximumMs: 19,
+  averageMs: 17,
+  latestMs: 18,
+  p50Ms: 17,
+  p99Ms: 19,
+  standardDeviationMs: 1.2,
+  jitterMs: 0.8,
+  sampleCount: 288,
+  validSampleCount: 287,
+  packetsSent: 864,
+  packetsReceived: 842
+};
+
 async function mockNodeDetail(page: import("@playwright/test").Page, seriesStatus = 200) {
   await page.route("**/api/public/nodes/rs1000/detail", (route) => route.fulfill({ json: detail }));
   await page.route("**/api/public/nodes/rs1000/series**", async (route) => {
@@ -97,10 +133,15 @@ async function mockNodeDetail(page: import("@playwright/test").Page, seriesStatu
 
 test("anonymous node detail uses combined charts and polished layout controls", async ({ page }) => {
   const seriesRequests: string[] = [];
+  let latencyStatsRequests = 0;
   await page.route("**/api/public/nodes/rs1000/detail", (route) => route.fulfill({ json: detail }));
   await page.route("**/api/public/nodes/rs1000/series**", async (route) => {
     seriesRequests.push(route.request().url());
     await route.fulfill({ json: series });
+  });
+  await page.route("**/api/public/nodes/rs1000/latency-stats?**", async (route) => {
+    latencyStatsRequests += 1;
+    await route.fulfill({ json: latencyStats });
   });
 
   await page.goto("/nodes/rs1000");
@@ -122,6 +163,20 @@ test("anonymous node detail uses combined charts and polished layout controls", 
     "rgb(139, 92, 246)",
     "rgb(20, 184, 166)"
   ]);
+  expect(latencyStatsRequests).toBe(0);
+  await page.getByRole("button", { name: "View real latency statistics for 浙江移动" }).click();
+  const statsDialog = page.getByRole("dialog", { name: "浙江移动 latency statistics" });
+  await expect(statsDialog).toBeVisible();
+  await expect(statsDialog).toContainText("Last 24 hours of raw RIPE Atlas results");
+  await expect(statsDialog).toContainText("Packet loss2.5%");
+  await expect(statsDialog).toContainText("Minimum13.0 ms");
+  await expect(statsDialog).toContainText("Measurements288");
+  await expect(statsDialog).toContainText("Received / sent842 / 864");
+  await expect(statsDialog).toContainText("Interval300s");
+  await expect(statsDialog).toContainText("TypeICMP");
+  expect(latencyStatsRequests).toBe(1);
+  await page.keyboard.press("Escape");
+  await expect(statsDialog).toBeHidden();
   await expect(page.locator(".detail-chart-toolbar select").first().locator("option")).toHaveCount(9);
 
   const initialRequests = seriesRequests.length;

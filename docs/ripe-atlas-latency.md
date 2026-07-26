@@ -105,6 +105,52 @@ nodebeacon_ripe_atlas_last_collection_success_timestamp_seconds
 Prometheus。旧 RS1000 WireGuard TCP 延迟仅在某个节点尚无 RIPE Atlas 序列时
 作为过渡兜底；只要 RIPE Atlas 已产生真实序列，页面就只展示四个 RIPE 标签。
 
+## 更新频率与 RS1000 k3s 监控的区别
+
+生产环境存在多层不同频率，不能把浏览器刷新频率当成底层采样频率：
+
+| 层级 | 频率 | 实际含义 |
+| --- | ---: | --- |
+| 节点详情当前指标、实时图表请求 | 5 秒 | 页面可见时向 NodeBeacon BFF 请求；不是让 RIPE 重新测量。 |
+| 全局状态摘要 | 20 秒 | 更新节点在线状态和列表摘要。 |
+| 事故记录 | 60 秒 | 更新最近 firing/resolved 事件。 |
+| `node-detail-fast` | 5 秒 | RS1000 上的 Prometheus 通过 WireGuard 或本机 Service 抓取五台服务器的 `node_exporter`。 |
+| RIPE Atlas 测量 | 300 秒 | 四个探针分别向五个公开目标执行 3 包 ICMP；这是延迟真实样本的产生频率。 |
+| RIPE Atlas collector | 60 秒 | NodeBeacon 服务端读取公开 `latest` 结果并导出 Prometheus gauge。 |
+| RIPE Atlas 官方 `latest` 缓存 | 最多 5 分钟 | RIPE API 的结果可能晚于测量发生时间返回；NodeBeacon 以结果时间戳判断新鲜度。 |
+
+RS1000 k3s 监控回答的是“服务器此刻的资源和连接状态”：数据由服务器自己的
+`node_exporter` 直接产生，Prometheus 5 秒抓取一次。RIPE Atlas 回答的是“从某个
+外部网络视角到服务器的公网路径质量”：数据由华为云、浙江移动、浙江联通和浙江电信
+四个独立探针产生，和 RS1000 是否为 k3s 工作节点无关。两者不能互相替代。
+
+`huawei-2c1g` 只是同时承担了被监控服务器与 `Ping` 软件探针两个角色；软件探针作为
+systemd 服务连接 RIPE Atlas，不需要加入 RS1000 k3s，也不需要为它增加 Pod。
+
+## 信息图标的真实统计口径
+
+延迟标签的信息图标按需调用：
+
+```text
+GET /api/public/nodes/:id/latency-stats?vantage=<key>
+```
+
+NodeBeacon 服务端从对应公开 measurement 与 probe 读取最近 24 小时原始 `results`
+接口，结果缓存 5 分钟。API UUID 不参与运行时查询；浏览器不会收到目标 IP、探针源 IP
+或 Prometheus 查询能力。
+
+- 丢包：`1 - 收到的包数 / 发送的包数`。
+- 最小值、最大值、平均值、P50、P99、标准差：按原始成功 ICMP 包的 RTT 计算。
+- 最新：最近一次有成功回包的测量平均 RTT。
+- 波动：相邻两次有效测量平均 RTT 的绝对差均值。
+- 样本数量：最近 24 小时实际测量执行次数，不是页面请求次数或 Prometheus 抓取次数。
+- 有效样本：至少有一个有效 RTT、可计算平均值的测量次数。
+- 包数：真实收到/发送的 ICMP 包数；类型固定显示 `ICMP`，检测间隔来自配置的
+  `300s`，不会照抄参考页面的 `TCP / 60s`。
+
+统计接口只在用户展开面板时请求。页面关闭或信息图标未展开时，不会为四个标签持续
+下载 24 小时原始数据。
+
 ## 验收
 
 生产启用后至少验证：
@@ -121,3 +167,4 @@ Prometheus。旧 RS1000 WireGuard TCP 延迟仅在某个节点尚无 RIPE Atlas 
 - [RIPE Atlas Credits](https://atlas.ripe.net/docs/getting-started/credits/)
 - [Creating Measurements](https://atlas.ripe.net/docs/apis/rest-api-manual/measurements/creating-measurements/)
 - [Results and Latest](https://atlas.ripe.net/docs/apis/rest-api-manual/measurements/results-and-latest/)
+- [Measurement Result Format](https://atlas.ripe.net/docs/apis/measurement-result-format/)

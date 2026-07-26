@@ -290,6 +290,38 @@ export interface ApiNodeDetailSeriesResponse {
   series: NodeDetailSeries[];
 }
 
+export interface ApiNodeLatencyStatsResponse {
+  nodeId: string;
+  vantage: string;
+  vantageName: string;
+  source: {
+    provider: string;
+    probeId: number;
+    asn: string;
+    city: string;
+    measurementId: number;
+  };
+  windowSeconds: number;
+  intervalSeconds: number;
+  type: "ICMP";
+  measuredFrom: string | null;
+  measuredTo: string | null;
+  updatedAt: string | null;
+  packetLossPercent: number | null;
+  minimumMs: number | null;
+  maximumMs: number | null;
+  averageMs: number | null;
+  latestMs: number | null;
+  p50Ms: number | null;
+  p99Ms: number | null;
+  standardDeviationMs: number | null;
+  jitterMs: number | null;
+  sampleCount: number;
+  validSampleCount: number;
+  packetsSent: number;
+  packetsReceived: number;
+}
+
 // --- Blackbox probe latency (public) ---
 
 /** One blackbox-exporter HTTP target, keyed by its probe URL. */

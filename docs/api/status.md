@@ -136,3 +136,24 @@ instead of inventing probe names.
 
 Both endpoints preserve the BFF boundary: the browser may choose only the
 documented enums and never submits PromQL, selectors, or arbitrary labels.
+
+### Public RIPE Atlas latency statistics
+
+`GET /api/public/nodes/:id/latency-stats?vantage=<key>` returns a public-safe,
+on-demand aggregate of the last 24 hours of raw RIPE Atlas ping results. The
+node and vantage must exist in the server-owned registry/configuration. Hidden,
+disabled, and authenticated-only nodes preserve the same `404` boundary as the
+other public detail endpoints. Requests are limited to 30 per minute.
+
+The response includes the public measurement/probe identity, measurement
+window, configured interval and ICMP type, plus packet loss, min/max/average,
+latest, P50, P99, population standard deviation, mean absolute change between
+consecutive successful measurement averages, actual measurement counts, and
+received/sent packet counts. Nullable statistics use `null` when no valid raw
+packet RTT exists. NodeBeacon caches each node/vantage response for 5 minutes.
+
+This endpoint reads only public RIPE data and never returns the target address,
+probe source address, API UUID, Prometheus credentials, or arbitrary query
+access. It is requested only after the user opens a latency-series information
+panel; chart rendering continues to use the existing server-side Prometheus
+series endpoint.

@@ -63,6 +63,31 @@ describe("node routes without Prometheus configured", () => {
     expect(res.json().error.code).toBe("node_not_found");
   });
 
+  it("public latency statistics validate their source before external access", async () => {
+    const invalid = await app.inject({
+      method: "GET",
+      url: "/api/public/nodes/rs1000/latency-stats?vantage=../unsafe"
+    });
+    expect(invalid.statusCode).toBe(400);
+    expect(invalid.json().error.code).toBe("invalid_vantage");
+
+    const hidden = await app.inject({
+      method: "GET",
+      url: "/api/public/nodes/nope/latency-stats?vantage=zhejiang_mobile"
+    });
+    expect(hidden.statusCode).toBe(404);
+    expect(hidden.json().error.code).toBe("node_not_found");
+  });
+
+  it("public latency statistics report an explicit unavailable state without RIPE configuration", async () => {
+    const res = await app.inject({
+      method: "GET",
+      url: "/api/public/nodes/rs1000/latency-stats?vantage=zhejiang_mobile"
+    });
+    expect(res.statusCode).toBe(503);
+    expect(res.json().error.code).toBe("latency_stats_unavailable");
+  });
+
   it("public V2 detail hides nodes configured for authenticated visibility", async () => {
     const dir = await mkdtemp(join(tmpdir(), "nodebeacon-public-detail-"));
     const registryPath = join(dir, "nodes.yaml");

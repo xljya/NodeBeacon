@@ -69,3 +69,18 @@ helm -n monitoring rollback monitoring 15 --wait --timeout 10m
 
 The NodeBeacon API queries this job by `job="node-detail-fast",node_id="..."`
 and falls back to the normal node selector until the fast job is available.
+
+## Sampling cadence versus RIPE Atlas
+
+`node-detail-fast` is direct host telemetry: Prometheus scrapes the five
+`node_exporter` targets every 5 seconds. The browser also refreshes real-time
+detail charts every 5 seconds while visible, so CPU, memory, disk, load, network
+and connection charts can receive a fresh underlying sample on each request.
+
+RIPE Atlas latency is a separate external path. Four public probes execute an
+ICMP measurement every 300 seconds, while NodeBeacon checks the public `latest`
+API every 60 seconds. A 5-second browser refresh can repeat the most recent RTT;
+it must not be counted as another latency measurement. The on-demand information
+panel therefore computes its 24-hour statistics from RIPE raw results rather
+than Prometheus scrape points. Operational details and formulas are documented
+in [`docs/ripe-atlas-latency.md`](../../docs/ripe-atlas-latency.md).
