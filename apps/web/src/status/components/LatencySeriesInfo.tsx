@@ -24,9 +24,14 @@ function formatTimestamp(value: string | null): string {
   return value ? new Date(value).toLocaleString() : "—";
 }
 
+function supportsFineHover(): boolean {
+  return window.matchMedia("(hover: hover) and (pointer: fine)").matches;
+}
+
 export function LatencySeriesInfo({ nodeId, series, t }: LatencySeriesInfoProps) {
   const vantage = series.labels?.vantage;
   const rootRef = useRef<HTMLSpanElement | null>(null);
+  const closeTimerRef = useRef<number | null>(null);
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(false);
@@ -48,11 +53,34 @@ export function LatencySeriesInfo({ nodeId, series, t }: LatencySeriesInfoProps)
     }
   }, [loading, nodeId, stats, vantage]);
 
+  const cancelScheduledClose = useCallback(() => {
+    if (closeTimerRef.current === null) return;
+    window.clearTimeout(closeTimerRef.current);
+    closeTimerRef.current = null;
+  }, []);
+
+  const openStats = useCallback(() => {
+    cancelScheduledClose();
+    setOpen(true);
+    void loadStats();
+  }, [cancelScheduledClose, loadStats]);
+
+  const scheduleClose = useCallback(() => {
+    cancelScheduledClose();
+    closeTimerRef.current = window.setTimeout(() => {
+      setOpen(false);
+      closeTimerRef.current = null;
+    }, 120);
+  }, [cancelScheduledClose]);
+
   useEffect(() => {
+    cancelScheduledClose();
     setOpen(false);
     setStats(null);
     setError(false);
-  }, [nodeId, vantage]);
+  }, [cancelScheduledClose, nodeId, vantage]);
+
+  useEffect(() => () => cancelScheduledClose(), [cancelScheduledClose]);
 
   useEffect(() => {
     if (!open) return;
@@ -103,7 +131,14 @@ export function LatencySeriesInfo({ nodeId, series, t }: LatencySeriesInfoProps)
         aria-expanded={open}
         aria-label={t("status.detail.openSeriesStats", { series: series.label })}
         title={t("status.detail.seriesSource", { source })}
-        onClick={() => {
+        onMouseEnter={() => {
+          if (supportsFineHover()) openStats();
+        }}
+        onMouseLeave={() => {
+          if (supportsFineHover()) scheduleClose();
+        }}
+        onClick={(event) => {
+          if (supportsFineHover() && event.detail !== 0) return;
           const nextOpen = !open;
           setOpen(nextOpen);
           if (nextOpen) void loadStats();
@@ -116,6 +151,12 @@ export function LatencySeriesInfo({ nodeId, series, t }: LatencySeriesInfoProps)
           className="detail-latency-stats-popover"
           role="dialog"
           aria-label={t("status.detail.seriesStatsTitle", { series: series.label })}
+          onMouseEnter={() => {
+            if (supportsFineHover()) cancelScheduledClose();
+          }}
+          onMouseLeave={() => {
+            if (supportsFineHover()) scheduleClose();
+          }}
         >
           <span className="detail-latency-stats-head">
             <span>

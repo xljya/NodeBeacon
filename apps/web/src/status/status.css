@@ -2891,6 +2891,15 @@
   line-height: 1.35;
 }
 
+.detail-latency-stats-popover::before {
+  position: absolute;
+  right: 0;
+  bottom: 100%;
+  left: 0;
+  height: 10px;
+  content: "";
+}
+
 .detail-profile-card small {
   display: block;
   margin-top: 1px;

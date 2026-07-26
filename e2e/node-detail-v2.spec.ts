@@ -171,7 +171,7 @@ test("anonymous node detail uses combined charts and polished layout controls", 
   await expect(statsButton.locator("svg")).toHaveAttribute("width", "16");
   await expect(statsButton.locator("svg")).toHaveAttribute("stroke", "gray");
   await expect(statsButton.locator("svg")).toHaveClass(/lucide-info/);
-  await statsButton.click();
+  await statsButton.hover();
   const statsDialog = page.getByRole("dialog", { name: "浙江移动 latency statistics" });
   await expect(statsDialog).toBeVisible();
   await expect(statsDialog).toContainText("Last 24 hours of raw RIPE Atlas results");
@@ -181,6 +181,14 @@ test("anonymous node detail uses combined charts and polished layout controls", 
   await expect(statsDialog).toContainText("Received / sent842 / 864");
   await expect(statsDialog).toContainText("Interval300s");
   await expect(statsDialog).toContainText("TypeICMP");
+  expect(latencyStatsRequests).toBe(1);
+  await statsDialog.hover();
+  await expect(statsDialog).toBeVisible();
+  await page.mouse.move(4, 4);
+  await expect(statsDialog).toBeHidden();
+  await statsButton.focus();
+  await page.keyboard.press("Enter");
+  await expect(statsDialog).toBeVisible();
   expect(latencyStatsRequests).toBe(1);
   await page.keyboard.press("Escape");
   await expect(statsDialog).toBeHidden();
