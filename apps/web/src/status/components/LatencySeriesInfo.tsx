@@ -32,6 +32,7 @@ export function LatencySeriesInfo({ nodeId, series, t }: LatencySeriesInfoProps)
   const vantage = series.labels?.vantage;
   const rootRef = useRef<HTMLSpanElement | null>(null);
   const closeTimerRef = useRef<number | null>(null);
+  const ignoreHoverUntilRef = useRef(0);
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(false);
@@ -60,6 +61,7 @@ export function LatencySeriesInfo({ nodeId, series, t }: LatencySeriesInfoProps)
   }, []);
 
   const openStats = useCallback(() => {
+    if (Date.now() < ignoreHoverUntilRef.current) return;
     cancelScheduledClose();
     setOpen(true);
     void loadStats();
@@ -71,6 +73,11 @@ export function LatencySeriesInfo({ nodeId, series, t }: LatencySeriesInfoProps)
       setOpen(false);
       closeTimerRef.current = null;
     }, 120);
+  }, [cancelScheduledClose]);
+
+  const closeStats = useCallback(() => {
+    cancelScheduledClose();
+    setOpen(false);
   }, [cancelScheduledClose]);
 
   useEffect(() => {
@@ -124,7 +131,13 @@ export function LatencySeriesInfo({ nodeId, series, t }: LatencySeriesInfoProps)
   ] : [];
 
   return (
-    <span className="detail-series-info-wrap" ref={rootRef}>
+    <span
+      className="detail-series-info-wrap"
+      ref={rootRef}
+      onPointerDownCapture={(event) => {
+        if (event.pointerType === "touch") ignoreHoverUntilRef.current = Date.now() + 800;
+      }}
+    >
       <button
         type="button"
         className="detail-series-info"
@@ -138,7 +151,8 @@ export function LatencySeriesInfo({ nodeId, series, t }: LatencySeriesInfoProps)
           if (supportsFineHover()) scheduleClose();
         }}
         onClick={(event) => {
-          if (supportsFineHover() && event.detail !== 0) return;
+          const recentTouch = Date.now() < ignoreHoverUntilRef.current;
+          if (!recentTouch && supportsFineHover() && event.detail !== 0) return;
           const nextOpen = !open;
           setOpen(nextOpen);
           if (nextOpen) void loadStats();
@@ -166,7 +180,16 @@ export function LatencySeriesInfo({ nodeId, series, t }: LatencySeriesInfoProps)
             <button
               type="button"
               aria-label={t("status.detail.closeSeriesStats")}
-              onClick={() => setOpen(false)}
+              onPointerUp={(event) => {
+                if (event.pointerType !== "touch") return;
+                event.preventDefault();
+                event.stopPropagation();
+                closeStats();
+              }}
+              onClick={(event) => {
+                event.stopPropagation();
+                closeStats();
+              }}
             >
               <X size={16} aria-hidden="true" />
             </button>

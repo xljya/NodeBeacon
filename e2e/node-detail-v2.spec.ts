@@ -405,6 +405,30 @@ test("mobile detail uses a node selector and keeps chart text readable", async (
   await expect.poll(async () => page.locator(".trend-tick").first().evaluate((element) => getComputedStyle(element).fontSize)).toBe("12px");
 });
 
+test("touch latency statistics stay above the chart stack and can be closed", async ({ browser }) => {
+  const context = await browser.newContext({
+    viewport: { width: 390, height: 844 },
+    screen: { width: 390, height: 844 },
+    hasTouch: true,
+    isMobile: true
+  });
+  const page = await context.newPage();
+  await mockNodeDetail(page);
+  await page.route("**/api/public/nodes/rs1000/latency-stats?**", (route) => route.fulfill({ status: 503, json: {} }));
+  await page.goto("/nodes/rs1000");
+
+  const latencyCard = page.locator('[data-chart-id="latency"]');
+  const statsButton = latencyCard.locator(".detail-series-chip").filter({ hasText: "浙江移动" }).locator(".detail-series-info");
+  await statsButton.tap();
+  const statsDialog = page.getByRole("dialog", { name: "浙江移动 latency statistics" });
+  await expect(statsDialog).toBeVisible();
+  await expect(latencyCard).toHaveCSS("z-index", "90");
+  await statsDialog.getByRole("button", { name: "Close latency statistics" }).tap();
+  await expect(statsButton).toHaveAttribute("aria-expanded", "false");
+  await expect(statsDialog).toBeHidden();
+  await context.close();
+});
+
 test("trend request failures render a clear chart state", async ({ page }) => {
   await mockNodeDetail(page, 503);
   await page.goto("/nodes/rs1000");

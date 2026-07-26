@@ -27,6 +27,7 @@ e2e/.tmp/
 artifacts/deployments/
 artifacts/production-verification/
 artifacts/ripe-atlas/
+artifacts/browser/
 
 # Local assistant configuration
 .claude/

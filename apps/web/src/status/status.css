@@ -2201,6 +2201,10 @@
   box-shadow: 0 18px 48px var(--card-shadow);
 }
 
+.detail-chart-card:has(.detail-latency-stats-popover) {
+  z-index: 90;
+}
+
 .detail-chart-card-head {
   min-height: 38px;
   gap: 10px;
