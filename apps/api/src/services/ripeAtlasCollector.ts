@@ -44,7 +44,7 @@ interface RipeAtlasPingResult {
   type?: string;
 }
 
-type LatestResponse = Record<string, RipeAtlasPingResult[]>;
+type LatestResponse = Record<string, RipeAtlasPingResult[]> | RipeAtlasPingResult[];
 type FetchLike = typeof fetch;
 
 export interface RipeAtlasCollectorLogger {
@@ -179,6 +179,15 @@ async function fetchLatest(
   }
 }
 
+function latestResultForProbe(response: LatestResponse, probeId: number): RipeAtlasPingResult | undefined {
+  if (Array.isArray(response)) {
+    return response
+      .filter((result) => result.prb_id === probeId)
+      .sort((left, right) => (right.timestamp ?? 0) - (left.timestamp ?? 0))[0];
+  }
+  return response[String(probeId)]?.[0];
+}
+
 export async function collectRipeAtlasMeasurements(
   config: RipeAtlasConfig,
   options: {
@@ -199,7 +208,7 @@ export async function collectRipeAtlasMeasurements(
       const latest = await fetchLatest(fetchImpl, measurement.measurementId, probeIds, timeoutMs);
       for (const probe of config.probes) {
         const labels = metricLabels(measurement.nodeId, measurement.measurementId, probe);
-        const result = latest[String(probe.id)]?.[0];
+        const result = latestResultForProbe(latest, probe.id);
         const timestamp = positiveInteger(result?.timestamp) ?? 0;
         const average = typeof result?.avg === "number" && Number.isFinite(result.avg) && result.avg >= 0
           ? result.avg

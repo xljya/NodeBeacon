@@ -59,23 +59,26 @@ describe("RIPE Atlas collector", () => {
   });
 
   it("exports fresh RTT, source metadata, success and result timestamps", async () => {
-    const fetchMock = vi.fn(async () => new Response(JSON.stringify({
-      "1009298": [{
+    // The live RIPE Atlas API currently returns an array here, while its
+    // documentation also permits a probe-ID-keyed object. The collector
+    // deliberately accepts both shapes.
+    const fetchMock = vi.fn(async () => new Response(JSON.stringify([
+      {
         type: "ping",
         prb_id: 1009298,
         avg: 18.25,
         rcvd: 3,
         sent: 3,
         timestamp: 2_000_000_000
-      }],
-      "55328": [{
+      },
+      {
         type: "ping",
         prb_id: 55328,
         rcvd: 0,
         sent: 3,
         timestamp: 2_000_000_000
-      }]
-    }), { status: 200, headers: { "content-type": "application/json" } }));
+      }
+    ]), { status: 200, headers: { "content-type": "application/json" } }));
 
     await collectRipeAtlasMeasurements(config, {
       fetchImpl: fetchMock as unknown as typeof fetch,
