@@ -164,9 +164,13 @@ test("anonymous node detail uses combined charts and polished layout controls", 
     "rgb(20, 184, 166)"
   ]);
   expect(latencyStatsRequests).toBe(0);
+  await expect(page.getByRole("button", { name: "View real latency statistics for Ping" })).toHaveCount(0);
+  await expect(page.locator('.detail-chart-card[data-chart-id="latency"] .detail-series-info')).toHaveCount(3);
   const statsButton = page.getByRole("button", { name: "View real latency statistics for 浙江移动" });
   await expect(statsButton).toHaveCSS("width", "28px");
-  await expect(statsButton.locator("svg")).toHaveAttribute("width", "18");
+  await expect(statsButton.locator("svg")).toHaveAttribute("width", "16");
+  await expect(statsButton.locator("svg")).toHaveAttribute("stroke", "gray");
+  await expect(statsButton.locator("svg")).toHaveClass(/lucide-info/);
   await statsButton.click();
   const statsDialog = page.getByRole("dialog", { name: "浙江移动 latency statistics" });
   await expect(statsDialog).toBeVisible();

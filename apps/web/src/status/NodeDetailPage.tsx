@@ -607,7 +607,7 @@ function SortableChartCard({
                     aria-hidden="true"
                   />
                   <span>{item.label}</span>
-                  {item.unit === "milliseconds" && item.labels?.vantage && (
+                  {item.unit === "milliseconds" && item.labels?.vantage && item.labels.vantage !== "ping" && (
                     <LatencySeriesInfo nodeId={nodeId} series={item} t={t} />
                   )}
                   <button

@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { CircleHelp, ExternalLink, LoaderCircle, X } from "lucide-react";
+import { ExternalLink, Info, LoaderCircle, X } from "lucide-react";
 import type { ApiNodeLatencyStatsResponse } from "@nodebeacon/shared";
 import { apiGet } from "../../lib/api";
 import type { ChartTrendSeries } from "./TrendChart";
@@ -70,7 +70,7 @@ export function LatencySeriesInfo({ nodeId, series, t }: LatencySeriesInfoProps)
     };
   }, [open]);
 
-  if (!vantage) return null;
+  if (!vantage || vantage === "ping") return null;
   const source = [
     series.labels?.city,
     series.labels?.provider,
@@ -109,7 +109,7 @@ export function LatencySeriesInfo({ nodeId, series, t }: LatencySeriesInfoProps)
           if (nextOpen) void loadStats();
         }}
       >
-        <CircleHelp size={18} strokeWidth={2} aria-hidden="true" />
+        <Info size={16} color="gray" strokeWidth={2} aria-hidden="true" />
       </button>
       {open && (
         <span
