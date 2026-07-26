@@ -9,30 +9,34 @@ const PLOT_BOTTOM = 32;
 const AXIS_WIDTH = 58;
 const MIN_CHART_WIDTH = 280;
 
-const SERIES_COLORS: Record<string, string> = {
-  cpu: "var(--accent)",
-  load1: "var(--warn)",
-  ram: "var(--accent)",
-  swap: "var(--warn)",
-  rx: "var(--ok)",
-  tx: "var(--accent)",
-  rxTotal: "#8b5cf6",
-  txTotal: "#06b6d4",
-  tcp: "var(--accent)",
-  udp: "var(--warn)"
-};
-
-const FALLBACK_COLORS = [
-  "var(--accent)",
-  "var(--ok)",
-  "var(--warn)",
-  "var(--crit)",
+export const TREND_SERIES_COLORS = [
+  "#2563eb",
+  "#f97316",
   "#8b5cf6",
-  "#06b6d4"
-];
+  "#14b8a6",
+  "#e11d48"
+] as const;
+
+const SERIES_COLOR_INDEX: Record<string, number> = {
+  cpu: 0,
+  load1: 1,
+  ram: 0,
+  swap: 1,
+  rx: 0,
+  tx: 1,
+  rxTotal: 2,
+  txTotal: 3,
+  tcp: 0,
+  udp: 1,
+  ping: 0,
+  zhejiang_mobile: 1,
+  zhejiang_unicom: 2,
+  zhejiang_telecom: 3
+};
 
 export interface ChartTrendSeries {
   name: string;
+  colorKey?: string;
   label: string;
   unit: TrendUnit;
   labels?: Record<string, string>;
@@ -175,7 +179,8 @@ function latestPoint(points: Array<[number, number | null]>): [number, number | 
 
 export function trendSeriesColor(name: string, index: number): string {
   const baseName = name.split(":")[0] ?? name;
-  return SERIES_COLORS[baseName] ?? FALLBACK_COLORS[index % FALLBACK_COLORS.length] ?? "var(--accent)";
+  const colorIndex = SERIES_COLOR_INDEX[name] ?? SERIES_COLOR_INDEX[baseName] ?? index;
+  return TREND_SERIES_COLORS[colorIndex % TREND_SERIES_COLORS.length] ?? TREND_SERIES_COLORS[0];
 }
 
 export interface TrendChartProps {
@@ -300,7 +305,7 @@ export function TrendChart({
             const path = paths[index];
             const unitScale = scale.units.find((candidate) => candidate.unit === item.unit) ?? scale.units[0];
             if (!path || !unitScale) return null;
-            const color = trendSeriesColor(item.name, index);
+            const color = trendSeriesColor(item.colorKey ?? item.name, index);
             return (
               <g key={item.name}>
                 {series.length === 1 && <path d={path.area} fill={color} opacity={0.1} />}
@@ -316,7 +321,7 @@ export function TrendChart({
                 const unitScale = scale.units.find((candidate) => candidate.unit === item.unit) ?? scale.units[0];
                 if (!point || point[1] === null || !unitScale) return null;
                 const y = PLOT_TOP + plotHeight - (Math.max(0, Math.min(point[1], unitScale.maxV)) / unitScale.maxV) * plotHeight;
-                return <circle key={item.name} cx={cursorX} cy={y} r={3.5} fill={trendSeriesColor(item.name, index)} />;
+                return <circle key={item.name} cx={cursorX} cy={y} r={3.5} fill={trendSeriesColor(item.colorKey ?? item.name, index)} />;
               })}
             </g>
           )}

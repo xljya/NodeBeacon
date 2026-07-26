@@ -113,6 +113,13 @@ const METRIC_UNITS: Record<DetailChartMetric, TrendUnit[]> = {
 
 const DEFAULT_CHART_IDS: ChartId[] = ["cpu", "memory", "disk", "network", "latency"];
 
+const LATENCY_VANTAGE_ORDER = new Map([
+  ["ping", 0],
+  ["zhejiang_mobile", 1],
+  ["zhejiang_unicom", 2],
+  ["zhejiang_telecom", 3]
+]);
+
 const LEGACY_DEFAULT_CHARTS = [
   { id: "cpu", size: "m", defaultSeries: ["cpu"] },
   { id: "load", size: "s", defaultSeries: ["load1"] },
@@ -412,6 +419,7 @@ function buildSeriesMap(
     const name = qualifier ? `${item.key}:${qualifier}` : item.key;
     list.push({
       name,
+      colorKey: item.metric === "latency" ? item.labels?.vantage ?? name : undefined,
       label: seriesLabel(name, t),
       unit: item.unit as TrendUnit,
       labels: item.labels,
@@ -419,6 +427,11 @@ function buildSeriesMap(
     });
     map.set(item.metric, list);
   }
+  map.get("latency")?.sort((left, right) => {
+    const leftOrder = LATENCY_VANTAGE_ORDER.get(left.labels?.vantage ?? "") ?? Number.MAX_SAFE_INTEGER;
+    const rightOrder = LATENCY_VANTAGE_ORDER.get(right.labels?.vantage ?? "") ?? Number.MAX_SAFE_INTEGER;
+    return leftOrder - rightOrder || left.label.localeCompare(right.label);
+  });
   return map;
 }
 
@@ -596,7 +609,7 @@ function SortableChartCard({
                 <span key={item.name} className="detail-series-chip active">
                   <span
                     className="detail-series-dot"
-                    style={{ background: trendSeriesColor(item.name, Math.max(0, colorIndex)) }}
+                    style={{ background: trendSeriesColor(item.colorKey ?? item.name, Math.max(0, colorIndex)) }}
                     aria-hidden="true"
                   />
                   <span>{item.label}</span>

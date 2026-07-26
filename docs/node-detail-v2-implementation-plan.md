@@ -13,6 +13,7 @@
 - 已实现 `ApiNodeDetailV2Response`、批量趋势查询、自动步长、九种白名单聚合算法、缓存和公开节点鉴权边界。
 - 已实现节点画像、实时摘要、历史图表、EWMA、全局/单卡时间范围、拖拽排序、S/M/L、删除/新增图表、series chip 增删/全部显隐和兼容指标组追加。
 - 默认 Network 为 Download、Upload、Total Download、Total Upload；Latency 从 `blackbox-tcp-wireguard` 动态生成真实 peer 标签并标明探针来源，不伪造参考站的探针名称。
+- 图表序列沿用 Komari Web 官方调色板的前五色：`#2563eb`、`#f97316`、`#8b5cf6`、`#14b8a6`、`#e11d48`。RIPE Atlas 延迟序列按 `Ping → 浙江移动 → 浙江联通 → 浙江电信` 固定语义顺序和颜色；第五色只为未来真实数据源保留，不生成虚假 `DC5` 标签。
 - 已接入节点安全详情配置，并提供 `infra/monitoring/node-detail-fast.example.yaml` 与接入说明。
 - v1.0.11 已通过 API 全量测试（85 tests）、workspace lint/typecheck/build、Playwright Chromium E2E（21/21），并用真实生产端点验证 RS1000 的九种聚合表达式、Network 四序列和四个动态 latency peer。
 - 生产已运行 NodeBeacon `1.0.11`（应用 commit `264bc280acb111b35970b1415cee33693f473f81`，Deployment revision 47）；5 秒 fast scrape 使用 Helm revision 15，五个 target 均已通过 30 分钟稳定门禁。
