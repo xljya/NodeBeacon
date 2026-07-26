@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { ExternalLink, Info, LoaderCircle, X } from "lucide-react";
 import type { ApiNodeLatencyStatsResponse } from "@nodebeacon/shared";
 import { apiGet } from "../../lib/api";
@@ -31,12 +32,14 @@ function supportsFineHover(): boolean {
 export function LatencySeriesInfo({ nodeId, series, t }: LatencySeriesInfoProps) {
   const vantage = series.labels?.vantage;
   const rootRef = useRef<HTMLSpanElement | null>(null);
+  const popoverRef = useRef<HTMLSpanElement | null>(null);
   const closeTimerRef = useRef<number | null>(null);
   const ignoreHoverUntilRef = useRef(0);
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(false);
   const [stats, setStats] = useState<ApiNodeLatencyStatsResponse | null>(null);
+  const [mobileLayout, setMobileLayout] = useState(false);
 
   const loadStats = useCallback(async () => {
     if (!vantage || stats || loading) return;
@@ -90,9 +93,18 @@ export function LatencySeriesInfo({ nodeId, series, t }: LatencySeriesInfoProps)
   useEffect(() => () => cancelScheduledClose(), [cancelScheduledClose]);
 
   useEffect(() => {
+    const media = window.matchMedia("(max-width: 720px)");
+    const updateLayout = () => setMobileLayout(media.matches);
+    updateLayout();
+    media.addEventListener("change", updateLayout);
+    return () => media.removeEventListener("change", updateLayout);
+  }, []);
+
+  useEffect(() => {
     if (!open) return;
     const closeOnPointer = (event: PointerEvent) => {
-      if (!rootRef.current?.contains(event.target as Node)) setOpen(false);
+      const target = event.target as Node;
+      if (!rootRef.current?.contains(target) && !popoverRef.current?.contains(target)) setOpen(false);
     };
     const closeOnEscape = (event: KeyboardEvent) => {
       if (event.key === "Escape") setOpen(false);
@@ -160,8 +172,10 @@ export function LatencySeriesInfo({ nodeId, series, t }: LatencySeriesInfoProps)
       >
         <Info size={16} color="gray" strokeWidth={2} aria-hidden="true" />
       </button>
-      {open && (
+      {open && (() => {
+        const content = (
         <span
+          ref={popoverRef}
           className="detail-latency-stats-popover"
           role="dialog"
           aria-label={t("status.detail.seriesStatsTitle", { series: series.label })}
@@ -230,7 +244,9 @@ export function LatencySeriesInfo({ nodeId, series, t }: LatencySeriesInfoProps)
             </>
           )}
         </span>
-      )}
+        );
+        return mobileLayout ? createPortal(content, document.body) : content;
+      })()}
     </span>
   );
 }

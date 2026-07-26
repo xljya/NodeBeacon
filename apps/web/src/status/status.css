@@ -3308,21 +3308,4 @@
     padding: 25px 12px 12px;
   }
 
-  .detail-chart-card:has(.detail-latency-stats-popover) {
-    overflow: visible;
-  }
-
-  .detail-series-info-wrap {
-    position: static;
-  }
-
-  .detail-latency-stats-popover {
-    position: absolute;
-    top: 112px;
-    right: 12px;
-    left: 12px;
-    width: auto;
-    transform: none;
-    transform-origin: top center;
-  }
 }
