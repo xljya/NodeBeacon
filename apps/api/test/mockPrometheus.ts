@@ -38,13 +38,16 @@ function probeVector(query: string): Array<{ metric: Record<string, string>; val
 
 export interface MockPrometheus {
   url: string;
+  queries: string[];
   close(): Promise<void>;
 }
 
 export async function startMockPrometheus(): Promise<MockPrometheus> {
+  const queries: string[] = [];
   const server = http.createServer((req, res) => {
     const url = new URL(req.url ?? "/", "http://localhost");
     const query = url.searchParams.get("query") ?? "";
+    queries.push(query);
     res.setHeader("content-type", "application/json");
 
     if (url.pathname === "/api/v1/query") {
@@ -101,6 +104,7 @@ export async function startMockPrometheus(): Promise<MockPrometheus> {
   const { port } = server.address() as AddressInfo;
   return {
     url: `http://127.0.0.1:${port}`,
+    queries,
     close: () => new Promise((resolve, reject) => server.close((err) => (err ? reject(err) : resolve())))
   };
 }

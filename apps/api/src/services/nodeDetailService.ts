@@ -445,7 +445,9 @@ function querySpecs(metricName: DetailChartMetric, node: NodeConfigEntry): Detai
         unit: "milliseconds",
         query: () => {
           const ripeAtlas = metric("nodebeacon_ripe_atlas_rtt_milliseconds", { node_id: node.id });
-          if (node.id === "rs1000") return ripeAtlas;
+          if (node.detail?.latencyVantages?.includes("ripe-atlas") || node.id === "rs1000") {
+            return ripeAtlas;
+          }
           const rs1000 = `1000 * ${metric(
             "probe_duration_seconds",
             { job: "blackbox-tcp-wireguard", node_id: "rs1000" },

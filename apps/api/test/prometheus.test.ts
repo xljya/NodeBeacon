@@ -94,6 +94,20 @@ describe("real-Prometheus paths against a mock upstream", () => {
     expect(body.series.every((item) => item.key === "ping")).toBe(true);
   });
 
+  it("does not mix the retired RS1000 fallback into RIPE-enabled nodes", async () => {
+    const before = prom.queries.length;
+    const res = await app.inject({
+      method: "GET",
+      url: "/api/public/nodes/dmit-uswest/series?metrics=latency&range=realtime&aggregation=avg"
+    });
+    expect(res.statusCode).toBe(200);
+    const body = res.json() as ApiNodeDetailSeriesResponse;
+    expect(body.series).toHaveLength(4);
+    const queries = prom.queries.slice(before);
+    expect(queries.some((query) => query.includes("nodebeacon_ripe_atlas_rtt_milliseconds"))).toBe(true);
+    expect(queries.every((query) => !query.includes("blackbox-tcp-wireguard"))).toBe(true);
+  });
+
   it("range endpoint returns 404 for an unknown node when Prometheus exists", async () => {
     const res = await app.inject({
       method: "GET",
