@@ -38,6 +38,8 @@ nodes:
       visibility: safe
       networkDevices:
         - eth0
+      latencyVantages:
+        - ripe-atlas
 
   - id: dmit-uswest
     name: dmit-uswest
@@ -63,6 +65,7 @@ nodes:
         - eth0
       latencyVantages:
         - rs1000
+        - ripe-atlas
 
   - id: hostbrr-4t
     name: hostbrr-4t
@@ -90,6 +93,7 @@ nodes:
         - /mnt/data
       latencyVantages:
         - rs1000
+        - ripe-atlas
 
   - id: netcup-1o
     name: netcup-1o
@@ -114,6 +118,7 @@ nodes:
         - eth0
       latencyVantages:
         - rs1000
+        - ripe-atlas
 
   - id: huawei-2c1g
     name: huawei-2c1g
@@ -138,3 +143,4 @@ nodes:
         - eth0
       latencyVantages:
         - rs1000
+        - ripe-atlas

@@ -1,0 +1,58 @@
+# Public RIPE Atlas measurement mapping for the four-vantage latency chart.
+# This file intentionally contains no API key or measurement target address.
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: nodebeacon-ripe-atlas
+  namespace: nodebeacon
+  labels:
+    app.kubernetes.io/name: nodebeacon
+data:
+  measurements.json: |
+    {
+      "version": 1,
+      "provider": "ripe-atlas",
+      "createdAt": "2026-07-26T14:02:22.1925487+08:00",
+      "intervalSeconds": 300,
+      "probes": [
+        {
+          "id": 1016690,
+          "key": "ping",
+          "label": "Ping",
+          "provider": "NodeBeacon Huawei Cloud",
+          "asn": 55990,
+          "city": "Shanghai"
+        },
+        {
+          "id": 1009298,
+          "key": "zhejiang_mobile",
+          "label": "浙江移动",
+          "provider": "China Mobile",
+          "asn": 56041,
+          "city": "Zhejiang"
+        },
+        {
+          "id": 1009966,
+          "key": "zhejiang_unicom",
+          "label": "浙江联通",
+          "provider": "China Unicom",
+          "asn": 4837,
+          "city": "Zhejiang"
+        },
+        {
+          "id": 55328,
+          "key": "zhejiang_telecom",
+          "label": "浙江电信",
+          "provider": "China Telecom",
+          "asn": 4134,
+          "city": "Hangzhou, Zhejiang"
+        }
+      ],
+      "measurements": [
+        { "nodeId": "rs1000", "measurementId": 193845936 },
+        { "nodeId": "dmit-uswest", "measurementId": 193845937 },
+        { "nodeId": "hostbrr-4t", "measurementId": 193845938 },
+        { "nodeId": "netcup-1o", "measurementId": 193845939 },
+        { "nodeId": "huawei-2c1g", "measurementId": 193845940 }
+      ]
+    }

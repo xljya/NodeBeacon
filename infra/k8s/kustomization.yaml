@@ -9,6 +9,7 @@ namespace: nodebeacon
 resources:
   - namespace.yaml
   - configmap-nodes.yaml
+  - configmap-ripe-atlas.yaml
   - pvc.yaml
   - deployment.yaml
   - service.yaml

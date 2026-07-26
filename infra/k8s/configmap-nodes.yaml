@@ -37,6 +37,8 @@ data:
           visibility: safe
           networkDevices:
             - eth0
+          latencyVantages:
+            - ripe-atlas
 
       - id: dmit-uswest
         name: dmit-uswest
@@ -62,6 +64,7 @@ data:
             - eth0
           latencyVantages:
             - rs1000
+            - ripe-atlas
 
       - id: hostbrr-4t
         name: hostbrr-4t
@@ -89,6 +92,7 @@ data:
             - /mnt/data
           latencyVantages:
             - rs1000
+            - ripe-atlas
 
       - id: netcup-1o
         name: netcup-1o
@@ -113,6 +117,7 @@ data:
             - eth0
           latencyVantages:
             - rs1000
+            - ripe-atlas
 
       - id: huawei-2c1g
         name: huawei-2c1g
@@ -137,3 +142,4 @@ data:
             - eth0
           latencyVantages:
             - rs1000
+            - ripe-atlas

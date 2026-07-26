@@ -27,6 +27,7 @@ monitor.liucf.com
 | --- | --- |
 | `k8s/namespace.yaml` | `nodebeacon` namespace |
 | `k8s/configmap-nodes.yaml` | Node registry seed (`/config/nodes.yaml`), Prometheus label mapping |
+| `k8s/configmap-ripe-atlas.yaml` | Public RIPE Atlas measurement IDs and four-vantage metadata |
 | `k8s/secret.example.yaml` | Auth/OAuth secret template. Copy + fill privately; never commit real values |
 | `k8s/deployment.yaml` | App Deployment, env, probes, security context |
 | `k8s/service.yaml` | NodePort 31003 |

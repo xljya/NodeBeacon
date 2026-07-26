@@ -16,15 +16,17 @@
 工作节点；当前生产 k3s 仍只有 `rs1000`。RIPE Atlas 探针直接作为
 `ripe-atlas.service` 运行在华为云主机上，不需要额外 Kubernetes Pod。
 
-## 当前状态（2026-07-23）
+## 当前状态（2026-07-26）
 
 - 软件探针 1016690 已激活并连接 RIPE Atlas。
 - 五台 NodeBeacon 目标均已验证可响应来自外部节点的 ICMP。
 - 一次性创建脚本、服务端结果采集器、Prometheus 指标、节点详情标签、
   Kubernetes 可选挂载及自动化测试已经完成。
-- 首次创建请求因 RIPE Atlas 账户余额为 `0` 被拒绝；没有创建任何测量、
-  没有扣除积分，也没有生成本地 measurement artifact。
-- 生产环境仍运行 NodeBeacon `1.0.11`，尚未启用 RIPE Atlas 数据。
+- 账户积分到账后，五个 300 秒周期的公开 ICMP 测量已创建成功：
+  `193845936` 至 `193845940`，分别对应五个 NodeBeacon 节点。
+- 非敏感 measurement artifact 已生成；API UUID 和目标公网地址未写入文件。
+- `nodebeacon-ripe-atlas` ConfigMap 已纳入 v1.0.13 发布，生产验收结果记录在
+  `docs/releases/v1.0.13.md`。
 
 ## 积分预算
 
