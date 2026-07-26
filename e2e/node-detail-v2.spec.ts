@@ -164,7 +164,10 @@ test("anonymous node detail uses combined charts and polished layout controls", 
     "rgb(20, 184, 166)"
   ]);
   expect(latencyStatsRequests).toBe(0);
-  await page.getByRole("button", { name: "View real latency statistics for 浙江移动" }).click();
+  const statsButton = page.getByRole("button", { name: "View real latency statistics for 浙江移动" });
+  await expect(statsButton).toHaveCSS("width", "28px");
+  await expect(statsButton.locator("svg")).toHaveAttribute("width", "18");
+  await statsButton.click();
   const statsDialog = page.getByRole("dialog", { name: "浙江移动 latency statistics" });
   await expect(statsDialog).toBeVisible();
   await expect(statsDialog).toContainText("Last 24 hours of raw RIPE Atlas results");

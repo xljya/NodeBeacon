@@ -109,7 +109,7 @@ export function LatencySeriesInfo({ nodeId, series, t }: LatencySeriesInfoProps)
           if (nextOpen) void loadStats();
         }}
       >
-        <CircleHelp size={15} aria-hidden="true" />
+        <CircleHelp size={18} strokeWidth={2} aria-hidden="true" />
       </button>
       {open && (
         <span
