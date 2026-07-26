@@ -25,9 +25,10 @@
 - 账户积分到账后，五个 300 秒周期的公开 ICMP 测量已创建成功：
   `193845936` 至 `193845940`，分别对应五个 NodeBeacon 节点。
 - 非敏感 measurement artifact 已生成；API UUID 和目标公网地址未写入文件。
-- `nodebeacon-ripe-atlas` ConfigMap 已纳入 v1.0.15 发布，采集器同时兼容 RIPE
+- `nodebeacon-ripe-atlas` ConfigMap 已纳入 v1.0.16 发布，采集器同时兼容 RIPE
   `latest` 接口在生产中出现的数组响应和文档所述的 probe-ID 键控对象响应。
-- 生产验收结果记录在 `docs/releases/v1.0.15.md`。
+- PromQL 按 RIPE 业务标签聚合，避免滚动发布时新旧 Pod 的抓取序列短暂重复。
+- 生产验收结果记录在 `docs/releases/v1.0.16.md`。
 
 ## 积分预算
 

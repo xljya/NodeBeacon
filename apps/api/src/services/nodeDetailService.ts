@@ -444,7 +444,9 @@ function querySpecs(metricName: DetailChartMetric, node: NodeConfigEntry): Detai
         key: "ping",
         unit: "milliseconds",
         query: () => {
-          const ripeAtlas = metric("nodebeacon_ripe_atlas_rtt_milliseconds", { node_id: node.id });
+          const rawRipeAtlas = metric("nodebeacon_ripe_atlas_rtt_milliseconds", { node_id: node.id });
+          const ripeAtlas = "max by (node_id, vantage, vantage_name, provider, probe_id, asn, city, measurement_id) "
+            + `(${rawRipeAtlas})`;
           if (node.detail?.latencyVantages?.includes("ripe-atlas") || node.id === "rs1000") {
             return ripeAtlas;
           }

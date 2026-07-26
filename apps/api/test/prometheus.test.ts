@@ -105,6 +105,7 @@ describe("real-Prometheus paths against a mock upstream", () => {
     expect(body.series).toHaveLength(4);
     const queries = prom.queries.slice(before);
     expect(queries.some((query) => query.includes("nodebeacon_ripe_atlas_rtt_milliseconds"))).toBe(true);
+    expect(queries.some((query) => query.includes("max by (node_id, vantage, vantage_name"))).toBe(true);
     expect(queries.every((query) => !query.includes("blackbox-tcp-wireguard"))).toBe(true);
   });
 
