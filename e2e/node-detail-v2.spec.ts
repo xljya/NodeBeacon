@@ -241,6 +241,67 @@ test("anonymous node detail uses combined charts and polished layout controls", 
   await expect.poll(async () => page.evaluate(() => JSON.parse(localStorage.getItem("nb-node-detail-layout:v3") ?? "{}").charts?.length)).toBe(5);
 });
 
+test("non-realtime chart ranges keep their accessible labels visually hidden", async ({ page }) => {
+  await page.addInitScript(() => {
+    localStorage.setItem("nb-lang", "zh-CN");
+    if (!localStorage.getItem("nb-theme")) localStorage.setItem("nb-theme", "light");
+  });
+  await mockNodeDetail(page);
+
+  for (const width of [1920, 1280, 390]) {
+    await page.setViewportSize({ width, height: width === 390 ? 844 : 900 });
+
+    for (const theme of ["light", "dark"] as const) {
+      await page.goto("/nodes/rs1000");
+      await page.evaluate((nextTheme) => localStorage.setItem("nb-theme", nextTheme), theme);
+      await page.reload();
+      await expect(page.locator(".status-page")).toHaveAttribute("data-theme", theme);
+
+      for (const rangeLabel of ["1天", "7天", "30天", "60天", "自定义"]) {
+        await page.getByRole("button", { name: rangeLabel, exact: true }).click();
+        const chartRanges = page.locator(".detail-chart-range");
+        await expect(chartRanges).toHaveCount(5);
+
+        const hiddenLabels = chartRanges.locator(".sr-only");
+        await expect(hiddenLabels).toHaveCount(5);
+        const hiddenLabelStyles = await hiddenLabels.evaluateAll((labels) => labels.map((label) => {
+          const style = getComputedStyle(label);
+          const rect = label.getBoundingClientRect();
+          return {
+            text: label.textContent,
+            position: style.position,
+            width: rect.width,
+            height: rect.height,
+            overflow: style.overflow,
+            whiteSpace: style.whiteSpace
+          };
+        }));
+        expect(hiddenLabelStyles).toEqual(Array.from({ length: 5 }, () => ({
+          text: "图表时间范围",
+          position: "absolute",
+          width: 1,
+          height: 1,
+          overflow: "hidden",
+          whiteSpace: "nowrap"
+        })));
+
+        await expect(chartRanges.first().locator("select")).toHaveCSS("height", "28px");
+        const firstHeaderHeight = await page.locator(".detail-chart-card-head").first().evaluate(
+          (header) => header.getBoundingClientRect().height
+        );
+        expect(firstHeaderHeight).toBeLessThanOrEqual(64);
+        await expect.poll(async () => page.evaluate(
+          () => document.documentElement.scrollWidth <= document.documentElement.clientWidth
+        )).toBe(true);
+
+        if (rangeLabel === "自定义") {
+          await expect(page.locator('.detail-custom-range input[type="date"]')).toHaveCount(2);
+        }
+      }
+    }
+  }
+});
+
 test("a chart can add and persist a compatible metric group", async ({ page }) => {
   await page.route("**/api/public/nodes/rs1000/detail", (route) => route.fulfill({ json: detail }));
   await page.route("**/api/public/nodes/rs1000/series**", async (route) => {
