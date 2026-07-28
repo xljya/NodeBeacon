@@ -26,14 +26,14 @@ const detail: ApiNodeDetailV2Response = {
     kernelVersion: "6.12.90",
     arch: "x86_64",
     virtualization: "QEMU",
-    cpuModel: null,
+    cpuModel: "AMD EPYC 9645 96-Core Processor",
     logicalCpuCores: 4,
     physicalCpuCores: null,
     gpuModel: null
   },
   capabilities: {
     realtime: true,
-    cpuModel: false,
+    cpuModel: true,
     gpu: false,
     swap: true,
     multiDisk: true,
@@ -146,6 +146,16 @@ test("anonymous node detail uses combined charts and polished layout controls", 
 
   await page.goto("/nodes/rs1000");
   await expect(page.locator(".detail-profile-card")).toBeVisible();
+  await expect(page.locator(".detail-profile-cpu")).toContainText("AMD EPYC 9645 96-Core Processor (x4)");
+  await expect(page.locator(".detail-profile-arch")).toContainText("amd64");
+  await expect(page.locator(".detail-profile-gpu")).toContainText("None");
+  await expect(page.locator(".detail-profile-os")).toContainText("Kernel version: 6.12.90");
+  await expect(page.locator(".detail-profile-memory")).toContainText("4.00 GB");
+  await expect(page.locator(".detail-profile-memory")).not.toContainText("8.00 GB");
+  await expect(page.locator(".detail-profile-swap")).toContainText("128 MB");
+  await expect(page.locator(".detail-profile-swap")).not.toContainText("2.00 GB");
+  await expect(page.locator(".detail-profile-disk")).toContainText("30 GB");
+  await expect(page.locator(".detail-profile-disk")).not.toContainText("100 GB");
   await expect(page.locator(".detail-chart-card")).toHaveCount(5);
   await expect(page.locator('[data-chart-id="cpu"]')).toContainText("CPU");
   await expect(page.locator('[data-chart-id="memory"]')).toContainText("Memory");

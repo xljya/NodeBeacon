@@ -330,6 +330,19 @@ function formatBytes(value: number | null): string {
   return `${scaled.toFixed(scaled >= 10 ? 0 : 2)} ${units[index]}`;
 }
 
+function formatArchitecture(value: string | null): string {
+  if (!value) return "—";
+  if (value === "x86_64") return "amd64";
+  if (value === "aarch64") return "arm64";
+  return value;
+}
+
+function primaryDiskUsedBytes(disks: ApiNodeDetailV2Response["live"]["disks"]): number | null {
+  return disks.find((disk) => disk.mountpoint === "/")?.usedBytes
+    ?? disks[0]?.usedBytes
+    ?? null;
+}
+
 function formatDuration(seconds: number | null): string {
   if (seconds === null || !Number.isFinite(seconds)) return "—";
   const days = Math.floor(seconds / 86400);
@@ -973,24 +986,24 @@ export function NodeDetailPage() {
                         <div className="detail-profile-card">
                           <div className="detail-profile-cpu">
                             <b>{t("status.detail.profileCpu")}</b>
-                            <span>{detail.profile.cpuModel ?? t("status.detail.unknown")}{detail.profile.logicalCpuCores ? ` × ${detail.profile.logicalCpuCores}` : ""}</span>
+                            <span>{detail.profile.cpuModel ?? t("status.detail.unknown")}{detail.profile.logicalCpuCores ? ` (x${detail.profile.logicalCpuCores})` : ""}</span>
                           </div>
-                          <div className="detail-profile-arch"><b>{t("status.detail.profileArch")}</b><span>{detail.profile.arch ?? "—"}</span></div>
+                          <div className="detail-profile-arch"><b>{t("status.detail.profileArch")}</b><span>{formatArchitecture(detail.profile.arch)}</span></div>
                           <div className="detail-profile-virt"><b>{t("status.detail.profileVirtualization")}</b><span>{detail.profile.virtualization ?? "—"}</span></div>
-                          <div className="detail-profile-gpu"><b>{t("status.detail.profileGpu")}</b><span>{detail.profile.gpuModel ?? t("status.detail.unavailable")}</span></div>
+                          <div className="detail-profile-gpu"><b>{t("status.detail.profileGpu")}</b><span>{detail.profile.gpuModel ?? t("status.detail.none")}</span></div>
                           <div className="detail-profile-os">
                             <b>{t("status.detail.profileOs")}</b>
                             <span className="detail-profile-value-with-icon">
                               <span className="node-os-logo"><OsLogo slug={view.osSlug} /></span>
                               {detail.profile.osName ?? view.osText}
                             </span>
-                            <small>{detail.profile.kernelVersion ?? "—"}</small>
+                            <small>{t("status.detail.profileKernelValue", { version: detail.profile.kernelVersion ?? "—" })}</small>
                           </div>
                           <div className="detail-profile-network"><b>{t("status.detail.profileNetwork")}</b><span>↑ {formatBytes(detail.live.networkTxBytesPerSecond)}/s · ↓ {formatBytes(detail.live.networkRxBytesPerSecond)}/s</span></div>
                           <div className="detail-profile-traffic"><b>{t("status.detail.profileTraffic")}</b><span>↑ {formatBytes(detail.live.networkTxBytesTotal)} · ↓ {formatBytes(detail.live.networkRxBytesTotal)}</span></div>
-                          <div className="detail-profile-memory"><b>{t("status.card.ram")}</b><span>{formatBytes(detail.live.memoryUsedBytes)} / {formatBytes(detail.live.memoryTotalBytes)}</span></div>
-                          <div className="detail-profile-swap"><b>{t("status.detail.chart_swap")}</b><span>{formatBytes(detail.live.swapUsedBytes)} / {formatBytes(detail.live.swapTotalBytes)}</span></div>
-                          <div className="detail-profile-disk"><b>{t("status.card.disk")}</b><span>{view.disk.sub ?? view.disk.text}</span></div>
+                          <div className="detail-profile-memory"><b>{t("status.card.ram")}</b><span>{formatBytes(detail.live.memoryUsedBytes)}</span></div>
+                          <div className="detail-profile-swap"><b>{t("status.detail.profileSwap")}</b><span>{formatBytes(detail.live.swapUsedBytes)}</span></div>
+                          <div className="detail-profile-disk"><b>{t("status.card.disk")}</b><span>{formatBytes(primaryDiskUsedBytes(detail.live.disks))}</span></div>
                           <div className="detail-profile-uptime"><b>{t("status.card.uptime")}</b><span>{detail.live.uptimeSeconds !== null ? formatDuration(detail.live.uptimeSeconds) : view.uptime}</span></div>
                           <div className="detail-profile-report"><b>{t("status.detail.lastReport")}</b><span>{detail.live.lastReportAt ? new Date(detail.live.lastReportAt).toLocaleString() : view.updatedAt}</span></div>
                         </div>

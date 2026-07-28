@@ -52,6 +52,11 @@ describe("node routes without Prometheus configured", () => {
     const body = res.json();
     expect(body.node.id).toBe("rs1000");
     expect(body).toHaveProperty("profile");
+    expect(body.profile).toMatchObject({
+      cpuModel: "AMD EPYC 9645 96-Core Processor",
+      physicalCpuCores: 4,
+      virtualization: "KVM"
+    });
     expect(body).toHaveProperty("capabilities");
     expect(body).toHaveProperty("live");
     expect(body.node).not.toHaveProperty("labels");

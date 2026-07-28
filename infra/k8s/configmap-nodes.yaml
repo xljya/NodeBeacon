@@ -35,6 +35,10 @@ data:
         detail:
           enabled: true
           visibility: safe
+          profileOverride:
+            cpuModel: AMD EPYC 9645 96-Core Processor
+            physicalCpuCores: 4
+            virtualization: KVM
           networkDevices:
             - eth0
           latencyVantages:
@@ -60,6 +64,10 @@ data:
         detail:
           enabled: true
           visibility: safe
+          profileOverride:
+            cpuModel: AMD EPYC 9654 96-Core Processor
+            physicalCpuCores: 1
+            virtualization: KVM
           networkDevices:
             - eth0
           latencyVantages:
@@ -85,6 +93,10 @@ data:
         detail:
           enabled: true
           visibility: safe
+          profileOverride:
+            cpuModel: AMD EPYC 9334 32-Core Processor
+            physicalCpuCores: 1
+            virtualization: KVM
           networkDevices:
             - eth0
           diskMounts:
@@ -113,6 +125,10 @@ data:
         detail:
           enabled: true
           visibility: safe
+          profileOverride:
+            cpuModel: "QEMU Virtual CPU version 2.5+"
+            physicalCpuCores: 1
+            virtualization: KVM
           networkDevices:
             - eth0
           latencyVantages:
@@ -138,6 +154,10 @@ data:
         detail:
           enabled: true
           visibility: safe
+          profileOverride:
+            cpuModel: General Purpose Processor
+            physicalCpuCores: 1
+            virtualization: KVM
           networkDevices:
             - eth0
           latencyVantages:
