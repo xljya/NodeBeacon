@@ -2144,6 +2144,7 @@ button.admin-menu-btn {
 }
 
 .komari-admin .admin-sidebar {
+  box-sizing: border-box;
   padding: 8px;
   border-right: 1px solid var(--border);
   background: color-mix(in srgb, var(--surface) 88%, var(--bg));

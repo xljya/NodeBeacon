@@ -73,6 +73,8 @@ test("sidebar route expansion and mobile drawer remain accessible", async ({ own
   await page.getByRole("button", { name: "Open menu" }).click();
   const sidebar = page.locator(".admin-sidebar");
   await expect(sidebar).toHaveClass(/open/);
+  const mobileSidebarBox = await sidebar.boundingBox();
+  expect(Math.round(mobileSidebarBox?.width ?? 0)).toBe(264);
   await expect(page.getByRole("link", { name: "Server", exact: true })).toBeFocused();
 
   await page.keyboard.press("Escape");
