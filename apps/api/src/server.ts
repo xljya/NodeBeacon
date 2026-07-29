@@ -120,7 +120,7 @@ export async function createApp() {
   await registerAdminNotificationRoutes(app, env, database, auditService);
   await registerAdminProbeRoutes(app, database);
   void reconcileManagedProbes(database, app.log);
-  await registerAdminRemoteRoutes(app, env, database, auditService);
+  await registerAdminRemoteRoutes(app, env, database, auditService, authService);
   await registerAlertRoutes(app, env, alertmanagerService, incidentService, database);
 
   if (existsSync(webDistPath)) {
