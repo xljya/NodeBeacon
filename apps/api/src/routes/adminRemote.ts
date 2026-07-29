@@ -4,6 +4,7 @@ import { buildApiError } from "@nodebeacon/shared";
 import type { ApiEnv } from "../config/env.js";
 import type { AuditService } from "../services/auditService.js";
 import type { SqliteDatabase } from "../services/database.js";
+import type { AuthService } from "../services/authService.js";
 
 const TASKS = [
   { id: "system-info", label: "System information", risk: "read-only" },
@@ -14,7 +15,7 @@ const TASKS = [
 
 function body(value: unknown): Record<string, unknown> { return typeof value === "object" && value !== null && !Array.isArray(value) ? value as Record<string, unknown> : {}; }
 
-export async function registerAdminRemoteRoutes(app: FastifyInstance, env: ApiEnv, db: SqliteDatabase, audit: AuditService): Promise<void> {
+export async function registerAdminRemoteRoutes(app: FastifyInstance, env: ApiEnv, db: SqliteDatabase, audit: AuditService, auth: AuthService): Promise<void> {
   const owner = { preHandler: app.requireOwner };
   app.get("/api/admin/remote/tasks", owner, async () => ({ tasks: TASKS }));
   app.get("/api/admin/remote/targets", owner, async () => ({ targets: db.prepare("SELECT id,node_id AS nodeId,hostname,port,enabled,updated_at AS updatedAt FROM remote_targets ORDER BY node_id").all() }));
@@ -22,6 +23,7 @@ export async function registerAdminRemoteRoutes(app: FastifyInstance, env: ApiEn
   app.patch<{ Params: { id: string } }>("/api/admin/remote/targets/:id", owner, async (request, reply) => { const input = body(request.body); const changed = db.prepare("UPDATE remote_targets SET enabled=?,updated_at=? WHERE id=?").run(input.enabled === true ? 1 : 0, Date.now(), request.params.id).changes; if (!changed) return reply.code(404).send(buildApiError("not_found", "Target not found.")); return { status: "ok" }; });
   app.post("/api/admin/remote/runs", owner, async (request, reply) => {
     const input = body(request.body); const taskId = String(input.taskId ?? ""); const targetId = String(input.targetId ?? ""); const task = TASKS.find((item) => item.id === taskId); if (!task || !targetId) return reply.code(400).send(buildApiError("invalid_remote_task", "Only predefined remote tasks are allowed."));
+    if (auth.totpEnabled && !auth.verifySecondFactor(String(input.totpCode ?? ""))) return reply.code(401).send(buildApiError("totp_required", "A valid TOTP is required for remote execution."));
     const target = db.prepare("SELECT id,enabled FROM remote_targets WHERE id = ?").get(targetId) as { id: string; enabled: number } | undefined; if (!target || target.enabled !== 1) return reply.code(400).send(buildApiError("remote_disabled", "Remote execution target is disabled."));
     const id = `run-${randomUUID()}`; db.prepare("INSERT INTO remote_runs(id,target_id,task_id,status,summary,started_at,actor) VALUES (?,?,?,?,?,?,?)").run(id, targetId, taskId, "pending", `Queued ${task.label}`, Date.now(), request.user?.id ?? "owner"); audit.record({ actor: request.user?.id ?? "owner", action: "remote.run_requested", entityId: id, payload: { taskId, targetId, risk: task.risk } }); return { id, status: "pending", task: task.id };
   });

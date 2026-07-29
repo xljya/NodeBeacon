@@ -39,7 +39,7 @@ spec:
           type: RuntimeDefault
       containers:
         - name: executor
-          image: nodebeacon:1.0.30
+          image: nodebeacon:1.0.31
           imagePullPolicy: Never
           command: ["node", "apps/api/dist/executor.js"]
           ports:
@@ -52,6 +52,15 @@ spec:
             allowPrivilegeEscalation: false
             readOnlyRootFilesystem: true
             capabilities: { drop: ["ALL"] }
+          volumeMounts:
+            - name: remote-ssh
+              mountPath: /var/run/nodebeacon-ssh
+              readOnly: true
+      volumes:
+        - name: remote-ssh
+          secret:
+            secretName: nodebeacon-remote-ssh
+            optional: true
 ---
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
