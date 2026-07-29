@@ -359,6 +359,8 @@ export interface AuthUser {
 export interface LoginRequest {
   email: string;
   password: string;
+  totpCode?: string;
+  recoveryCode?: string;
 }
 
 export interface AuthResponse {

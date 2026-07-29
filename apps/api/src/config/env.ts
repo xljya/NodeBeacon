@@ -34,6 +34,11 @@ export interface ApiEnv {
   revokedSessionRetentionDays: number;
   /** Timestamp file written only after a successful off-site backup copy. */
   backupSuccessTimestampPath: string;
+  backupRequestPath: string;
+  backupLastResultPath: string;
+  settingsEncryptionKey?: string;
+  lokiUrl?: string;
+  notificationAllowedHosts: string[];
   allowRegister: boolean;
   initialOwnerEmail?: string;
   initialOwnerPassword?: string;
@@ -93,6 +98,9 @@ export function loadEnv(): ApiEnv {
   const githubCallbackUrl = process.env.GITHUB_CALLBACK_URL?.trim();
   const publicBaseUrl = process.env.PUBLIC_BASE_URL?.trim();
   const ripeAtlasConfigPath = process.env.RIPE_ATLAS_CONFIG_PATH?.trim();
+  const lokiUrl = process.env.LOKI_URL?.trim();
+  const settingsEncryptionKey = process.env.SETTINGS_ENCRYPTION_KEY?.trim();
+  const notificationAllowedHosts = (process.env.NOTIFICATION_ALLOWED_HOSTS ?? "").split(",").map((host) => host.trim().toLowerCase()).filter(Boolean);
 
   return {
     host: process.env.API_HOST ?? "0.0.0.0",
@@ -127,6 +135,15 @@ export function loadEnv(): ApiEnv {
     backupSuccessTimestampPath:
       process.env.NODEBEACON_BACKUP_SUCCESS_PATH?.trim() ||
       (nodeEnv === "production" ? "/data/backup-last-success.timestamp" : "./data/backup-last-success.timestamp"),
+    backupRequestPath:
+      process.env.NODEBEACON_BACKUP_REQUEST_PATH?.trim() ||
+      (nodeEnv === "production" ? "/data/backup-request.json" : "./data/backup-request.json"),
+    backupLastResultPath:
+      process.env.NODEBEACON_BACKUP_LAST_RESULT_PATH?.trim() ||
+      (nodeEnv === "production" ? "/data/backup-last-result.json" : "./data/backup-last-result.json"),
+    settingsEncryptionKey: settingsEncryptionKey || undefined,
+    lokiUrl: lokiUrl || undefined,
+    notificationAllowedHosts,
     allowRegister: boolFromEnv("ALLOW_REGISTER", false),
     initialOwnerEmail: initialOwnerEmail || undefined,
     initialOwnerPassword: initialOwnerPassword || undefined,

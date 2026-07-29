@@ -44,6 +44,7 @@
       "public": "Public status page",
       "home": "Home",
       "defaultTheme": "Default Theme Settings"
+      ,"site": "Site", "theme": "Theme Management", "signOn": "Sign-In", "notifications": "Notifications", "general": "General", "xtermjs": "XtermJS", "reverseProxy": "Reverse Proxy", "metrics": "Metrics Database", "offline": "Offline", "load": "Load", "trafficReport": "Traffic Report"
     },
     "topbar": {
       "title": "Admin console",

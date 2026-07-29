@@ -18,6 +18,7 @@ import type { AdminSummaryResponse } from "@nodebeacon/shared";
 import { AppearanceControls } from "./ThemeSettingsPage";
 import { useApi } from "../../lib/useApi";
 import { PageError, PageLoading } from "../components/PageState";
+import { apiPatch, apiPost } from "../../lib/api";
 
 const SETTINGS_INDEX = [
   { slug: "site", label: "Site", icon: Globe2 },
@@ -33,6 +34,9 @@ export function SettingsPage() {
   const { t } = useTranslation();
   const { section = "site" } = useParams();
   const { data, error, loading, reload } = useApi<AdminSummaryResponse>("/api/admin/summary");
+  const { data: site } = useApi<{ name: string; description: string; defaultLocale: string; timezone: string }>("/api/admin/settings/site");
+  const { data: general } = useApi<{ statusCacheTtlSeconds: number; incidentRetentionDays: number; auditRetentionDays: number; executionRetentionDays: number }>("/api/admin/settings/general");
+  const { data: sources } = useApi<{ sources: Array<{ id: string; reachable: boolean; bytes?: number; host?: string }> }>("/api/admin/data-sources");
 
   if (loading) return <PageLoading />;
   if (error || !data) return <PageError message={error ?? t("common.loadFailed")} />;
@@ -60,7 +64,7 @@ export function SettingsPage() {
           </div>
           <Icon size={20} />
         </div>
-        <SettingsContent section={section} summary={data} />
+        <SettingsContent section={section} summary={data} site={site} general={general} sources={sources?.sources ?? []} />
       </section>
 
       <section className="settings-index" aria-label="Settings sections">
@@ -76,7 +80,7 @@ export function SettingsPage() {
   );
 }
 
-function SettingsContent({ section, summary }: { section: string; summary: AdminSummaryResponse }) {
+function SettingsContent({ section, summary, site, general, sources }: { section: string; summary: AdminSummaryResponse; site: { name: string; description: string; defaultLocale: string; timezone: string } | null; general: { statusCacheTtlSeconds: number; incidentRetentionDays: number; auditRetentionDays: number; executionRetentionDays: number } | null; sources: Array<{ id: string; reachable: boolean; bytes?: number; host?: string }> }) {
   switch (section) {
     case "theme":
       return <AppearanceControls compact />;
@@ -95,6 +99,7 @@ function SettingsContent({ section, summary }: { section: string; summary: Admin
         <div className="setting-list">
           <SettingRow label="Application version" value={`v${summary.version}`} />
           <SettingRow label="Status cache" value={`${summary.cache.ttlSeconds}s TTL`} ok={!summary.cache.stale} />
+          {general && <SettingRow label="Audit retention" value={`${general.auditRetentionDays} days`} />}
           <SettingRow label="Node registry" value="Writable YAML registry" ok />
         </div>
       );
@@ -105,24 +110,34 @@ function SettingsContent({ section, summary }: { section: string; summary: Admin
         <div className="setting-list">
           <SettingRow label="Prometheus host" value={summary.prometheus.host ?? "Not configured"} />
           <SettingRow label="Connection status" value={summary.prometheus.reachable ? "Reachable" : "Unavailable / fallback"} ok={summary.prometheus.reachable} />
+          {sources.map((source) => <SettingRow key={source.id} label={source.id} value={source.reachable ? "Reachable" : "Unavailable"} ok={source.reachable} />)}
         </div>
       );
     case "site":
     default:
-      return <SiteSettings />;
+      return <SiteSettings site={site} />;
   }
 }
 
-function SiteSettings() {
+function SiteSettings({ site }: { site: { name: string; description: string; defaultLocale: string; timezone: string } | null }) {
+  const [name, setName] = useState(site?.name ?? ""); const [description, setDescription] = useState(site?.description ?? ""); const [saved, setSaved] = useState(false);
   return (
     <div className="setting-list">
+      <div className="settings-action-row"><input className="text-input" value={name} onChange={(event) => setName(event.target.value)} placeholder="Site name" /><input className="text-input" value={description} onChange={(event) => setDescription(event.target.value)} placeholder="Description" /><button className="primary-btn" onClick={() => void apiPatch("/api/admin/settings/site", { name, description }).then(() => setSaved(true))}>Save</button></div>
       <SettingRow label="Public status page" value="Available to visitors" ok />
+      <BackupStatus />
       <div className="settings-action-row">
         <a className="primary-btn settings-link-button" href="/">Open public status <ArrowUpRight size={15} /></a>
         <CopyOrigin />
       </div>
     </div>
   );
+}
+
+function BackupStatus() {
+  const { data, reload } = useApi<{ lastSuccess: string | null; lastResult: { status?: string; completedAt?: string } | null }>("/api/admin/backup/status");
+  const [message, setMessage] = useState("");
+  return <div className="setting-card flat"><div className="setting-text"><h3>Backups</h3><p>{data?.lastSuccess ? `Last success ${new Date(data.lastSuccess).toLocaleString()}` : "No successful backup recorded"}</p></div><button className="ghost-btn" onClick={() => void apiPost("/api/admin/backup/run").then(() => { setMessage("Backup requested"); void reload(); }).catch((error: Error) => setMessage(error.message))}>Request backup</button>{message && <span className="pill">{message}</span>}</div>;
 }
 
 function CopyOrigin() {

@@ -4,6 +4,8 @@
 set -euo pipefail
 
 NAMESPACE="${NODEBEACON_NAMESPACE:-nodebeacon}"
+REQUEST_PATH="${NODEBEACON_BACKUP_REQUEST_PATH:-/data/backup-request.json}"
+RESULT_PATH="${NODEBEACON_BACKUP_LAST_RESULT_PATH:-/data/backup-last-result.json}"
 BACKUP_REMOTE="${NODEBEACON_BACKUP_REMOTE:?set NODEBEACON_BACKUP_REMOTE to user@host:/path/}"
 BACKUP_DIR="${NODEBEACON_BACKUP_DIR:-/var/backups/nodebeacon}"
 KEEP_LOCAL_DAYS="${NODEBEACON_BACKUP_KEEP_LOCAL_DAYS:-7}"
@@ -13,6 +15,13 @@ STAMP="$(date -u +%Y%m%dT%H%M%SZ)"
 WORK_DIR="${BACKUP_DIR}/${STAMP}"
 REMOTE_DB="/data/nodebeacon-backup-${STAMP}.db"
 SUCCESS_TIMESTAMP_PATH="${NODEBEACON_BACKUP_SUCCESS_PATH:-/data/backup-last-success.timestamp}"
+
+if [[ "${1:-}" == "--if-requested" ]]; then
+  POD_CHECK="$(${KUBECTL_BIN:-kubectl} -n "${NAMESPACE}" get pods -l app.kubernetes.io/name=nodebeacon --field-selector=status.phase=Running -o jsonpath='{.items[0].metadata.name}' 2>/dev/null || true)"
+  if [[ -z "${POD_CHECK}" ]] || ! ${KUBECTL_BIN:-kubectl} -n "${NAMESPACE}" exec "${POD_CHECK}" -- test -f "${REQUEST_PATH}"; then
+    exit 0
+  fi
+fi
 
 if [[ -z "${KUBECTL_BIN}" || ! -x "${KUBECTL_BIN}" ]]; then
   echo "kubectl not found; set NODEBEACON_KUBECTL_BIN to its absolute path" >&2
@@ -62,3 +71,8 @@ find "${BACKUP_DIR}" -maxdepth 1 -type f -name 'nodebeacon-*.tar.gz' \
 trap - EXIT
 cleanup
 echo "NodeBeacon backup copied to ${BACKUP_REMOTE}: $(basename "${ARCHIVE}")"
+
+if [[ "${1:-}" == "--if-requested" ]]; then
+  NOW="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+  ${KUBECTL_BIN} -n "${NAMESPACE}" exec "${POD}" -- sh -c 'printf "%s\n" "$1" > "$2.tmp" && mv "$2.tmp" "$2" && rm -f "$3"' sh "{\"status\":\"success\",\"completedAt\":\"${NOW}\"}" "${RESULT_PATH}" "${REQUEST_PATH}"
+fi

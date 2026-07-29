@@ -11,6 +11,8 @@ import type { ApiEnv } from "../config/env.js";
 import { AlertmanagerError, type AlertmanagerService } from "../services/alertmanagerService.js";
 import type { IncidentService, IncomingIncidentAlert } from "../services/incidentService.js";
 import { alertmanagerWebhookRequestsTotal } from "../observability/metrics.js";
+import type { SqliteDatabase } from "../services/database.js";
+import { createNotificationService } from "../services/notificationService.js";
 
 interface AlertmanagerWebhookBody {
   status?: string;
@@ -69,7 +71,8 @@ export async function registerAlertRoutes(
   app: FastifyInstance,
   env: ApiEnv,
   alertmanagerService: AlertmanagerService,
-  incidentService: IncidentService
+  incidentService: IncidentService,
+  database?: SqliteDatabase
 ): Promise<void> {
   const ownerOnly = { preHandler: app.requireOwner };
 
@@ -132,6 +135,10 @@ export async function registerAlertRoutes(
 
     try {
       const processed = incidentService.record(alerts);
+      if (database) {
+        const notification = createNotificationService(database, env);
+        for (const alert of alerts) notification.enqueue(`incident:${alert.fingerprint}:${alert.status}`, alert);
+      }
       alertmanagerWebhookRequestsTotal.inc({ outcome: "success" });
       return reply.send({ status: "ok", processed });
     } catch (error) {

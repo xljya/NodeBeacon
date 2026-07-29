@@ -394,3 +394,17 @@ clean tree to RS1000, inspect the plan, then deploy:
   `.dockerignore` excludes `**/*.tsbuildinfo`.
 - Keep the built workspace in the runtime image unless a production prune step
   is proven not to remove workspace `dist/` outputs.
+
+## Admin control plane additions
+
+v1.0.28 stores Owner credentials, settings, safe JSON themes, auth factors,
+notification intent, latency tasks and remote-run intent in the existing SQLite
+PVC. `SETTINGS_ENCRYPTION_KEY` must be a separate random key in the production
+Secret. `/api/admin/backup/run` writes only `/data/backup-request.json`; host
+cron runs `scripts/backup.sh --if-requested` and writes
+`/data/backup-last-result.json` after the off-site copy. Restore and downloads
+remain host operations.
+
+The `nodebeacon-executor` Deployment is intentionally `replicas: 0` in the
+foundation release. Its fixed task API cannot execute arbitrary shell. Enable
+only after the `netcup-1o` canary and TOTP/output/audit checks pass.

@@ -56,6 +56,10 @@ export async function registerAuthRoutes(
       if (!user) {
         return reply.code(401).send(buildApiError("invalid_credentials", "Invalid email or password."));
       }
+      const secondFactor = typeof body?.totpCode === "string" ? body.totpCode : typeof body?.recoveryCode === "string" ? body.recoveryCode : "";
+      if (authService.totpEnabled && !authService.verifySecondFactor(secondFactor)) {
+        return reply.code(401).send(buildApiError("totp_required", "A valid authenticator or recovery code is required."));
+      }
 
       app.setSession(reply, user);
       auditService.record({ actor: user.id, action: "auth.login", payload: { method: "password" } });

@@ -11,7 +11,7 @@ test("sidebar links navigate to their admin pages", async ({ ownerPage: page }) 
   await expect(page).toHaveURL(/\/admin\/notification\/offline/);
 
   await page.getByRole("link", { name: "Default Theme Settings" }).click();
-  await expect(page).toHaveURL(/\/admin\/theme$/);
+  await expect(page).toHaveURL(/\/admin\/theme\/default$/);
 
   await page.getByRole("link", { name: "Server", exact: true }).click();
   await expect(page).toHaveURL(/\/admin$/);

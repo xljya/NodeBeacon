@@ -1,0 +1,38 @@
+apiVersion: monitoring.coreos.com/v1
+kind: Probe
+metadata:
+  name: nodebeacon-managed-http
+  namespace: nodebeacon
+  labels: { app.kubernetes.io/name: nodebeacon }
+spec:
+  jobName: nodebeacon-managed-http
+  interval: 60s
+  module: http_public
+  prober: { url: blackbox-exporter.monitoring.svc.cluster.local:9115 }
+  targets: { staticConfig: { static: [] } }
+---
+apiVersion: monitoring.coreos.com/v1
+kind: Probe
+metadata:
+  name: nodebeacon-managed-tcp
+  namespace: nodebeacon
+  labels: { app.kubernetes.io/name: nodebeacon }
+spec:
+  jobName: nodebeacon-managed-tcp
+  interval: 60s
+  module: tcp_connect_ipv4
+  prober: { url: blackbox-exporter.monitoring.svc.cluster.local:9115 }
+  targets: { staticConfig: { static: [] } }
+---
+apiVersion: monitoring.coreos.com/v1
+kind: Probe
+metadata:
+  name: nodebeacon-managed-icmp
+  namespace: nodebeacon
+  labels: { app.kubernetes.io/name: nodebeacon }
+spec:
+  jobName: nodebeacon-managed-icmp
+  interval: 60s
+  module: icmp_ipv4
+  prober: { url: blackbox-exporter.monitoring.svc.cluster.local:9115 }
+  targets: { staticConfig: { static: [] } }

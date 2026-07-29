@@ -1,0 +1,42 @@
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: nodebeacon-managed-alerts
+  namespace: nodebeacon
+  labels:
+    app.kubernetes.io/name: nodebeacon
+spec:
+  groups:
+    - name: nodebeacon.managed
+      rules: []
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: nodebeacon-control
+  namespace: nodebeacon
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: nodebeacon-managed-alerts
+  namespace: nodebeacon
+rules:
+  - apiGroups: ["monitoring.coreos.com"]
+    resources: ["prometheusrules"]
+    resourceNames: ["nodebeacon-managed-alerts"]
+    verbs: ["get", "update", "patch"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: nodebeacon-managed-alerts
+  namespace: nodebeacon
+subjects:
+  - kind: ServiceAccount
+    name: nodebeacon-control
+    namespace: nodebeacon
+roleRef:
+  kind: Role
+  name: nodebeacon-managed-alerts
+  apiGroup: rbac.authorization.k8s.io

@@ -24,6 +24,7 @@ export function LoginPage() {
   const [config, setConfig] = useState<AuthConfigResponse | null>(null);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [secondFactor, setSecondFactor] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
@@ -50,7 +51,7 @@ export function LoginPage() {
     setError(null);
     setSubmitting(true);
     try {
-      await login(email.trim(), password);
+      await login(email.trim(), password, secondFactor.trim() || undefined);
       navigate(from, { replace: true });
     } catch (err) {
       setError(err instanceof Error ? err.message : t("login.err_generic"));
@@ -92,6 +93,11 @@ export function LoginPage() {
                 placeholder="you@example.com"
                 required
               />
+            </label>
+
+            <label className="login-field">
+              <span>Authenticator / recovery code (optional)</span>
+              <input inputMode="numeric" autoComplete="one-time-code" value={secondFactor} onChange={(e) => setSecondFactor(e.target.value)} placeholder="6 digits or recovery code" />
             </label>
 
             <label className="login-field">

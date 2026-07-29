@@ -34,7 +34,7 @@
       "activity": "活動",
       "about": "關於",
       "documentation": "文件",
-      "public": "公開狀態頁"
+      "public": "公開狀態頁", "server": "伺服器", "settings": "設定", "notification": "通知", "remoteExec": "遠端執行", "latency": "延遲", "sessions": "工作階段", "account": "帳戶", "logs": "日誌", "home": "首頁", "defaultTheme": "預設主題設定", "site": "站點", "theme": "主題管理", "signOn": "登入", "notifications": "通知", "general": "通用", "xtermjs": "XtermJS", "reverseProxy": "反向代理", "metrics": "Metrics 資料庫", "offline": "離線通知", "load": "負載通知", "trafficReport": "流量定時報告"
     },
     "topbar": {
       "title": "管理後台",

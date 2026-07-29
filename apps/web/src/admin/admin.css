@@ -1679,7 +1679,7 @@ button.admin-menu-btn {
   --accent-fg: #ffffff;
   --shadow: none;
   display: grid;
-  grid-template-columns: 286px minmax(0, 1fr);
+  grid-template-columns: 244px minmax(0, 1fr);
   grid-template-rows: 68px minmax(0, 1fr);
   min-height: 100vh;
   background: var(--bg);
@@ -2291,7 +2291,7 @@ button.admin-menu-btn {
 }
 
 .komari-nav .admin-nav-item {
-  min-height: 38px;
+  min-height: 44px;
   padding: 0 13px;
   border: 0;
   border-radius: 8px;
@@ -2337,7 +2337,7 @@ button.admin-menu-btn {
 }
 
 .komari-nav .admin-nav-child {
-  min-height: 34px;
+  min-height: 38px;
   padding: 0 10px;
   font-size: 13px;
   font-weight: 500;
@@ -2800,6 +2800,37 @@ button.admin-menu-btn {
 .appearance-reset {
   width: fit-content;
 }
+
+.text-input,
+.komari-admin select.selector {
+  min-height: 38px;
+  padding: 0 10px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  color: var(--text);
+  background: var(--surface);
+  font: inherit;
+}
+
+.log-stream {
+  max-height: 560px;
+  margin-top: 16px;
+  overflow: auto;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--surface-2);
+}
+
+.log-line {
+  display: flex;
+  gap: 14px;
+  padding: 8px 12px;
+  border-bottom: 1px solid color-mix(in srgb, var(--border) 70%, transparent);
+  font-size: 12px;
+}
+
+.log-line time { flex: 0 0 88px; color: var(--text-muted); }
+.log-line code { white-space: pre-wrap; overflow-wrap: anywhere; color: var(--text); }
 
 @media (max-width: 900px) {
   .komari-admin {

@@ -4,7 +4,7 @@ import Database from "better-sqlite3";
 
 export type SqliteDatabase = Database.Database;
 
-export const CURRENT_SCHEMA_VERSION = 2;
+export const CURRENT_SCHEMA_VERSION = 5;
 
 function migrateToV1(db: SqliteDatabase): void {
   db.exec(`
@@ -61,6 +61,103 @@ function migrateToV2(db: SqliteDatabase): void {
   `);
 }
 
+function migrateToV3(db: SqliteDatabase): void {
+  db.exec(`
+    CREATE TABLE users (
+      id TEXT PRIMARY KEY,
+      email TEXT NOT NULL,
+      role TEXT NOT NULL CHECK(role IN ('owner', 'viewer')),
+      password_hash TEXT,
+      github_login TEXT,
+      created_at INTEGER NOT NULL,
+      updated_at INTEGER NOT NULL
+    );
+    CREATE UNIQUE INDEX users_email_idx ON users(email COLLATE NOCASE);
+
+    CREATE TABLE settings (
+      key TEXT PRIMARY KEY,
+      value_json TEXT NOT NULL,
+      updated_at INTEGER NOT NULL
+    );
+
+    CREATE TABLE auth_factors (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      user_id TEXT NOT NULL,
+      type TEXT NOT NULL CHECK(type IN ('totp')),
+      secret_json TEXT NOT NULL,
+      enabled INTEGER NOT NULL DEFAULT 0,
+      created_at INTEGER NOT NULL,
+      updated_at INTEGER NOT NULL,
+      UNIQUE(user_id, type),
+      FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE
+    );
+
+    CREATE TABLE recovery_codes (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      user_id TEXT NOT NULL,
+      code_hash TEXT NOT NULL,
+      used_at INTEGER,
+      created_at INTEGER NOT NULL,
+      FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE
+    );
+
+    CREATE TABLE theme_presets (
+      id TEXT PRIMARY KEY,
+      name TEXT NOT NULL,
+      tokens_json TEXT NOT NULL,
+      is_default INTEGER NOT NULL DEFAULT 0,
+      created_at INTEGER NOT NULL,
+      updated_at INTEGER NOT NULL
+    );
+
+    PRAGMA user_version = 3;
+  `);
+}
+
+function migrateToV4(db: SqliteDatabase): void {
+  db.exec(`
+    CREATE TABLE notification_channels (
+      id TEXT PRIMARY KEY, name TEXT NOT NULL, type TEXT NOT NULL CHECK(type IN ('telegram','smtp','webhook')),
+      config_json TEXT NOT NULL, enabled INTEGER NOT NULL DEFAULT 1, created_at INTEGER NOT NULL, updated_at INTEGER NOT NULL
+    );
+    CREATE TABLE alert_rules (
+      id TEXT PRIMARY KEY, type TEXT NOT NULL CHECK(type IN ('offline','load')), name TEXT NOT NULL, node_id TEXT,
+      config_json TEXT NOT NULL, channel_ids_json TEXT NOT NULL, enabled INTEGER NOT NULL DEFAULT 1,
+      reconcile_status TEXT NOT NULL DEFAULT 'pending', reconcile_error TEXT, created_at INTEGER NOT NULL, updated_at INTEGER NOT NULL
+    );
+    CREATE TABLE traffic_reports (
+      id TEXT PRIMARY KEY, name TEXT NOT NULL, period TEXT NOT NULL CHECK(period IN ('daily','weekly','monthly')),
+      time TEXT NOT NULL, timezone TEXT NOT NULL, node_ids_json TEXT NOT NULL, channel_ids_json TEXT NOT NULL,
+      enabled INTEGER NOT NULL DEFAULT 1, created_at INTEGER NOT NULL, updated_at INTEGER NOT NULL
+    );
+    CREATE TABLE notification_outbox (
+      id INTEGER PRIMARY KEY AUTOINCREMENT, idempotency_key TEXT NOT NULL UNIQUE, channel_id TEXT NOT NULL,
+      event_type TEXT NOT NULL, payload_json TEXT NOT NULL, status TEXT NOT NULL DEFAULT 'pending', attempts INTEGER NOT NULL DEFAULT 0,
+      next_attempt_at INTEGER NOT NULL, last_error TEXT, sent_at INTEGER, created_at INTEGER NOT NULL
+    );
+    PRAGMA user_version = 4;
+  `);
+}
+
+function migrateToV5(db: SqliteDatabase): void {
+  db.exec(`
+    CREATE TABLE latency_tasks (
+      id TEXT PRIMARY KEY, name TEXT NOT NULL, protocol TEXT NOT NULL CHECK(protocol IN ('http','tcp','icmp')),
+      target TEXT NOT NULL, interval_seconds INTEGER NOT NULL DEFAULT 60, enabled INTEGER NOT NULL DEFAULT 1,
+      created_at INTEGER NOT NULL, updated_at INTEGER NOT NULL
+    );
+    CREATE TABLE remote_targets (
+      id TEXT PRIMARY KEY, node_id TEXT NOT NULL UNIQUE, hostname TEXT NOT NULL, port INTEGER NOT NULL DEFAULT 22,
+      enabled INTEGER NOT NULL DEFAULT 0, created_at INTEGER NOT NULL, updated_at INTEGER NOT NULL
+    );
+    CREATE TABLE remote_runs (
+      id TEXT PRIMARY KEY, target_id TEXT NOT NULL, task_id TEXT NOT NULL, status TEXT NOT NULL,
+      exit_code INTEGER, summary TEXT, started_at INTEGER NOT NULL, finished_at INTEGER, actor TEXT NOT NULL
+    );
+    PRAGMA user_version = 5;
+  `);
+}
+
 export function migrateDatabase(db: SqliteDatabase): void {
   const version = db.pragma("user_version", { simple: true }) as number;
   if (version > CURRENT_SCHEMA_VERSION) {
@@ -72,6 +169,15 @@ export function migrateDatabase(db: SqliteDatabase): void {
   }
   if (version < 2) {
     db.transaction(() => migrateToV2(db))();
+  }
+  if (version < 3) {
+    db.transaction(() => migrateToV3(db))();
+  }
+  if (version < 4) {
+    db.transaction(() => migrateToV4(db))();
+  }
+  if (version < 5) {
+    db.transaction(() => migrateToV5(db))();
   }
 }
 

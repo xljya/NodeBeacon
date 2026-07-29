@@ -16,3 +16,6 @@ resources:
   - servicemonitor.yaml
   - prometheusrule.yaml
   - alertmanagerconfig.yaml
+  - executor.yaml
+  - managed-probes.yaml
+  - managed-alerts.yaml

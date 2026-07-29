@@ -10,7 +10,7 @@ import {
   CircleUserRound,
   Droplet,
   Gauge,
-  History,
+  Globe2,
   Home,
   KeyRound,
   LogOut,
@@ -22,7 +22,7 @@ import {
   Server,
   Settings,
   Sun,
-  UsersRound
+  Terminal
 } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import type { AdminSummaryResponse } from "@nodebeacon/shared";
@@ -45,20 +45,21 @@ interface NestedNavItem {
 }
 
 const SETTINGS_ITEMS: NestedNavItem[] = [
-  { to: "/admin/settings/site", label: "Site", icon: Home },
-  { to: "/admin/settings/theme", label: "Theme Management", icon: Palette },
-  { to: "/admin/settings/sign-on", label: "Sign-On", icon: CircleUserRound },
-  { to: "/admin/settings/notifications", label: "Notifications", icon: Bell },
-  { to: "/admin/settings/general", label: "General", icon: Settings },
-  { to: "/admin/settings/reverse-proxy", label: "Reverse Proxy", icon: Activity },
-  { to: "/admin/settings/metrics", label: "Metrics Database", icon: Server }
+  { to: "/admin/settings/site", label: "site", icon: Home },
+  { to: "/admin/settings/theme", label: "theme", icon: Palette },
+  { to: "/admin/settings/sign-on", label: "signOn", icon: CircleUserRound },
+  { to: "/admin/settings/notifications", label: "notifications", icon: Bell },
+  { to: "/admin/settings/general", label: "general", icon: Settings },
+  { to: "/admin/settings/xtermjs", label: "xtermjs", icon: Terminal },
+  { to: "/admin/settings/reverse-proxy", label: "reverseProxy", icon: Globe2 },
+  { to: "/admin/settings/metrics", label: "metrics", icon: Server }
 ];
 
 const NOTIFICATION_ITEMS: NestedNavItem[] = [
-  { to: "/admin/notification/offline", label: "Offline", icon: Bell },
-  { to: "/admin/notification/load", label: "Load", icon: Activity },
-  { to: "/admin/notification/traffic-report", label: "Traffic Report", icon: Activity },
-  { to: "/admin/notification/general", label: "General", icon: Settings }
+  { to: "/admin/notification/offline", label: "offline", icon: Bell },
+  { to: "/admin/notification/load", label: "load", icon: Activity },
+  { to: "/admin/notification/traffic-report", label: "trafficReport", icon: Activity },
+  { to: "/admin/notification/general", label: "general", icon: Settings }
 ];
 
 export function AdminLayout() {
@@ -102,9 +103,6 @@ export function AdminLayout() {
           <div className="admin-nav-section">
             <div className="admin-nav-heading">{t("admin.nav.groupMonitor")}</div>
             <AdminLink to="/admin" end icon={Server} label={t("admin.nav.server")} onNavigate={() => setSidebarOpen(false)} />
-            <AdminLink to="/admin/overview" icon={Gauge} label={t("admin.nav.overview")} onNavigate={() => setSidebarOpen(false)} />
-            <AdminLink to="/admin/latency" icon={Activity} label={t("admin.nav.latency")} onNavigate={() => setSidebarOpen(false)} />
-            <AdminLink to="/admin/activity" icon={History} label={t("admin.nav.activity")} onNavigate={() => setSidebarOpen(false)} />
           </div>
           <div className="admin-nav-section">
             <div className="admin-nav-heading">{t("admin.nav.groupManage")}</div>
@@ -114,7 +112,7 @@ export function AdminLayout() {
               open={settingsOpen}
               onToggle={() => setSettingsOpen((open) => !open)}
               onNavigate={() => setSidebarOpen(false)}
-              items={SETTINGS_ITEMS}
+              items={SETTINGS_ITEMS.map((item) => ({ ...item, label: t(`admin.nav.${item.label}`) }))}
             />
             <NestedNavGroup
               icon={Bell}
@@ -122,9 +120,10 @@ export function AdminLayout() {
               open={notificationOpen}
               onToggle={() => setNotificationOpen((open) => !open)}
               onNavigate={() => setSidebarOpen(false)}
-              items={NOTIFICATION_ITEMS}
+              items={NOTIFICATION_ITEMS.map((item) => ({ ...item, label: t(`admin.nav.${item.label}`) }))}
             />
-            <AdminLink to="/admin/users" icon={UsersRound} label={t("admin.nav.users")} onNavigate={() => setSidebarOpen(false)} />
+            <AdminLink to="/admin/exec" icon={Terminal} label={t("admin.nav.remoteExec")} onNavigate={() => setSidebarOpen(false)} />
+            <AdminLink to="/admin/ping" icon={Gauge} label={t("admin.nav.latency")} onNavigate={() => setSidebarOpen(false)} />
             <AdminLink to="/admin/sessions" icon={KeyRound} label={t("admin.nav.sessions")} onNavigate={() => setSidebarOpen(false)} />
             <AdminLink to="/admin/account" icon={CircleUserRound} label={t("admin.nav.account")} onNavigate={() => setSidebarOpen(false)} />
             <AdminLink to="/admin/logs" icon={ScrollText} label={t("admin.nav.logs")} onNavigate={() => setSidebarOpen(false)} />

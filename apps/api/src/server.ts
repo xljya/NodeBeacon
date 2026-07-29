@@ -27,6 +27,11 @@ import { createAlertmanagerService } from "./services/alertmanagerService.js";
 import { createIncidentService } from "./services/incidentService.js";
 import { registerAlertRoutes } from "./routes/alerts.js";
 import { startRipeAtlasCollector } from "./services/ripeAtlasCollector.js";
+import { createSettingsService } from "./services/settingsService.js";
+import { registerAdminFoundationRoutes } from "./routes/adminFoundation.js";
+import { registerAdminNotificationRoutes } from "./routes/adminNotifications.js";
+import { registerAdminProbeRoutes } from "./routes/adminProbes.js";
+import { registerAdminRemoteRoutes } from "./routes/adminRemote.js";
 
 const webDistPath = fileURLToPath(new URL("../../web/dist/", import.meta.url));
 
@@ -60,7 +65,9 @@ export async function createApp() {
 
   const database = openDatabase(env.databasePath);
   configureBackupSuccessTimestamp(env.backupSuccessTimestampPath);
-  const authService = createAuthService(env);
+  const authService = createAuthService(env, database);
+  await authService.initialize();
+  const settingsService = createSettingsService(database);
   const sessionService = createSessionService(database);
   const auditService = createAuditService(database);
   const alertmanagerService = createAlertmanagerService(env);
@@ -108,7 +115,11 @@ export async function createApp() {
   await registerMetricsRoutes(app);
   await registerAuthRoutes(app, env, authService, sessionService, auditService);
   await registerAdminRoutes(app, env, authService, sessionService, auditService);
-  await registerAlertRoutes(app, env, alertmanagerService, incidentService);
+  await registerAdminFoundationRoutes(app, env, authService, auditService, settingsService, database);
+  await registerAdminNotificationRoutes(app, env, database, auditService);
+  await registerAdminProbeRoutes(app, database);
+  await registerAdminRemoteRoutes(app, env, database, auditService);
+  await registerAlertRoutes(app, env, alertmanagerService, incidentService, database);
 
   if (existsSync(webDistPath)) {
     await app.register(fastifyStatic, {
