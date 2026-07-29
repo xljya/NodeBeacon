@@ -1789,44 +1789,6 @@ button.admin-menu-btn {
   gap: 16px;
 }
 
-.komari-nav {
-  gap: 4px;
-}
-
-.komari-nav .admin-nav-item {
-  min-height: 49px;
-  padding: 0 14px;
-  border: 0;
-  border-radius: 8px;
-  color: var(--text);
-  font-size: 20px;
-  font-weight: 700;
-}
-
-.komari-nav .admin-nav-item svg {
-  color: var(--text-muted);
-}
-
-.komari-nav .admin-nav-item:hover,
-.komari-nav .admin-nav-item.active {
-  background: #eeeeee;
-  color: var(--text);
-}
-
-.komari-admin[data-theme="dark"] .komari-nav .admin-nav-item:hover,
-.komari-admin[data-theme="dark"] .komari-nav .admin-nav-item.active {
-  background: #272727;
-}
-
-.komari-nav .admin-nav-item.active svg,
-.komari-nav .admin-nav-item:hover svg {
-  color: var(--text-muted);
-}
-
-.nav-chevron {
-  margin-left: auto;
-}
-
 .komari-page {
   width: 100%;
 }
@@ -2159,7 +2121,7 @@ button.admin-menu-btn {
   --bad: #e45162;
   --warn: #d28c20;
   --shadow: 0 10px 28px rgba(40, 70, 116, 0.07);
-  grid-template-columns: 248px minmax(0, 1fr);
+  grid-template-columns: 240px minmax(0, 1fr);
   grid-template-rows: 72px minmax(0, 1fr);
   background: var(--bg);
 }
@@ -2182,7 +2144,7 @@ button.admin-menu-btn {
 }
 
 .komari-admin .admin-sidebar {
-  padding: 14px 12px 20px;
+  padding: 8px;
   border-right: 1px solid var(--border);
   background: color-mix(in srgb, var(--surface) 88%, var(--bg));
 }
@@ -2265,59 +2227,70 @@ button.admin-menu-btn {
   gap: 10px;
 }
 
-.komari-nav {
-  gap: 3px;
-}
-
 .admin-nav-group {
   display: flex;
   flex-direction: column;
-  gap: 3px;
+  gap: 0;
 }
 
 .komari-nav {
   flex: 1;
   min-height: 0;
+  gap: 4px;
+  overflow-y: auto;
+  overflow-x: hidden;
+  scrollbar-width: thin;
+  scrollbar-color: var(--text-muted) transparent;
 }
 
-.komari-nav .admin-nav-heading {
-  padding: 12px 13px 4px;
+.komari-nav::-webkit-scrollbar {
+  width: 6px;
 }
 
-.komari-nav .admin-sidebar-links {
-  margin-top: auto;
-  padding-top: 10px;
-  border-top: 1px solid var(--border);
+.komari-nav::-webkit-scrollbar-thumb {
+  background: var(--text-muted);
+  border-radius: 999px;
 }
 
 .komari-nav .admin-nav-item {
-  min-height: 44px;
-  padding: 0 13px;
+  min-height: 40px;
+  padding: 8px;
+  gap: 8px;
   border: 0;
-  border-radius: 8px;
+  border-left: 4px solid transparent;
+  border-radius: 6px;
   color: var(--text);
-  font-size: 13.5px;
-  font-weight: 550;
+  background: transparent;
+  font-family: system-ui, -apple-system, "Segoe UI", "Microsoft YaHei", sans-serif;
+  font-size: 16px;
+  line-height: 24px;
+  font-weight: 500;
 }
 
 .komari-nav .admin-nav-item svg {
+  flex: 0 0 16px;
   color: var(--text-muted);
 }
 
-.komari-nav .admin-nav-item:hover,
-.komari-nav .admin-nav-item.active {
-  color: var(--accent);
-  background: color-mix(in srgb, var(--accent) 9%, var(--surface));
+.komari-nav .admin-nav-item:hover {
+  color: var(--text);
+  background: color-mix(in srgb, var(--accent) 6%, var(--surface));
 }
 
-.komari-admin[data-theme="dark"] .komari-nav .admin-nav-item:hover,
-.komari-admin[data-theme="dark"] .komari-nav .admin-nav-item.active {
-  background: color-mix(in srgb, var(--accent) 18%, var(--surface));
+.komari-nav .admin-nav-item.active {
+  color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 10%, var(--surface));
+  border-left-color: var(--accent);
 }
 
 .komari-nav .admin-nav-item.active svg,
 .komari-nav .admin-nav-item:hover svg {
   color: var(--accent);
+}
+
+.komari-nav .admin-nav-item:focus-visible {
+  outline: 2px solid color-mix(in srgb, var(--accent) 65%, transparent);
+  outline-offset: -2px;
 }
 
 .nav-group-toggle {
@@ -2327,20 +2300,28 @@ button.admin-menu-btn {
   text-align: left;
 }
 
+.nav-group-toggle.open,
+.nav-group-toggle.open:hover {
+  color: var(--text);
+  background: transparent;
+}
+
 .admin-nav-nested {
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: 4px;
   margin: 0 0 4px 16px;
-  padding-left: 10px;
-  border-left: 1px solid var(--border);
+  padding: 0;
 }
 
-.komari-nav .admin-nav-child {
-  min-height: 38px;
-  padding: 0 10px;
-  font-size: 13px;
-  font-weight: 500;
+.nav-chevron {
+  flex: 0 0 16px;
+  margin-left: auto;
+  transition: transform 200ms ease;
+}
+
+.nav-group-toggle.open .nav-chevron {
+  transform: rotate(180deg);
 }
 
 .komari-page-head {

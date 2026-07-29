@@ -27,23 +27,23 @@
     "nav": {
       "groupMonitor": "监控",
       "groupManage": "管理",
-      "server": "Server",
+      "server": "服务器",
       "overview": "总览",
       "nodes": "节点",
       "users": "用户",
       "settings": "设置",
-      "notification": "Notification",
-      "remoteExec": "Remote Exec",
-      "latency": "Latency",
-      "sessions": "Sessions",
-      "account": "Account",
-      "logs": "Logs",
+      "notification": "通知",
+      "remoteExec": "远程执行",
+      "latency": "延迟监测",
+      "sessions": "会话管理",
+      "account": "账户",
+      "logs": "日志",
       "activity": "活动",
       "about": "关于",
       "documentation": "文档",
       "public": "公开状态页",
-      "home": "Home",
-      "defaultTheme": "Default Theme Settings"
+      "home": "首页",
+      "defaultTheme": "默认主题设置"
       ,"site": "站点", "theme": "主题管理", "signOn": "登录", "notifications": "通知", "general": "通用", "xtermjs": "XtermJS", "reverseProxy": "反向代理", "metrics": "Metrics 数据库", "offline": "离线通知", "load": "负载通知", "trafficReport": "流量定时报告"
     },
     "topbar": {
