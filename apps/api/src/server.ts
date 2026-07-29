@@ -5,6 +5,7 @@ import cors from "@fastify/cors";
 import cookie from "@fastify/cookie";
 import rateLimit from "@fastify/rate-limit";
 import fastifyStatic from "@fastify/static";
+import websocket from "@fastify/websocket";
 import { loadEnv } from "./config/env.js";
 import { registerHealthRoutes } from "./routes/health.js";
 import { registerStatusRoutes } from "./routes/status.js";
@@ -53,6 +54,7 @@ export async function createApp() {
   await app.register(cookie, { secret: env.cookieSecret });
   // global:false => only routes that opt in (login) are rate limited.
   await app.register(rateLimit, { global: false });
+  await app.register(websocket);
 
   // API responses contain live operational or authenticated state. Make the
   // no-store boundary explicit at the origin so browsers, reverse proxies and
