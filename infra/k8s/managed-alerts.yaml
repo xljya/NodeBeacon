@@ -26,6 +26,10 @@ rules:
     resources: ["prometheusrules"]
     resourceNames: ["nodebeacon-managed-alerts"]
     verbs: ["get", "update", "patch"]
+  - apiGroups: ["monitoring.coreos.com"]
+    resources: ["probes"]
+    resourceNames: ["nodebeacon-managed-http", "nodebeacon-managed-tcp", "nodebeacon-managed-icmp"]
+    verbs: ["get", "update", "patch"]
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding

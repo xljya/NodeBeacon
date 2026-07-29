@@ -39,7 +39,7 @@ spec:
           type: RuntimeDefault
       containers:
         - name: executor
-          image: nodebeacon:1.0.29
+          image: nodebeacon:1.0.30
           imagePullPolicy: Never
           command: ["node", "apps/api/dist/executor.js"]
           ports:

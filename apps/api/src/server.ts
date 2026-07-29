@@ -32,6 +32,7 @@ import { registerAdminFoundationRoutes } from "./routes/adminFoundation.js";
 import { registerAdminNotificationRoutes } from "./routes/adminNotifications.js";
 import { registerAdminProbeRoutes } from "./routes/adminProbes.js";
 import { registerAdminRemoteRoutes } from "./routes/adminRemote.js";
+import { reconcileManagedProbes } from "./services/k8sReconcileService.js";
 
 const webDistPath = fileURLToPath(new URL("../../web/dist/", import.meta.url));
 
@@ -118,6 +119,7 @@ export async function createApp() {
   await registerAdminFoundationRoutes(app, env, authService, auditService, settingsService, database);
   await registerAdminNotificationRoutes(app, env, database, auditService);
   await registerAdminProbeRoutes(app, database);
+  void reconcileManagedProbes(database, app.log);
   await registerAdminRemoteRoutes(app, env, database, auditService);
   await registerAlertRoutes(app, env, alertmanagerService, incidentService, database);
 
