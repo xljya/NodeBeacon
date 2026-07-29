@@ -14,6 +14,8 @@ import {
 import { useTranslation } from "react-i18next";
 import type { AdminAlert, AdminAlertsResponse, AdminIncidentsResponse } from "@nodebeacon/shared";
 import { useApi } from "../../lib/useApi";
+import { apiPost } from "../../lib/api";
+import { useState } from "react";
 
 const RULES = [
   { slug: "offline", title: "Offline", icon: PlugZap, pattern: /down|offline|unavailable|probe/i },
@@ -33,6 +35,8 @@ export function NotificationPage() {
   const Icon = rule.icon;
   const alerts = useApi<AdminAlertsResponse>("/api/admin/alerts");
   const incidents = useApi<AdminIncidentsResponse>("/api/admin/incidents?limit=20");
+  const rules = useApi<{ rules: Array<{ id: string; name: string; type: string; enabled: boolean; reconcileStatus: string }> }>("/api/admin/alert-rules");
+  const [ruleName, setRuleName] = useState("");
 
   const visibleAlerts = (alerts.data?.alerts ?? []).filter((alert) =>
     alertName(alert) !== "Watchdog" && rule.pattern.test(alertName(alert))
@@ -61,6 +65,7 @@ export function NotificationPage() {
       </section>
 
       <div className="notification-live-grid">
+        {(rule.slug === "offline" || rule.slug === "load") && <section className="section-panel notification-focus-panel"><div className="section-head"><div><h3>Managed rules</h3><p>Whitelist-generated Prometheus rules with per-rule channel binding.</p></div><Gauge size={20} /></div><div className="settings-action-row"><input className="text-input" placeholder={`${rule.title} rule name`} value={ruleName} onChange={(event) => setRuleName(event.target.value)} /><button className="primary-btn" onClick={() => void apiPost("/api/admin/alert-rules", { name: ruleName || rule.title, type: rule.slug, config: {}, channelIds: [] }).then(() => { setRuleName(""); void rules.reload(); })}>Create rule</button></div><div className="setting-list">{rules.data?.rules.filter((item) => item.type === rule.slug).map((item) => <div className="setting-card flat" key={item.id}><div className="setting-text"><h3>{item.name}</h3><p>{item.reconcileStatus}</p></div><span className={item.enabled ? "pill pill-ok" : "pill"}>{item.enabled ? "Enabled" : "Disabled"}</span></div>)}</div></section>}
         <section className="section-panel notification-focus-panel">
           <div className="section-head">
             <div>

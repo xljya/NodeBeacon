@@ -12,13 +12,14 @@ import {
   RefreshCw,
   Server,
   Settings2
+  ,Terminal
 } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import type { AdminSummaryResponse } from "@nodebeacon/shared";
 import { AppearanceControls } from "./ThemeSettingsPage";
 import { useApi } from "../../lib/useApi";
 import { PageError, PageLoading } from "../components/PageState";
-import { apiPatch, apiPost } from "../../lib/api";
+import { apiDelete, apiPatch, apiPost } from "../../lib/api";
 
 const SETTINGS_INDEX = [
   { slug: "site", label: "Site", icon: Globe2 },
@@ -26,6 +27,7 @@ const SETTINGS_INDEX = [
   { slug: "sign-on", label: "Sign-On", icon: LockKeyhole },
   { slug: "notifications", label: "Notifications", icon: Bell },
   { slug: "general", label: "General", icon: Settings2 },
+  { slug: "xtermjs", label: "XtermJS", icon: Terminal },
   { slug: "reverse-proxy", label: "Reverse Proxy", icon: ArrowUpRight },
   { slug: "metrics", label: "Metrics Database", icon: Database }
 ] as const;
@@ -93,7 +95,7 @@ function SettingsContent({ section, summary, site, general, sources }: { section
         </div>
       );
     case "notifications":
-      return <SettingsLink target="/admin/notification/general" text="Open notification rules" />;
+      return <NotificationSettings />;
     case "general":
       return (
         <div className="setting-list">
@@ -105,6 +107,8 @@ function SettingsContent({ section, summary, site, general, sources }: { section
       );
     case "reverse-proxy":
       return <CopyOrigin />;
+    case "xtermjs":
+      return <XtermSettings />;
     case "metrics":
       return (
         <div className="setting-list">
@@ -117,6 +121,19 @@ function SettingsContent({ section, summary, site, general, sources }: { section
     default:
       return <SiteSettings site={site} />;
   }
+}
+
+function XtermSettings() {
+  const [fontSize, setFontSize] = useState(() => window.localStorage.getItem("nodebeacon.xterm.fontSize") ?? "14"); const [rows, setRows] = useState(() => window.localStorage.getItem("nodebeacon.xterm.rows") ?? "1000");
+  const save = () => { window.localStorage.setItem("nodebeacon.xterm.fontSize", fontSize); window.localStorage.setItem("nodebeacon.xterm.rows", rows); };
+  return <div className="setting-list"><div className="settings-action-row"><label>Font size <input className="text-input" type="number" min="10" max="32" value={fontSize} onChange={(event) => setFontSize(event.target.value)} /></label><label>Scrollback rows <input className="text-input" type="number" min="100" max="10000" value={rows} onChange={(event) => setRows(event.target.value)} /></label><button className="primary-btn" onClick={save}>Save</button></div><p className="page-sub">Cursor, spacing and terminal palette are applied when XtermJS is enabled in v1.0.32.</p></div>;
+}
+
+function NotificationSettings() {
+  const { data, reload } = useApi<{ channels: Array<{ id: string; name: string; type: string; enabled: boolean; config: Record<string, unknown> }> }>("/api/admin/notification-channels");
+  const [name, setName] = useState(""); const [type, setType] = useState("webhook"); const [url, setUrl] = useState(""); const [message, setMessage] = useState("");
+  const add = async () => { try { await apiPost("/api/admin/notification-channels", { name, type, config: type === "webhook" ? { url } : type === "telegram" ? { botToken: url, chatId: "" } : { host: url } }); setName(""); setUrl(""); setMessage("Channel saved"); await reload(); } catch (error) { setMessage(error instanceof Error ? error.message : "Channel failed"); } };
+  return <div className="setting-list"><div className="settings-action-row"><input className="text-input" placeholder="Channel name" value={name} onChange={(event) => setName(event.target.value)} /><select className="selector" value={type} onChange={(event) => setType(event.target.value)}><option value="telegram">Telegram</option><option value="smtp">SMTP</option><option value="webhook">HTTPS Webhook</option></select><input className="text-input" placeholder={type === "webhook" ? "https://..." : "Host or bot token"} value={url} onChange={(event) => setUrl(event.target.value)} /><button className="primary-btn" onClick={() => void add()}>Add channel</button></div>{data?.channels.map((channel) => <div className="setting-card flat" key={channel.id}><div className="setting-text"><h3>{channel.name}</h3><p>{channel.type}</p></div><button className="ghost-btn" onClick={() => void apiPost(`/api/admin/notification-channels/${channel.id}/test`).then(() => setMessage("Test queued"))}>Test</button><button className="ghost-btn" onClick={() => void apiDelete(`/api/admin/notification-channels/${channel.id}`).then(() => void reload())}>Delete</button></div>)}{message && <p className="page-sub">{message}</p>}<SettingsLink target="/admin/notification/general" text="Open alert rules and delivery history" /></div>;
 }
 
 function SiteSettings({ site }: { site: { name: string; description: string; defaultLocale: string; timezone: string } | null }) {
