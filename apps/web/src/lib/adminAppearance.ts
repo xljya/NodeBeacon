@@ -15,7 +15,9 @@ export function getAdminAppearance(): AdminAppearance {
     ? accent ?? ADMIN_ACCENTS[0]
     : ADMIN_ACCENTS[0];
   return {
-    theme: theme === "dark" ? "dark" : "light",
+    // The management console is data-dense by design; match the low-glare
+    // operator-focused default while respecting an explicitly saved choice.
+    theme: theme === "light" ? "light" : "dark",
     accent: resolvedAccent
   };
 }

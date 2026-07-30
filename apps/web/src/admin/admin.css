@@ -2879,3 +2879,201 @@ button.admin-menu-btn {
     min-width: min(100%, 250px);
   }
 }
+
+/* ---------- Deep operator theme: Komari-style node management ---------- */
+
+.komari-admin[data-theme="dark"] {
+  --bg: #06080c;
+  --surface: #0b0e14;
+  --surface-2: #10141d;
+  --border: #202738;
+  --text: #e8edf6;
+  --text-muted: #7f8ba1;
+  --ok: #35d69a;
+  --bad: #ff6875;
+  --shadow: none;
+}
+
+.komari-admin[data-theme="dark"] .admin-topbar {
+  height: 64px;
+  background: #07090d;
+  border-bottom-color: #171d29;
+}
+
+.komari-admin[data-theme="dark"] .admin-sidebar {
+  background: #080a0e;
+  border-right-color: #171d29;
+}
+
+.komari-admin[data-theme="dark"] .admin-content {
+  padding: 28px 28px 48px;
+  background: #06080c;
+}
+
+.komari-admin[data-theme="dark"] .komari-nav .admin-nav-item {
+  color: #a7b0c0;
+}
+
+.komari-admin[data-theme="dark"] .komari-nav .admin-nav-item:hover {
+  color: #f1f5fb;
+  background: #101622;
+}
+
+.komari-admin[data-theme="dark"] .komari-nav .admin-nav-item.active {
+  color: #9db5ff;
+  background: #111a33;
+  border-left-color: #5b7cff;
+}
+
+.komari-admin[data-theme="dark"] .top-icon,
+.komari-admin[data-theme="dark"] .top-lang .lang-switch > .icon-btn {
+  color: #8d9ab0;
+  background: #0d1119;
+  border-color: #202838;
+  box-shadow: none;
+}
+
+.komari-admin[data-theme="dark"] .top-icon:hover,
+.komari-admin[data-theme="dark"] .top-lang .lang-switch > .icon-btn:hover {
+  color: #dbe6ff;
+  background: #141c2b;
+  border-color: #354363;
+}
+
+.komari-admin[data-theme="dark"] .logout-icon {
+  color: #c9d6ff;
+  background: #1b3270;
+  border-color: #294b9e;
+}
+
+.komari-admin[data-theme="dark"] .komari-page-head {
+  margin-bottom: 24px;
+}
+
+.komari-admin[data-theme="dark"] .komari-page-head h2 {
+  color: #f3f6fb;
+  font-size: 30px;
+  font-weight: 750;
+  letter-spacing: -0.025em;
+}
+
+.komari-admin[data-theme="dark"] .komari-search {
+  width: 260px;
+  height: 50px;
+  border-color: #202838;
+  border-radius: 7px;
+  color: #73809a;
+  background: #090c12;
+  box-shadow: none;
+}
+
+.komari-admin[data-theme="dark"] .komari-search:focus-within {
+  border-color: #4d70db;
+  box-shadow: 0 0 0 3px rgba(91, 124, 255, 0.16);
+}
+
+.komari-admin[data-theme="dark"] .komari-search input {
+  color: #e8edf6;
+  font-size: 16px;
+}
+
+.komari-admin[data-theme="dark"] .komari-search input::placeholder {
+  color: #59657a;
+}
+
+.komari-admin[data-theme="dark"] .komari-muted-btn,
+.komari-admin[data-theme="dark"] .komari-add-btn {
+  height: 50px;
+  border-radius: 7px;
+  box-shadow: none;
+}
+
+.komari-admin[data-theme="dark"] .komari-muted-btn {
+  color: #8d9ab0;
+  background: #0d1119;
+  border-color: #202838;
+}
+
+.komari-admin[data-theme="dark"] .komari-muted-btn:hover {
+  color: #dbe6ff;
+  background: #141c2b;
+  border-color: #354363;
+}
+
+.komari-admin[data-theme="dark"] .komari-add-btn {
+  padding: 0 20px;
+  color: #dbe6ff;
+  background: #1b3270;
+  border-color: #294b9e;
+}
+
+.komari-admin[data-theme="dark"] .komari-add-btn:hover {
+  background: #254491;
+}
+
+.komari-admin[data-theme="dark"] .komari-table-wrap {
+  border-color: transparent;
+  border-radius: 12px;
+  background: transparent;
+  box-shadow: none;
+}
+
+.komari-admin[data-theme="dark"] .komari-table {
+  font-size: 15px;
+}
+
+.komari-admin[data-theme="dark"] .komari-table th {
+  height: 56px;
+  padding: 0 18px;
+  color: #74829c;
+  background: #0e1731;
+  font-size: 14px;
+  font-weight: 650;
+  letter-spacing: 0;
+  text-transform: none;
+}
+
+.komari-admin[data-theme="dark"] .komari-table td {
+  height: 56px;
+  padding: 0 18px;
+  border-bottom-color: #171d29;
+  background: #090c12;
+}
+
+.komari-admin[data-theme="dark"] .komari-table tbody tr:hover td {
+  background: #101722;
+}
+
+.komari-admin[data-theme="dark"] .komari-table tbody tr:last-child td:first-child {
+  border-bottom-left-radius: 12px;
+}
+
+.komari-admin[data-theme="dark"] .komari-table tbody tr:last-child td:last-child {
+  border-bottom-right-radius: 12px;
+}
+
+.komari-admin[data-theme="dark"] .komari-column-popover {
+  border-color: #293348;
+  background: #10151f;
+  box-shadow: 0 18px 40px rgba(0, 0, 0, 0.32);
+}
+
+.komari-admin[data-theme="dark"] .komari-bulk-bar {
+  border-color: #2a3d76;
+  background: #0d1630;
+}
+
+@media (max-width: 900px) {
+  .komari-admin[data-theme="dark"] .admin-content {
+    padding: 22px 18px 40px;
+  }
+
+  .komari-admin[data-theme="dark"] .komari-page-head h2 {
+    font-size: 26px;
+  }
+
+  .komari-admin[data-theme="dark"] .komari-search {
+    flex-basis: 100%;
+    width: 100%;
+  }
+}

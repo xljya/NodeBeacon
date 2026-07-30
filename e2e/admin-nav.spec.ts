@@ -1,5 +1,12 @@
 import { test, expect } from "./fixtures";
 
+test("node management defaults to the deep Komari-style operator theme", async ({ ownerPage: page }) => {
+  await expect(page.locator(".komari-admin")).toHaveAttribute("data-theme", "dark");
+  await expect(page.getByRole("heading", { name: "Node list" })).toHaveCSS("font-size", "30px");
+  await expect(page.locator(".komari-search")).toHaveCSS("height", "50px");
+  await expect(page.locator(".komari-table th").first()).toHaveCSS("background-color", "rgb(14, 23, 49)");
+});
+
 test("sidebar follows the compact Komari menu structure", async ({ ownerPage: page }) => {
   const nav = page.getByRole("navigation", { name: "Admin console" });
   const sidebarBox = await page.locator(".admin-sidebar").boundingBox();
