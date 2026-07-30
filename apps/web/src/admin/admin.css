@@ -1791,6 +1791,7 @@ button.admin-menu-btn {
 
 .komari-page {
   width: 100%;
+  min-width: 0;
 }
 
 .komari-page-head {
@@ -1810,7 +1811,7 @@ button.admin-menu-btn {
 .komari-list-actions {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 8px;
 }
 
 .komari-search {
@@ -2151,7 +2152,7 @@ button.admin-menu-btn {
 }
 
 .komari-admin .admin-content {
-  padding: 24px 32px 44px;
+  padding: 16px;
   background: var(--bg);
 }
 
@@ -2326,7 +2327,7 @@ button.admin-menu-btn {
 }
 
 .komari-page-head {
-  margin-bottom: 18px;
+  margin-bottom: 16px;
 }
 
 .komari-page-head h2,
@@ -2338,11 +2339,12 @@ button.admin-menu-btn {
 }
 
 .komari-search {
-  width: 260px;
-  height: 38px;
+  box-sizing: border-box;
+  width: 182px;
+  height: 36px;
   padding: 0 12px;
   border-color: var(--border);
-  border-radius: 10px;
+  border-radius: 5px;
   background: var(--surface);
   box-shadow: 0 1px 3px rgba(40, 70, 116, 0.04);
   transition: border-color 0.15s ease, box-shadow 0.15s ease;
@@ -2359,15 +2361,16 @@ button.admin-menu-btn {
 
 .komari-muted-btn,
 .komari-add-btn {
-  height: 38px;
-  border-radius: 10px;
+  box-sizing: border-box;
+  height: 36px;
+  border-radius: 5px;
   font-size: 14px;
-  font-weight: 600;
+  font-weight: 500;
   transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease;
 }
 
 .komari-muted-btn {
-  width: 38px;
+  width: 36px;
   color: var(--text-muted);
   background: var(--surface);
   border: 1px solid var(--border);
@@ -2386,7 +2389,7 @@ button.admin-menu-btn {
 }
 
 .komari-add-btn {
-  padding: 0 16px;
+  padding: 0 12px;
   background: var(--accent);
   box-shadow: 0 1px 3px color-mix(in srgb, var(--accent) 30%, transparent);
 }
@@ -2434,10 +2437,10 @@ button.admin-menu-btn {
 
 .komari-table-wrap {
   overflow: auto;
-  border: 1px solid var(--border);
-  border-radius: 15px;
-  background: var(--surface);
-  box-shadow: var(--shadow);
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  box-shadow: none;
 }
 
 .komari-table {
@@ -2446,14 +2449,14 @@ button.admin-menu-btn {
 }
 
 .komari-table th {
-  height: 44px;
-  padding: 0 16px;
+  height: 40px;
+  padding: 0 8px;
   color: #607391;
   background: #edf3fb;
-  font-size: 12px;
-  font-weight: 700;
-  letter-spacing: 0.02em;
-  text-transform: uppercase;
+  font-size: 14px;
+  font-weight: 500;
+  letter-spacing: 0;
+  text-transform: none;
   white-space: nowrap;
 }
 
@@ -2463,8 +2466,8 @@ button.admin-menu-btn {
 }
 
 .komari-table td {
-  height: 52px;
-  padding: 0 16px;
+  height: 48px;
+  padding: 0 8px;
   border-bottom: 1px solid color-mix(in srgb, var(--border) 75%, transparent);
   white-space: nowrap;
 }
@@ -2906,7 +2909,7 @@ button.admin-menu-btn {
 }
 
 .komari-admin[data-theme="dark"] .admin-content {
-  padding: 28px 28px 48px;
+  padding: 16px;
   background: #06080c;
 }
 
@@ -2947,21 +2950,21 @@ button.admin-menu-btn {
 }
 
 .komari-admin[data-theme="dark"] .komari-page-head {
-  margin-bottom: 24px;
+  margin-bottom: 16px;
 }
 
 .komari-admin[data-theme="dark"] .komari-page-head h2 {
   color: #f3f6fb;
-  font-size: 30px;
-  font-weight: 750;
-  letter-spacing: -0.025em;
+  font-size: 22px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
 }
 
 .komari-admin[data-theme="dark"] .komari-search {
-  width: 260px;
-  height: 50px;
+  width: 182px;
+  height: 36px;
   border-color: #202838;
-  border-radius: 7px;
+  border-radius: 5px;
   color: #73809a;
   background: #090c12;
   box-shadow: none;
@@ -2974,7 +2977,7 @@ button.admin-menu-btn {
 
 .komari-admin[data-theme="dark"] .komari-search input {
   color: #e8edf6;
-  font-size: 16px;
+  font-size: 14px;
 }
 
 .komari-admin[data-theme="dark"] .komari-search input::placeholder {
@@ -2983,8 +2986,8 @@ button.admin-menu-btn {
 
 .komari-admin[data-theme="dark"] .komari-muted-btn,
 .komari-admin[data-theme="dark"] .komari-add-btn {
-  height: 50px;
-  border-radius: 7px;
+  height: 36px;
+  border-radius: 5px;
   box-shadow: none;
 }
 
@@ -3001,7 +3004,7 @@ button.admin-menu-btn {
 }
 
 .komari-admin[data-theme="dark"] .komari-add-btn {
-  padding: 0 20px;
+  padding: 0 12px;
   color: #dbe6ff;
   background: #1b3270;
   border-color: #294b9e;
@@ -3013,29 +3016,29 @@ button.admin-menu-btn {
 
 .komari-admin[data-theme="dark"] .komari-table-wrap {
   border-color: transparent;
-  border-radius: 12px;
+  border-radius: 8px;
   background: transparent;
   box-shadow: none;
 }
 
 .komari-admin[data-theme="dark"] .komari-table {
-  font-size: 15px;
+  font-size: 14px;
 }
 
 .komari-admin[data-theme="dark"] .komari-table th {
-  height: 56px;
-  padding: 0 18px;
+  height: 40px;
+  padding: 0 8px;
   color: #74829c;
   background: #0e1731;
   font-size: 14px;
-  font-weight: 650;
+  font-weight: 500;
   letter-spacing: 0;
   text-transform: none;
 }
 
 .komari-admin[data-theme="dark"] .komari-table td {
-  height: 56px;
-  padding: 0 18px;
+  height: 48px;
+  padding: 0 8px;
   border-bottom-color: #171d29;
   background: #090c12;
 }
@@ -3045,11 +3048,11 @@ button.admin-menu-btn {
 }
 
 .komari-admin[data-theme="dark"] .komari-table tbody tr:last-child td:first-child {
-  border-bottom-left-radius: 12px;
+  border-bottom-left-radius: 8px;
 }
 
 .komari-admin[data-theme="dark"] .komari-table tbody tr:last-child td:last-child {
-  border-bottom-right-radius: 12px;
+  border-bottom-right-radius: 8px;
 }
 
 .komari-admin[data-theme="dark"] .komari-column-popover {
@@ -3065,11 +3068,11 @@ button.admin-menu-btn {
 
 @media (max-width: 900px) {
   .komari-admin[data-theme="dark"] .admin-content {
-    padding: 22px 18px 40px;
+    padding: 16px;
   }
 
   .komari-admin[data-theme="dark"] .komari-page-head h2 {
-    font-size: 26px;
+    font-size: 22px;
   }
 
   .komari-admin[data-theme="dark"] .komari-search {

@@ -1,9 +1,15 @@
 import { test, expect } from "./fixtures";
 
 test("node management defaults to the deep Komari-style operator theme", async ({ ownerPage: page }) => {
+  await page.setViewportSize({ width: 2048, height: 900 });
+  await expect(page.getByRole("heading", { name: "Node list" })).toBeVisible();
   await expect(page.locator(".komari-admin")).toHaveAttribute("data-theme", "dark");
-  await expect(page.getByRole("heading", { name: "Node list" })).toHaveCSS("font-size", "30px");
-  await expect(page.locator(".komari-search")).toHaveCSS("height", "50px");
+  await expect(page.getByRole("heading", { name: "Node list" })).toHaveCSS("font-size", "22px");
+  await expect(page.locator(".komari-search")).toHaveCSS("width", "182px");
+  await expect(page.locator(".komari-search")).toHaveCSS("height", "36px");
+  await expect(page.locator(".komari-table-wrap")).toHaveCSS("width", "1776px");
+  await expect(page.locator(".komari-table th").first()).toHaveCSS("height", "40px");
+  await expect(page.locator(".komari-table td").first()).toHaveCSS("height", "48.5px");
   await expect(page.locator(".komari-table th").first()).toHaveCSS("background-color", "rgb(14, 23, 49)");
 });
 
@@ -47,6 +53,7 @@ test("sidebar follows the compact Komari menu structure", async ({ ownerPage: pa
   );
   expect(labels).toEqual([
     "Server",
+    "Overview",
     "Settings",
     "Site",
     "Theme Management",
@@ -74,6 +81,11 @@ test("sidebar follows the compact Komari menu structure", async ({ ownerPage: pa
 });
 
 test("sidebar links navigate to their admin pages", async ({ ownerPage: page }) => {
+  await page.getByRole("link", { name: "Overview", exact: true }).click();
+  await expect(page).toHaveURL(/\/admin\/overview$/);
+  await page.getByRole("link", { name: "Server", exact: true }).click();
+  await expect(page).toHaveURL(/\/admin$/);
+
   // "Settings" and "Notification" are nested-group toggle buttons, not links.
   await page.getByRole("button", { name: "Settings", exact: true }).click();
   await page.getByRole("link", { name: "Theme Management" }).click();

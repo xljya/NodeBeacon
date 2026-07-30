@@ -15,6 +15,7 @@ import { NotificationPage } from "./admin/pages/NotificationPage";
 import { ThemeSettingsPage } from "./admin/pages/ThemeSettingsPage";
 import { RemoteExecPage } from "./admin/pages/RemoteExecPage";
 import { ServerPage } from "./admin/pages/ServerPage";
+import { OverviewPage } from "./admin/pages/OverviewPage";
 
 export function App() {
   return (
@@ -29,7 +30,7 @@ export function App() {
       <Route element={<ProtectedRoute />}>
         <Route path="/admin" element={<AdminLayout />}>
           <Route index element={<ServerPage />} />
-          <Route path="overview" element={<Navigate to="/admin?tab=overview" replace />} />
+          <Route path="overview" element={<OverviewPage />} />
           <Route path="nodes" element={<ServerPage />} />
           <Route path="users" element={<Navigate to="/admin/account?tab=identity" replace />} />
           <Route path="settings" element={<SettingsPage />} />

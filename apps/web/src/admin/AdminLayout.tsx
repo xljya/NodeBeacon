@@ -78,6 +78,7 @@ type AdminNavEntry = AdminNavLink | AdminNavGroup | AdminNavExternalLink;
 
 const ADMIN_NAV: AdminNavEntry[] = [
   { kind: "link", to: "/admin", end: true, label: "server", icon: Server },
+  { kind: "link", to: "/admin/overview", label: "overview", icon: BarChart3 },
   {
     kind: "group",
     id: "settings",
