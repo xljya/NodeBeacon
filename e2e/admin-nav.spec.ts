@@ -7,6 +7,22 @@ test("node management defaults to the deep Komari-style operator theme", async (
   await expect(page.locator(".komari-table th").first()).toHaveCSS("background-color", "rgb(14, 23, 49)");
 });
 
+test("migrates the persisted legacy light theme once and then respects later choices", async ({ ownerPage: page }) => {
+  await page.evaluate(() => {
+    window.localStorage.setItem("nb-admin-theme", "light");
+    window.localStorage.removeItem("nb-admin-komari-theme-v1");
+  });
+  await page.reload();
+
+  await expect(page.locator(".komari-admin")).toHaveAttribute("data-theme", "dark");
+  await expect(page.locator(".komari-table th").first()).toHaveCSS("background-color", "rgb(14, 23, 49)");
+
+  await page.getByRole("button", { name: "Toggle theme" }).click();
+  await expect(page.locator(".komari-admin")).toHaveAttribute("data-theme", "light");
+  await page.reload();
+  await expect(page.locator(".komari-admin")).toHaveAttribute("data-theme", "light");
+});
+
 test("sidebar follows the compact Komari menu structure", async ({ ownerPage: page }) => {
   const nav = page.getByRole("navigation", { name: "Admin console" });
   const sidebarBox = await page.locator(".admin-sidebar").boundingBox();
