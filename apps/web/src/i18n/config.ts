@@ -48,4 +48,10 @@ void i18n
     interpolation: { escapeValue: false }
   });
 
+// Keep the document language in sync so the browser can select the matching
+// Simplified or Traditional Chinese font fallback stack.
+i18n.on("languageChanged", (language) => {
+  document.documentElement.lang = language;
+});
+
 export default i18n;

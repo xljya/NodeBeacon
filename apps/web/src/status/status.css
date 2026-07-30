@@ -31,7 +31,7 @@
   min-height: 100vh;
   background: var(--bg);
   color: var(--text);
-  font-family: "Space Grotesk", system-ui, -apple-system, sans-serif;
+  font-family: var(--font-ui);
 }
 
 .status-page[data-theme="dark"] {
@@ -60,7 +60,7 @@
 }
 
 .status-mono {
-  font-family: "JetBrains Mono", ui-monospace, monospace;
+  font-family: var(--font-mono);
 }
 
 .sr-only {
@@ -177,6 +177,10 @@
   cursor: pointer;
   display: inline-flex;
   align-items: center;
+  flex: none;
+  min-width: 58px;
+  justify-content: center;
+  white-space: nowrap;
   text-decoration: none;
   transition: 0.15s;
 }
@@ -715,10 +719,37 @@
 .status-footer {
   border-top: 1px solid var(--border);
   padding-top: 16px;
-  font-family: "JetBrains Mono", ui-monospace, monospace;
+  font-family: var(--font-ui);
   font-size: 11px;
   color: var(--text-mute);
   text-align: center;
+}
+
+/* Keep telemetry monospaced while using the active CJK fallback for localized
+   units such as "42天 03时". */
+.status-page .stat-value,
+.status-page .node-kv-value,
+.status-page .metric-head .v,
+.status-page .metric-sub,
+.status-page .node-foot-row .v,
+.status-page .node-row .tcell,
+.status-page .detail-netbox-row .v,
+.status-page .detail-latency-stats-row > strong {
+  font-family: var(--font-mono);
+}
+
+html:lang(zh-CN) .status-page,
+html:lang(zh-Hans) .status-page,
+html:lang(zh-TW) .status-page,
+html:lang(zh-Hant) .status-page {
+  line-height: 1.45;
+}
+
+html:lang(zh-CN) .status-page .stat-label,
+html:lang(zh-Hans) .status-page .stat-label,
+html:lang(zh-TW) .status-page .stat-label,
+html:lang(zh-Hant) .status-page .stat-label {
+  font-size: 13px;
 }
 
 @media (min-width: 721px) {

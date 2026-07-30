@@ -7,6 +7,17 @@ test("public status page renders without signing in", async ({ page }) => {
   await expect(page.locator(".node-card", { hasText: "hostbrr-4t" }).locator(".node-flag")).toHaveText("🇩🇪");
 });
 
+test("Chinese selection sets the document language and typography stack", async ({ page }) => {
+  await page.goto("/");
+  await page.getByTitle("Language").click();
+  await page.getByRole("option", { name: "简体中文 (zh)" }).click();
+
+  await expect(page.locator("html")).toHaveAttribute("lang", "zh-CN");
+  await expect(page.getByText("当前时间", { exact: true })).toBeVisible();
+  await expect(page.locator(".stat-label").first()).toHaveCSS("font-family", /Noto Sans SC/);
+  await expect(page.locator(".status-login")).toHaveCSS("white-space", "nowrap");
+});
+
 test("the whole node card opens its detail page and hides the live badge", async ({ page }) => {
   await page.goto("/");
   await expect(page.getByText("Live data", { exact: true })).toHaveCount(0);
