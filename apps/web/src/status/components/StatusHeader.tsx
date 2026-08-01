@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import { Moon, Radar, Sun } from "lucide-react";
+import { Github, Moon, Radar, Sun } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { LanguageSwitch } from "../../components/LanguageSwitch";
 
@@ -23,6 +23,16 @@ export function StatusHeader({
         <span className="status-brand-sub">status</span>
       </Link>
       <div className="status-actions">
+        <a
+          href="https://github.com/xljya/NodeBeacon"
+          className="status-iconbtn"
+          title="GitHub"
+          aria-label="GitHub"
+          target="_blank"
+          rel="noreferrer"
+        >
+          <Github size={18} aria-hidden="true" />
+        </a>
         <button
           type="button"
           className="status-iconbtn"
