@@ -773,6 +773,17 @@ html:lang(zh-Hant) .status-page .stat-label {
   }
 }
 
+@media (max-width: 480px) {
+  .status-header {
+    flex-wrap: wrap;
+  }
+
+  .status-actions {
+    width: 100%;
+    justify-content: flex-end;
+  }
+}
+
 .detail-series-info-wrap {
   position: relative;
   display: inline-flex;
