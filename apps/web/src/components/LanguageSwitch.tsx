@@ -9,6 +9,12 @@ export function LanguageSwitch() {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
 
+  // Keep the document language aligned after a saved preference is restored
+  // during initialization, including the first render after a page reload.
+  useEffect(() => {
+    document.documentElement.lang = i18n.language;
+  }, [i18n.language]);
+
   // Close on outside click or Escape.
   useEffect(() => {
     if (!open) return;

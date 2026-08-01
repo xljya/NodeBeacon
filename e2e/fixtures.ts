@@ -5,7 +5,9 @@ export { expect };
 
 /** Forces English so assertions don't depend on the machine's browser locale. */
 async function forceEnglish(page: Page) {
-  await page.addInitScript(() => window.localStorage.setItem("nb-lang", "en"));
+  await page.addInitScript(() => {
+    if (!window.localStorage.getItem("nb-lang")) window.localStorage.setItem("nb-lang", "en");
+  });
 }
 
 export const test = base.extend<{ ownerPage: Page }>({

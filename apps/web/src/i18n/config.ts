@@ -31,6 +31,12 @@ const resources = {
   "zh-MO": { translation: zhTW }
 };
 
+const syncDocumentLanguage = (language: string) => {
+  document.documentElement.lang = language;
+};
+
+i18n.on("languageChanged", syncDocumentLanguage);
+
 void i18n
   .use(LanguageDetector)
   .use(initReactI18next)
@@ -46,12 +52,7 @@ void i18n
       lookupLocalStorage: "nb-lang"
     },
     interpolation: { escapeValue: false }
-  });
-
-// Keep the document language in sync so the browser can select the matching
-// Simplified or Traditional Chinese font fallback stack.
-i18n.on("languageChanged", (language) => {
-  document.documentElement.lang = language;
-});
+  })
+  .then(() => syncDocumentLanguage(i18n.resolvedLanguage ?? i18n.language));
 
 export default i18n;

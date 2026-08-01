@@ -34,6 +34,11 @@ test("English and Traditional Chinese use the matching Pigsty system stacks", as
   await expect(page.getByText("目前時間", { exact: true })).toBeVisible();
   await expect(page.locator(".stat-label").first()).toHaveCSS("font-family", /PingFang TC/);
   await expect(page.locator(".stat-value").first()).toHaveCSS("font-family", /ui-monospace/);
+
+  await page.reload();
+  await expect(page.locator("html")).toHaveAttribute("lang", "zh-TW");
+  await expect(page.getByText("目前時間", { exact: true })).toBeVisible();
+  await expect(page.locator(".stat-label").first()).toHaveCSS("font-family", /PingFang TC/);
 });
 
 test("the whole node card opens its detail page and hides the live badge", async ({ page }) => {
