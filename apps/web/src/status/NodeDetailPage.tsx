@@ -57,6 +57,7 @@ import {
 } from "./components/TrendChart";
 import { getStatusSnapshot, loadStatusSnapshot } from "./statusSnapshot";
 import { LatencySeriesInfo } from "./components/LatencySeriesInfo";
+import { NodeDetailLoadingSkeleton } from "./components/LoadingSkeletons";
 import "./status.css";
 
 type Theme = "light" | "dark";
@@ -915,7 +916,7 @@ export function NodeDetailPage() {
         <StatusHeader theme={theme} onToggleTheme={() => setTheme((previous) => (previous === "light" ? "dark" : "light"))} />
         <div className="status-body">
           {statusLoading && !status && !detail ? (
-            <div className="status-empty"><div className="status-empty-title">{t("common.loading")}</div></div>
+            <NodeDetailLoadingSkeleton />
           ) : !detail && !node ? (
             <div className="status-empty">
               <div className="status-empty-title">

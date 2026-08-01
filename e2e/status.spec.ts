@@ -75,6 +75,69 @@ test("returning from a node detail keeps the previous status snapshot visible", 
   delayStatus = false;
 });
 
+test("public status page shows a layout skeleton during the initial request", async ({ page }) => {
+  let releaseStatus!: () => void;
+  const statusGate = new Promise<void>((resolve) => { releaseStatus = resolve; });
+
+  await page.route("**/api/status", async (route) => {
+    await statusGate;
+    await route.continue();
+  });
+
+  await page.goto("/");
+  await expect(page.getByTestId("status-loading-skeleton")).toBeVisible();
+  await expect(page.locator(".status-empty")).toHaveCount(0);
+
+  releaseStatus();
+  await expect(page.locator(".node-card")).toHaveCount(5);
+  await expect(page.getByTestId("status-loading-skeleton")).toHaveCount(0);
+});
+
+test("public status page matches the persisted table view while loading", async ({ page }) => {
+  await page.addInitScript(() => localStorage.setItem("nb-view", "table"));
+
+  let releaseStatus!: () => void;
+  const statusGate = new Promise<void>((resolve) => { releaseStatus = resolve; });
+  await page.route("**/api/status", async (route) => {
+    await statusGate;
+    await route.continue();
+  });
+
+  await page.goto("/");
+  const skeleton = page.getByTestId("status-loading-skeleton");
+  await expect(skeleton).toBeVisible();
+  await expect(skeleton.getByTestId("status-skeleton-table")).toBeVisible();
+  await expect(skeleton.getByTestId("status-skeleton-row")).toHaveCount(5);
+
+  releaseStatus();
+  await expect(page.locator(".node-table")).toBeVisible();
+  await expect(skeleton).toHaveCount(0);
+});
+
+test("mobile loading skeleton is static for reduced-motion users", async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.emulateMedia({ reducedMotion: "reduce" });
+
+  let releaseStatus!: () => void;
+  const statusGate = new Promise<void>((resolve) => { releaseStatus = resolve; });
+  await page.route("**/api/status", async (route) => {
+    await statusGate;
+    await route.continue();
+  });
+
+  await page.goto("/");
+  const skeleton = page.getByTestId("status-loading-skeleton");
+  await expect(skeleton).toBeVisible();
+  const blocks = skeleton.locator(".status-skeleton-block");
+  const blockCount = await blocks.count();
+  expect(blockCount).toBeGreaterThan(0);
+  await expect(blocks.nth(0)).toHaveCSS("animation-name", "none");
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
+
+  releaseStatus();
+  await expect(page.locator(".node-card")).toHaveCount(5);
+});
+
 test("login page is reachable and rejects bad credentials", async ({ page }) => {
   await page.goto("/login");
   await expect(page.getByRole("heading", { name: "NodeBeacon" })).toBeVisible();

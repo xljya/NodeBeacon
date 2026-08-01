@@ -9,6 +9,7 @@ import { NodeControls, type ViewMode } from "./components/NodeControls";
 import { NodeCard } from "./components/NodeCard";
 import { NodeTable } from "./components/NodeTable";
 import { DataStatusBadge, type DataTone } from "./components/DataStatusBadge";
+import { StatusLoadingSkeleton } from "./components/LoadingSkeletons";
 import { getStatusSnapshot, loadStatusSnapshot } from "./statusSnapshot";
 import "./status.css";
 
@@ -135,53 +136,53 @@ export function StatusPage() {
         <StatusHeader theme={theme} onToggleTheme={() => setTheme((p) => (p === "light" ? "dark" : "light"))} />
 
         <div className="status-body">
-          <StatBar
-            onlineText={`${onlineCount} / ${total}`}
-            regions={regions}
-            trafficUp={fmtBytes(totalTxBytes)}
-            trafficDown={fmtBytes(totalRxBytes)}
-            speedUp={fmtRate(totalTxRate)}
-            speedDown={fmtRate(totalRxRate)}
-            cfg={cfg}
-            onToggle={(key: StatKey) => setCfg((c) => ({ ...c, [key]: !c[key] }))}
-          />
+          {initialLoading ? <StatusLoadingSkeleton view={view} /> : (
+            <>
+              <StatBar
+                onlineText={`${onlineCount} / ${total}`}
+                regions={regions}
+                trafficUp={fmtBytes(totalTxBytes)}
+                trafficDown={fmtBytes(totalRxBytes)}
+                speedUp={fmtRate(totalTxRate)}
+                speedDown={fmtRate(totalRxRate)}
+                cfg={cfg}
+                onToggle={(key: StatKey) => setCfg((c) => ({ ...c, [key]: !c[key] }))}
+              />
 
-          <NodeControls
-            query={query}
-            onQuery={setQuery}
-            view={view}
-            onView={setView}
-            groups={groups}
-            group={group}
-            onGroup={setGroup}
-          />
+              <NodeControls
+                query={query}
+                onQuery={setQuery}
+                view={view}
+                onView={setView}
+                groups={groups}
+                group={group}
+                onGroup={setGroup}
+              />
 
-          <div className="status-meta">
-            <div className="status-count">{t("status.count", { total, online: onlineCount })}</div>
-            {tone !== "live" && <DataStatusBadge tone={tone} />}
-          </div>
-
-          {initialLoading ? (
-            <div className="status-empty" aria-busy="true">
-              <div className="status-empty-title">{t("common.loading")}</div>
-            </div>
-          ) : showEmpty ? (
-            <div className="status-empty">
-              <div className="status-empty-title">
-                {noMatch ? t("status.empty.noMatchTitle") : t("status.empty.noConfigTitle")}
+              <div className="status-meta">
+                <div className="status-count">{t("status.count", { total, online: onlineCount })}</div>
+                {tone !== "live" && <DataStatusBadge tone={tone} />}
               </div>
-              <div className="status-empty-text">
-                {noMatch ? t("status.empty.noMatchText") : t("status.empty.noConfigText")}
-              </div>
-            </div>
-          ) : view === "grid" ? (
-            <div className="node-grid">
-              {views.map((n) => (
-                <NodeCard key={n.id} node={n} />
-              ))}
-            </div>
-          ) : (
-            <NodeTable nodes={views} />
+
+              {showEmpty ? (
+                <div className="status-empty">
+                  <div className="status-empty-title">
+                    {noMatch ? t("status.empty.noMatchTitle") : t("status.empty.noConfigTitle")}
+                  </div>
+                  <div className="status-empty-text">
+                    {noMatch ? t("status.empty.noMatchText") : t("status.empty.noConfigText")}
+                  </div>
+                </div>
+              ) : view === "grid" ? (
+                <div className="node-grid">
+                  {views.map((n) => (
+                    <NodeCard key={n.id} node={n} />
+                  ))}
+                </div>
+              ) : (
+                <NodeTable nodes={views} />
+              )}
+            </>
           )}
 
           <div className="status-footer">

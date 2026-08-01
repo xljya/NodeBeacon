@@ -251,6 +251,31 @@ test("anonymous node detail uses combined charts and polished layout controls", 
   await expect.poll(async () => page.evaluate(() => JSON.parse(localStorage.getItem("nb-node-detail-layout:v3") ?? "{}").charts?.length)).toBe(5);
 });
 
+test("anonymous node detail shows a layout skeleton while initial data is pending", async ({ page }) => {
+  let releaseStatus!: () => void;
+  let releaseDetail!: () => void;
+  const statusGate = new Promise<void>((resolve) => { releaseStatus = resolve; });
+  const detailGate = new Promise<void>((resolve) => { releaseDetail = resolve; });
+
+  await page.route("**/api/status", async (route) => {
+    await statusGate;
+    await route.continue();
+  });
+  await page.route("**/api/public/nodes/rs1000/detail", async (route) => {
+    await detailGate;
+    await route.continue();
+  });
+
+  await page.goto("/nodes/rs1000");
+  await expect(page.getByTestId("node-detail-loading-skeleton")).toBeVisible();
+  await expect(page.locator(".status-empty")).toHaveCount(0);
+
+  releaseStatus();
+  releaseDetail();
+  await expect(page.locator(".detail-main-grid")).toBeVisible();
+  await expect(page.getByTestId("node-detail-loading-skeleton")).toHaveCount(0);
+});
+
 test("non-realtime chart ranges keep their accessible labels visually hidden", async ({ page }) => {
   await page.addInitScript(() => {
     localStorage.setItem("nb-lang", "zh-CN");
