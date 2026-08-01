@@ -17,8 +17,23 @@ test("Chinese selection sets the document language and typography stack", async 
 
   await expect(page.locator("html")).toHaveAttribute("lang", "zh-CN");
   await expect(page.getByText("当前时间", { exact: true })).toBeVisible();
-  await expect(page.locator(".stat-label").first()).toHaveCSS("font-family", /Noto Sans SC/);
+  await expect(page.locator(".stat-label").first()).toHaveCSS("font-family", /PingFang SC/);
+  await expect(page.locator(".stat-value").first()).toHaveCSS("font-family", /ui-monospace/);
   await expect(page.locator(".status-login")).toHaveCSS("white-space", "nowrap");
+});
+
+test("English and Traditional Chinese use the matching Pigsty system stacks", async ({ page }) => {
+  await page.goto("/");
+  await expect(page.locator("html")).toHaveAttribute("lang", "en");
+  await expect(page.locator(".status-page")).toHaveCSS("font-family", /-apple-system/);
+
+  await page.getByTitle("Language").click();
+  await page.getByRole("option", { name: "繁體中文 (zh-tw)" }).click();
+
+  await expect(page.locator("html")).toHaveAttribute("lang", "zh-TW");
+  await expect(page.getByText("目前時間", { exact: true })).toBeVisible();
+  await expect(page.locator(".stat-label").first()).toHaveCSS("font-family", /PingFang TC/);
+  await expect(page.locator(".stat-value").first()).toHaveCSS("font-family", /ui-monospace/);
 });
 
 test("the whole node card opens its detail page and hides the live badge", async ({ page }) => {

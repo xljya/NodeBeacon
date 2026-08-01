@@ -1,5 +1,5 @@
 /* Admin console + login. Hand-rolled to continue the status-page design
-   language (Space Grotesk / JetBrains Mono, soft light surface + blue accent),
+   language (system UI / system mono, soft light surface + blue accent),
    with a matching dark theme. Tokens are scoped to [data-theme] on the shell. */
 
 .admin-shell,
@@ -84,7 +84,7 @@
   border: 1px solid var(--border);
   background: var(--surface-2);
   color: var(--text-muted);
-  font-family: "JetBrains Mono", ui-monospace, monospace;
+  font-family: var(--font-mono);
   font-size: 11px;
   font-weight: 600;
 }
@@ -335,7 +335,7 @@ button.admin-menu-btn {
   justify-content: center;
   min-height: 100vh;
   color: #6b7887;
-  font-family: "Space Grotesk", system-ui, sans-serif;
+  font-family: var(--font-ui);
   background: #eef3f9;
 }
 
@@ -368,7 +368,7 @@ button.admin-menu-btn {
 .metric {
   font-size: 30px;
   font-weight: 700;
-  font-family: "JetBrains Mono", monospace;
+  font-family: var(--font-mono);
 }
 .metric span {
   font-size: 14px;
@@ -464,7 +464,7 @@ button.admin-menu-btn {
 }
 .meter-ring strong {
   display: block;
-  font-family: "JetBrains Mono", monospace;
+  font-family: var(--font-mono);
   font-size: 25px;
 }
 .meter-ring span {
@@ -633,7 +633,7 @@ button.admin-menu-btn {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  font-family: "JetBrains Mono", monospace;
+  font-family: var(--font-mono);
   font-size: 18px;
 }
 .mini-stat p {
@@ -999,7 +999,7 @@ button.admin-menu-btn {
   opacity: 0.75;
 }
 .selector {
-  font-family: "JetBrains Mono", monospace;
+  font-family: var(--font-mono);
   font-size: 12px;
   background: var(--surface-2);
   border: 1px solid var(--border);
@@ -2263,7 +2263,7 @@ button.admin-menu-btn {
   border-radius: 6px;
   color: var(--text);
   background: transparent;
-  font-family: system-ui, -apple-system, "Segoe UI", "Microsoft YaHei", sans-serif;
+  font-family: var(--font-ui);
   font-size: 16px;
   line-height: 24px;
   font-weight: 500;
@@ -2549,7 +2549,7 @@ button.admin-menu-btn {
 }
 
 .inline-copy {
-  font-family: "JetBrains Mono", ui-monospace, monospace;
+  font-family: var(--font-mono);
   font-size: 13px;
 }
 
