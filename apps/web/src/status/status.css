@@ -226,7 +226,7 @@
   color: var(--text-mute);
 }
 .stat-value {
-  font-family: "JetBrains Mono", ui-monospace, monospace;
+  font-family: var(--font-mono);
   font-size: 17px;
   font-weight: 600;
   color: var(--text);
@@ -572,7 +572,7 @@
   display: flex;
   align-items: center;
   gap: 7px;
-  font-family: "JetBrains Mono", ui-monospace, monospace;
+  font-family: var(--font-mono);
   font-size: 13px;
   color: var(--text);
 }
@@ -601,12 +601,12 @@
   color: var(--text-mute);
 }
 .metric-head .v {
-  font-family: "JetBrains Mono", ui-monospace, monospace;
+  font-family: var(--font-mono);
   font-size: 13px;
   color: var(--text);
 }
 .metric-sub {
-  font-family: "JetBrains Mono", ui-monospace, monospace;
+  font-family: var(--font-mono);
   font-size: 11px;
   color: var(--text-mute);
 }
@@ -646,7 +646,7 @@
   color: var(--text-mute);
 }
 .node-foot-row .v {
-  font-family: "JetBrains Mono", ui-monospace, monospace;
+  font-family: var(--font-mono);
   color: var(--text-dim);
   text-align: right;
 }
@@ -695,7 +695,7 @@
   text-overflow: ellipsis;
 }
 .node-row .tcell {
-  font-family: "JetBrains Mono", ui-monospace, monospace;
+  font-family: var(--font-mono);
   font-size: 13px;
   color: var(--text);
 }
@@ -929,7 +929,7 @@ html:lang(zh-Hant) .status-page .stat-label {
 
 .detail-latency-stats-row > strong {
   color: var(--text);
-  font-family: "JetBrains Mono", ui-monospace, monospace;
+  font-family: var(--font-mono);
   font-size: 13px;
   font-weight: 600;
   text-align: right;
@@ -1248,7 +1248,7 @@ html:lang(zh-Hant) .status-page .stat-label {
   color: var(--text-mute);
 }
 .detail-netbox-row .v {
-  font-family: "JetBrains Mono", ui-monospace, monospace;
+  font-family: var(--font-mono);
   font-size: 13px;
   color: var(--text-dim);
 }
@@ -1419,7 +1419,7 @@ html:lang(zh-Hant) .status-page .stat-label {
 }
 .trend-tick {
   fill: var(--text-mute);
-  font-family: "JetBrains Mono", ui-monospace, monospace;
+  font-family: var(--font-mono);
   font-size: 13px;
 }
 .trend-cursor {
@@ -1440,7 +1440,7 @@ html:lang(zh-Hant) .status-page .stat-label {
   flex-wrap: wrap;
   gap: 4px 14px;
   padding: 6px 2px 6px;
-  font-family: "JetBrains Mono", ui-monospace, monospace;
+  font-family: var(--font-mono);
   font-size: 13px;
   color: var(--text-dim);
   min-height: 24px;
@@ -1557,7 +1557,7 @@ html:lang(zh-Hant) .status-page .stat-label {
 .detail-profile-card span {
   overflow: hidden;
   color: var(--text);
-  font-family: "JetBrains Mono", ui-monospace, monospace;
+  font-family: var(--font-mono);
   font-size: 14px;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -1987,7 +1987,7 @@ html:lang(zh-Hant) .status-page .stat-label {
 .detail-profile-card span {
   overflow: visible;
   color: var(--text);
-  font-family: "JetBrains Mono", ui-monospace, monospace;
+  font-family: var(--font-mono);
   font-size: 14px;
   line-height: 1.45;
   overflow-wrap: anywhere;
@@ -2888,7 +2888,7 @@ html:lang(zh-Hant) .status-page .stat-label {
   min-width: 0;
   overflow: hidden;
   color: var(--text-mute);
-  font-family: "JetBrains Mono", ui-monospace, monospace;
+  font-family: var(--font-mono);
   font-size: 12px;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -3163,7 +3163,7 @@ html:lang(zh-Hant) .status-page .stat-label {
   margin-top: 2px;
   overflow: hidden;
   color: var(--text-mute);
-  font-family: "JetBrains Mono", ui-monospace, monospace;
+  font-family: var(--font-mono);
   font-size: 12px;
   line-height: 18px;
   text-overflow: ellipsis;
