@@ -3,7 +3,7 @@ import type { AuthUser } from "@nodebeacon/shared";
 import type { ApiEnv } from "../config/env.js";
 import type { SqliteDatabase } from "./database.js";
 import { decryptSecret } from "./secretService.js";
-import { recoveryCodeHash, verifyTotpCode } from "./totpService.js";
+import { findTotpCodeStep, normalizeRecoveryCode, recoveryCodeHash } from "./totpService.js";
 
 const OWNER_ID = "owner";
 
@@ -27,6 +27,7 @@ export interface AuthService {
   getUsers(): AuthUser[];
   getUserById(id: string): AuthUser | null;
   verifySecondFactor(code: string): boolean;
+  verifyTotpFactor(code: string): boolean;
 }
 
 function toUser(row: UserRow): AuthUser {
@@ -103,13 +104,22 @@ export function createAuthService(env: ApiEnv, db?: SqliteDatabase): AuthService
 
     verifySecondFactor(code: string): boolean {
       if (!db || !service.totpEnabled) return true;
+      if (service.verifyTotpFactor(code)) return true;
+      const normalized = normalizeRecoveryCode(code);
+      const recovery = db.prepare("SELECT id FROM recovery_codes WHERE user_id = 'owner' AND used_at IS NULL AND code_hash = ?").get(recoveryCodeHash(normalized)) as { id?: number } | undefined;
+      if (!recovery?.id) return false;
+      const consumed = db.prepare("UPDATE recovery_codes SET used_at = ? WHERE id = ? AND used_at IS NULL").run(Date.now(), recovery.id);
+      return consumed.changes > 0;
+    },
+
+    verifyTotpFactor(code: string): boolean {
+      if (!db || !service.totpEnabled) return false;
       const factor = db.prepare("SELECT secret_json FROM auth_factors WHERE user_id = 'owner' AND type = 'totp'").get() as { secret_json?: string } | undefined;
       const secret = factor?.secret_json ? decryptSecret(env, factor.secret_json) : null;
-      if (secret && verifyTotpCode(secret, code)) return true;
-      const recovery = db.prepare("SELECT id FROM recovery_codes WHERE user_id = 'owner' AND used_at IS NULL AND code_hash = ?").get(recoveryCodeHash(code)) as { id?: number } | undefined;
-      if (!recovery?.id) return false;
-      db.prepare("UPDATE recovery_codes SET used_at = ? WHERE id = ? AND used_at IS NULL").run(Date.now(), recovery.id);
-      return true;
+      const step = secret ? findTotpCodeStep(secret, code) : null;
+      if (step === null) return false;
+      const updated = db.prepare("UPDATE auth_factors SET last_used_step = ?, updated_at = ? WHERE user_id = 'owner' AND type = 'totp' AND enabled = 1 AND (last_used_step IS NULL OR last_used_step < ?)").run(step, Date.now(), step);
+      return updated.changes > 0;
     },
 
     resolveGithubOwner(login, githubEmail): AuthUser | null {

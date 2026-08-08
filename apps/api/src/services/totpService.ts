@@ -50,19 +50,33 @@ function codeFor(secret: string, counter: number): string {
   return String(number % 1_000_000).padStart(6, "0");
 }
 
+/** Generates the current six-digit code for deterministic tests and local tooling. */
+export function generateTotpCode(secret: string, now = Date.now()): string {
+  return codeFor(secret, Math.floor(now / 30_000));
+}
+
 export function verifyTotpCode(secret: string, code: string, now = Date.now()): boolean {
-  if (!/^\d{6}$/.test(code)) return false;
+  return findTotpCodeStep(secret, code, now) !== null;
+}
+
+/** Returns the matching RFC 6238 time-step, or null when the code is invalid. */
+export function findTotpCodeStep(secret: string, code: string, now = Date.now()): number | null {
+  if (!/^\d{6}$/.test(code)) return null;
   const counter = Math.floor(now / 30_000);
   for (const offset of [-1, 0, 1]) {
     const expected = Buffer.from(codeFor(secret, counter + offset));
     const actual = Buffer.from(code);
-    if (expected.length === actual.length && timingSafeEqual(expected, actual)) return true;
+    if (expected.length === actual.length && timingSafeEqual(expected, actual)) return counter + offset;
   }
-  return false;
+  return null;
 }
 
 export function recoveryCodeHash(code: string): string {
-  return createHash("sha256").update(code).digest("hex");
+  return createHash("sha256").update(normalizeRecoveryCode(code)).digest("hex");
+}
+
+export function normalizeRecoveryCode(code: string): string {
+  return code.trim().replace(/[\s-]/g, "").toUpperCase();
 }
 
 export function createRecoveryCodes(count = 8): string[] {

@@ -4,7 +4,7 @@ import Database from "better-sqlite3";
 
 export type SqliteDatabase = Database.Database;
 
-export const CURRENT_SCHEMA_VERSION = 5;
+export const CURRENT_SCHEMA_VERSION = 6;
 
 function migrateToV1(db: SqliteDatabase): void {
   db.exec(`
@@ -158,6 +158,13 @@ function migrateToV5(db: SqliteDatabase): void {
   `);
 }
 
+function migrateToV6(db: SqliteDatabase): void {
+  db.exec(`
+    ALTER TABLE auth_factors ADD COLUMN last_used_step INTEGER;
+    PRAGMA user_version = 6;
+  `);
+}
+
 export function migrateDatabase(db: SqliteDatabase): void {
   const version = db.pragma("user_version", { simple: true }) as number;
   if (version > CURRENT_SCHEMA_VERSION) {
@@ -178,6 +185,9 @@ export function migrateDatabase(db: SqliteDatabase): void {
   }
   if (version < 5) {
     db.transaction(() => migrateToV5(db))();
+  }
+  if (version < 6) {
+    db.transaction(() => migrateToV6(db))();
   }
 }
 

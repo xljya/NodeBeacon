@@ -1,140 +1,144 @@
-import { useEffect, useState, type FormEvent } from "react";
+import { useEffect, useState, type CSSProperties, type FormEvent } from "react";
 import { Navigate, useLocation, useNavigate, useSearchParams } from "react-router-dom";
-import { Github, Loader2, LogIn, Radar } from "lucide-react";
-import { useTranslation } from "react-i18next";
+import { Github, Loader2, LogIn, Radar, ShieldCheck } from "lucide-react";
 import type { AuthConfigResponse } from "@nodebeacon/shared";
+import { useTranslation } from "react-i18next";
 import { useAuth } from "../auth/AuthProvider";
-import { apiGet } from "../lib/api";
+import { apiGet, ApiError } from "../lib/api";
 import { LanguageSwitch } from "../components/LanguageSwitch";
+import { getAdminAppearance } from "../lib/adminAppearance";
 import "../admin/admin.css";
 
 const ERROR_KEYS: Record<string, string> = {
   github_unbound: "login.err_github_unbound",
   github_failed: "login.err_github_failed",
-  github_disabled: "login.err_github_disabled"
+  github_disabled: "login.err_github_disabled",
+  challenge_expired: "login.err_challenge_expired",
+  invalid_second_factor: "login.err_invalid_second_factor",
+  invalid_credentials: "login.err_invalid_credentials"
 };
 
 export function LoginPage() {
   const { t } = useTranslation();
-  const { user, loading, login } = useAuth();
+  const { user, loading, login, secondFactor, challengeRequired, cancelSecondFactor } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   const [searchParams] = useSearchParams();
-
   const [config, setConfig] = useState<AuthConfigResponse | null>(null);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [secondFactor, setSecondFactor] = useState("");
+  const [code, setCode] = useState("");
+  const [useRecoveryCode, setUseRecoveryCode] = useState(false);
+  const [step, setStep] = useState<"credentials" | "second-factor">("credentials");
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
-
-  // Surface an error passed back from the GitHub OAuth redirect.
-  useEffect(() => {
-    const code = searchParams.get("error");
-    if (code) setError(t(ERROR_KEYS[code] ?? "login.err_generic"));
-  }, [searchParams, t]);
+  const appearance = getAdminAppearance();
 
   useEffect(() => {
-    apiGet<AuthConfigResponse>("/api/auth/config")
+    const codeFromRedirect = searchParams.get("error");
+    if (codeFromRedirect) setError(t(ERROR_KEYS[codeFromRedirect] ?? "login.err_generic"));
+    const redirectChallenge = searchParams.get("step") === "second-factor";
+    void challengeRequired().then((required) => {
+      if (redirectChallenge || required) setStep("second-factor");
+    }).catch(() => undefined);
+  }, [challengeRequired, searchParams, t]);
+
+  useEffect(() => {
+    void apiGet<AuthConfigResponse>("/api/auth/config")
       .then(setConfig)
       .catch(() => setConfig({ passwordLoginEnabled: true, githubLoginEnabled: false }));
   }, []);
 
   const from = (location.state as { from?: string } | null)?.from ?? "/admin";
 
-  if (!loading && user?.role === "owner") {
-    return <Navigate to={from} replace />;
-  }
+  if (!loading && user?.role === "owner") return <Navigate to={from} replace />;
 
-  const handleSubmit = async (event: FormEvent) => {
+  const showError = (err: unknown) => {
+    if (err instanceof ApiError && err.code && ERROR_KEYS[err.code]) {
+      const key = ERROR_KEYS[err.code];
+      if (key) setError(t(key));
+      return;
+    }
+    setError(err instanceof Error ? err.message : t("login.err_generic"));
+  };
+
+  const handleCredentialsSubmit = async (event: FormEvent) => {
     event.preventDefault();
     setError(null);
     setSubmitting(true);
     try {
-      await login(email.trim(), password, secondFactor.trim() || undefined);
-      navigate(from, { replace: true });
+      const result = await login(email.trim(), password);
+      setPassword("");
+      if (result === "second_factor_required") {
+        setStep("second-factor");
+        setCode("");
+      } else {
+        navigate(from, { replace: true });
+      }
     } catch (err) {
-      setError(err instanceof Error ? err.message : t("login.err_generic"));
+      showError(err);
     } finally {
       setSubmitting(false);
     }
+  };
+
+  const handleSecondFactorSubmit = async (event: FormEvent) => {
+    event.preventDefault();
+    setError(null);
+    setSubmitting(true);
+    try {
+      await secondFactor(code.trim());
+      navigate(from, { replace: true });
+    } catch (err) {
+      showError(err);
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const restart = async () => {
+    await cancelSecondFactor().catch(() => undefined);
+    setStep("credentials");
+    setCode("");
+    setPassword("");
+    setError(null);
   };
 
   const passwordEnabled = config?.passwordLoginEnabled ?? true;
   const githubEnabled = config?.githubLoginEnabled ?? false;
 
   return (
-    <div className="login-screen" data-theme="light">
+    <div className="login-screen" data-theme={appearance.theme} style={{ "--accent": appearance.accent } as CSSProperties}>
       <div className="login-card">
         <div className="login-brand">
-          <span className="login-logo" aria-hidden="true">
-            <Radar size={26} strokeWidth={2.25} />
-          </span>
-          <div>
-            <h1>NodeBeacon</h1>
-            <p>{t("login.subtitle")}</p>
-          </div>
-          <div className="login-lang">
-            <LanguageSwitch />
-          </div>
+          <span className="login-logo" aria-hidden="true"><Radar size={26} strokeWidth={2.25} /></span>
+          <div><h1>NodeBeacon</h1><p>{step === "second-factor" ? t("login.secondFactorSubtitle") : t("login.subtitle")}</p></div>
+          <div className="login-lang"><LanguageSwitch /></div>
         </div>
 
-        {error && <div className="login-error">{error}</div>}
+        {error && <div className="login-error" role="alert">{error}</div>}
 
-        {passwordEnabled && (
-          <form className="login-form" onSubmit={handleSubmit}>
-            <label className="login-field">
-              <span>{t("login.email")}</span>
-              <input
-                type="email"
-                autoComplete="username"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="you@example.com"
-                required
-              />
-            </label>
-
-            <label className="login-field">
-              <span>Authenticator / recovery code (optional)</span>
-              <input inputMode="numeric" autoComplete="one-time-code" value={secondFactor} onChange={(e) => setSecondFactor(e.target.value)} placeholder="6 digits or recovery code" />
-            </label>
-
-            <label className="login-field">
-              <span>{t("login.password")}</span>
-              <input
-                type="password"
-                autoComplete="current-password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                placeholder={t("login.passwordPlaceholder")}
-                required
-              />
-            </label>
-
-            <button className="login-submit" type="submit" disabled={submitting || !email || !password}>
-              {submitting ? <Loader2 className="spin" size={16} /> : <LogIn size={16} />}
-              {submitting ? t("login.submitting") : t("login.submit")}
-            </button>
+        {step === "credentials" && passwordEnabled && (
+          <form className="login-form" onSubmit={handleCredentialsSubmit}>
+            <label className="login-field"><span>{t("login.email")}</span><input type="email" autoComplete="username" value={email} onChange={(event) => setEmail(event.target.value)} placeholder="you@example.com" required /></label>
+            <label className="login-field"><span>{t("login.password")}</span><input type="password" autoComplete="current-password" value={password} onChange={(event) => setPassword(event.target.value)} placeholder={t("login.passwordPlaceholder")} required /></label>
+            <button className="login-submit" type="submit" disabled={submitting || !email || !password}><>{submitting ? <Loader2 className="spin" size={16} /> : <LogIn size={16} />}</>{submitting ? t("login.submitting") : t("login.submit")}</button>
           </form>
         )}
 
-        {passwordEnabled && githubEnabled && (
-          <div className="login-divider">
-            <span>{t("login.or")}</span>
-          </div>
+        {step === "second-factor" && (
+          <form className="login-form" onSubmit={handleSecondFactorSubmit}>
+            <div className="login-step-intro"><ShieldCheck size={22} /><p>{useRecoveryCode ? t("login.recoveryHelp") : t("login.authenticatorHelp")}</p></div>
+            <label className="login-field"><span>{useRecoveryCode ? t("login.recoveryCode") : t("login.authenticatorCode")}</span><input autoFocus inputMode={useRecoveryCode ? "text" : "numeric"} autoComplete="one-time-code" maxLength={useRecoveryCode ? 32 : 6} pattern={useRecoveryCode ? undefined : "[0-9]{6}"} value={code} onChange={(event) => setCode(event.target.value)} placeholder={useRecoveryCode ? t("login.recoveryCodePlaceholder") : t("login.authenticatorCodePlaceholder")} required /></label>
+            <button className="login-submit" type="submit" disabled={submitting || !code.trim()}>{submitting ? <Loader2 className="spin" size={16} /> : <ShieldCheck size={16} />}{submitting ? t("login.verifying") : t("login.verify")}</button>
+            <button className="login-link-button" type="button" onClick={() => { setUseRecoveryCode((value) => !value); setCode(""); setError(null); }}>{useRecoveryCode ? t("login.useAuthenticator") : t("login.useRecoveryCode")}</button>
+            <button className="login-link-button" type="button" onClick={() => void restart()}>{t("login.startOver")}</button>
+          </form>
         )}
 
-        {githubEnabled && (
-          <a className="login-github" href="/api/auth/github">
-            <Github size={17} />
-            {t("login.github")}
-          </a>
-        )}
-
-        <a className="login-back" href="/">
-          {t("login.back")}
-        </a>
+        {step === "credentials" && passwordEnabled && githubEnabled && <div className="login-divider"><span>{t("login.or")}</span></div>}
+        {step === "credentials" && githubEnabled && <a className="login-github" href="/api/auth/github"><Github size={17} />{t("login.github")}</a>}
+        {step === "credentials" && <a className="login-back" href="/">{t("login.back")}</a>}
       </div>
     </div>
   );

@@ -7,7 +7,7 @@ import type { AuthService } from "../services/authService.js";
 import type { AuditService } from "../services/auditService.js";
 import type { SqliteDatabase } from "../services/database.js";
 import type { SettingsService } from "../services/settingsService.js";
-import { createRecoveryCodes, generateTotpSecret, otpauthUri, recoveryCodeHash, verifyTotpCode } from "../services/totpService.js";
+import { createRecoveryCodes, findTotpCodeStep, generateTotpSecret, otpauthUri, recoveryCodeHash } from "../services/totpService.js";
 import { decryptSecret, encryptSecret } from "../services/secretService.js";
 import { getPrometheusReachability } from "../services/statusService.js";
 
@@ -87,31 +87,57 @@ export async function registerAdminFoundationRoutes(
     auditService.record({ actor: "owner", action: "auth.password_changed" });
     return { status: "ok" };
   });
-  app.post("/api/admin/2fa/setup", ownerOnly, async () => {
+  app.post("/api/admin/2fa/setup", ownerOnly, async (request, reply) => {
+    const factor = db.prepare("SELECT enabled FROM auth_factors WHERE user_id = 'owner' AND type = 'totp'").get() as { enabled?: number } | undefined;
+    if (factor?.enabled === 1) return reply.code(409).send(buildApiError("totp_already_enabled", "Two-factor authentication is already enabled."));
+    const currentPassword = String(asRecord(request.body).currentPassword ?? "");
+    if (!request.user || !currentPassword || !(await authService.verifyCredentials(request.user.email, currentPassword))) {
+      return reply.code(400).send(buildApiError("reauthentication_required", "Enter the current Owner password to set up two-factor authentication."));
+    }
     const secret = generateTotpSecret();
     db.prepare(`INSERT INTO auth_factors(user_id,type,secret_json,enabled,created_at,updated_at) VALUES ('owner','totp',?,0,?,?) ON CONFLICT(user_id,type) DO UPDATE SET secret_json=excluded.secret_json,enabled=0,updated_at=excluded.updated_at`).run(encryptSecret(env, secret), Date.now(), Date.now());
     return { secret, otpauthUri: otpauthUri(secret, authService.getUserById("owner")?.email ?? "owner") };
   });
   app.post("/api/admin/2fa/confirm", ownerOnly, async (request, reply) => {
     const code = String(asRecord(request.body).code ?? "");
-    const row = db.prepare("SELECT secret_json FROM auth_factors WHERE user_id = ? AND type = 'totp'").get("owner") as { secret_json?: string } | undefined;
+    const row = db.prepare("SELECT secret_json, enabled FROM auth_factors WHERE user_id = ? AND type = 'totp'").get("owner") as { secret_json?: string; enabled?: number } | undefined;
+    if (!row || row.enabled === 1) return reply.code(409).send(buildApiError("totp_already_enabled", "Two-factor authentication is already enabled."));
     const secret = row?.secret_json ? decryptSecret(env, row.secret_json) : null;
-    if (!secret || !verifyTotpCode(secret, code)) return reply.code(400).send(buildApiError("invalid_totp", "Invalid authenticator code."));
-    db.prepare("UPDATE auth_factors SET enabled = 1, updated_at = ? WHERE user_id = 'owner' AND type = 'totp'").run(Date.now());
-    db.prepare("DELETE FROM recovery_codes WHERE user_id = 'owner'").run();
+    const step = secret ? findTotpCodeStep(secret, code) : null;
+    if (!secret || step === null) return reply.code(400).send(buildApiError("invalid_totp", "Invalid authenticator code."));
     const codes = createRecoveryCodes();
-    const insert = db.prepare("INSERT INTO recovery_codes(user_id,code_hash,created_at) VALUES ('owner',?,?)");
-    const tx = db.transaction(() => codes.forEach((item) => insert.run(recoveryCodeHash(item), Date.now())));
-    tx();
+    const activated = db.transaction(() => {
+      const enabled = db.prepare("UPDATE auth_factors SET enabled = 1, last_used_step = ?, updated_at = ? WHERE user_id = 'owner' AND type = 'totp' AND enabled = 0").run(step, Date.now());
+      if (enabled.changes !== 1) return false;
+      db.prepare("DELETE FROM recovery_codes WHERE user_id = 'owner'").run();
+      const insert = db.prepare("INSERT INTO recovery_codes(user_id,code_hash,created_at) VALUES ('owner',?,?)");
+      codes.forEach((item) => insert.run(recoveryCodeHash(item), Date.now()));
+      return true;
+    })();
+    if (!activated) return reply.code(409).send(buildApiError("totp_already_enabled", "Two-factor authentication is already enabled."));
     auditService.record({ actor: "owner", action: "auth.totp_enabled" });
+    return { status: "ok", recoveryCodes: codes };
+  });
+  app.post("/api/admin/2fa/recovery-codes", ownerOnly, async (request, reply) => {
+    const code = String(asRecord(request.body).code ?? "");
+    if (!authService.verifyTotpFactor(code)) return reply.code(400).send(buildApiError("invalid_totp", "A valid authenticator code is required."));
+    const codes = createRecoveryCodes();
+    db.transaction(() => {
+      db.prepare("DELETE FROM recovery_codes WHERE user_id = 'owner'").run();
+      const insert = db.prepare("INSERT INTO recovery_codes(user_id,code_hash,created_at) VALUES ('owner',?,?)");
+      codes.forEach((item) => insert.run(recoveryCodeHash(item), Date.now()));
+    })();
+    auditService.record({ actor: "owner", action: "auth.recovery_codes_regenerated" });
     return { status: "ok", recoveryCodes: codes };
   });
   app.post("/api/admin/2fa/disable", ownerOnly, async (request, reply) => {
     const code = String(asRecord(request.body).code ?? "");
-    const row = db.prepare("SELECT secret_json FROM auth_factors WHERE user_id = ? AND type = 'totp'").get("owner") as { secret_json?: string } | undefined;
-    const secret = row?.secret_json ? decryptSecret(env, row.secret_json) : null;
-    if (!secret || !verifyTotpCode(secret, code)) return reply.code(400).send(buildApiError("invalid_totp", "Invalid authenticator code."));
-    db.prepare("UPDATE auth_factors SET enabled = 0, updated_at = ? WHERE user_id = 'owner' AND type = 'totp'").run(Date.now());
+    if (!authService.verifyTotpFactor(code)) return reply.code(400).send(buildApiError("invalid_totp", "A valid authenticator code is required."));
+    db.transaction(() => {
+      db.prepare("DELETE FROM recovery_codes WHERE user_id = 'owner'").run();
+      db.prepare("DELETE FROM auth_factors WHERE user_id = 'owner' AND type = 'totp'").run();
+    })();
+    auditService.record({ actor: "owner", action: "auth.totp_disabled" });
     return { status: "ok" };
   });
 

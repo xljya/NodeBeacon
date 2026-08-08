@@ -10,11 +10,23 @@
   },
   "login": {
     "subtitle": "登录管理控制台",
+    "secondFactorSubtitle": "完成两步验证",
     "email": "账号（邮箱）",
     "password": "密码",
     "passwordPlaceholder": "请输入密码",
     "submit": "登录",
     "submitting": "登录中…",
+    "verifying": "验证中…",
+    "verify": "验证并登录",
+    "authenticatorCode": "Authenticator 验证码",
+    "authenticatorCodePlaceholder": "输入 6 位验证码",
+    "authenticatorHelp": "打开你的 Authenticator 应用，输入当前显示的 6 位验证码。",
+    "recoveryCode": "恢复码",
+    "recoveryCodePlaceholder": "输入恢复码",
+    "recoveryHelp": "输入之前保存的一次性恢复码。每个恢复码只能使用一次。",
+    "useRecoveryCode": "改用恢复码",
+    "useAuthenticator": "改用 Authenticator 验证码",
+    "startOver": "返回账号密码登录",
     "or": "或",
     "github": "使用 GitHub 登录",
     "back": "← 返回状态页",
@@ -22,6 +34,9 @@
     "err_github_unbound": "请先登录并绑定你的外部账号。",
     "err_github_failed": "GitHub 登录失败，请重试。",
     "err_github_disabled": "GitHub 登录未启用。"
+    ,"err_challenge_expired": "验证已过期，请重新登录。"
+    ,"err_invalid_second_factor": "Authenticator 验证码或恢复码无效。"
+    ,"err_invalid_credentials": "账号或密码错误。"
   },
   "admin": {
     "nav": {
@@ -204,9 +219,41 @@
       "emptyText": "配置 PROBE_JOB 后会在这里显示 blackbox exporter 结果。"
     },
     "account": {
-      "title": "Account",
+      "title": "账户",
       "subtitle": "当前 owner 会话",
-      "role": "角色：{{role}}"
+      "role": "角色：{{role}}",
+      "passwordTitle": "密码",
+      "passwordDescription": "修改存储在 SQLite 中的 Owner 密码。",
+      "currentPassword": "当前密码",
+      "newPassword": "新密码（至少 12 个字符）",
+      "updatePassword": "更新密码",
+      "passwordUpdated": "密码已更新。",
+      "totpTitle": "两步验证",
+      "totpStatusEnabled": "已启用 · 剩余 {{count}} 个恢复码",
+      "totpStatusDisabled": "未启用",
+      "beginSetup": "设置 Authenticator",
+      "scanTitle": "扫描二维码",
+      "scanDescription": "在 Authenticator 应用中添加 NodeBeacon，然后输入应用显示的验证码。",
+      "qrAlt": "NodeBeacon Authenticator 设置二维码",
+      "qrFailed": "二维码生成失败，请使用下方手动密钥。",
+      "manualKey": "无法扫码时，可手动输入此设置密钥：",
+      "copy": "复制",
+      "confirmCode": "6 位验证码",
+      "confirmSetup": "启用两步验证",
+      "currentAuthenticatorCode": "当前 Authenticator 验证码",
+      "regenerateCodes": "重新生成恢复码",
+      "disableTotp": "禁用两步验证",
+      "recoveryTitle": "保存恢复码",
+      "recoveryDescription": "每个恢复码只能使用一次。离开此页面前，请将它们保存到安全位置。",
+      "copyAll": "全部复制",
+      "download": "下载",
+      "savedCodes": "我已保存这些恢复码。",
+      "done": "完成",
+      "recoveryCodesRegenerated": "恢复码已重新生成。",
+      "totpEnabled": "两步验证已启用。",
+      "totpDisabled": "两步验证已禁用。",
+      "copied": "已复制。",
+      "actionFailed": "操作失败。"
     },
     "sessions": {
       "title": "会话",

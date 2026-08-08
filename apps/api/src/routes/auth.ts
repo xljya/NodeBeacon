@@ -1,18 +1,43 @@
 import { randomBytes } from "node:crypto";
-import type { FastifyInstance, FastifyRequest } from "fastify";
+import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
 import {
   buildApiError,
   type AuthConfigResponse,
   type AuthResponse,
-  type LoginRequest
+  type LoginRequest,
+  type SecondFactorRequiredResponse
 } from "@nodebeacon/shared";
 import type { ApiEnv } from "../config/env.js";
 import type { AuthService } from "../services/authService.js";
 import type { SessionService } from "../services/sessionService.js";
 import type { AuditService } from "../services/auditService.js";
 import { buildAuthorizeUrl, exchangeCodeForIdentity } from "../services/githubOAuth.js";
+import type { AuthChallengeService } from "../services/authChallengeService.js";
+import { AUTH_CHALLENGE_COOKIE, AUTH_CHALLENGE_TTL_SECONDS } from "../services/authChallengeService.js";
 
 const OAUTH_STATE_COOKIE = "nb_oauth_state";
+
+function setChallengeCookie(reply: FastifyReply, env: ApiEnv, token: string): void {
+  reply.setCookie(AUTH_CHALLENGE_COOKIE, token, {
+    signed: true,
+    httpOnly: true,
+    sameSite: "lax",
+    secure: env.secureCookie,
+    path: "/api/auth",
+    maxAge: AUTH_CHALLENGE_TTL_SECONDS
+  });
+}
+
+function clearChallengeCookie(reply: FastifyReply): void {
+  reply.clearCookie(AUTH_CHALLENGE_COOKIE, { path: "/api/auth" });
+}
+
+function readChallengeToken(request: FastifyRequest): string | null {
+  const raw = request.cookies[AUTH_CHALLENGE_COOKIE];
+  if (!raw) return null;
+  const unsigned = request.unsignCookie(raw);
+  return unsigned.valid && unsigned.value ? unsigned.value : null;
+}
 
 function computeRedirectUri(env: ApiEnv, request: FastifyRequest): string {
   if (env.githubCallbackUrl) return env.githubCallbackUrl;
@@ -28,7 +53,8 @@ export async function registerAuthRoutes(
   env: ApiEnv,
   authService: AuthService,
   sessionService: SessionService,
-  auditService: AuditService
+  auditService: AuditService,
+  challengeService: AuthChallengeService
 ): Promise<void> {
   // Public: lets the login page decide which sign-in methods to show.
   app.get("/api/auth/config", async (): Promise<AuthConfigResponse> => ({
@@ -56,9 +82,11 @@ export async function registerAuthRoutes(
       if (!user) {
         return reply.code(401).send(buildApiError("invalid_credentials", "Invalid email or password."));
       }
-      const secondFactor = typeof body?.totpCode === "string" ? body.totpCode : typeof body?.recoveryCode === "string" ? body.recoveryCode : "";
-      if (authService.totpEnabled && !authService.verifySecondFactor(secondFactor)) {
-        return reply.code(401).send(buildApiError("totp_required", "A valid authenticator or recovery code is required."));
+      if (authService.totpEnabled) {
+        const token = challengeService.create(user, "password");
+        setChallengeCookie(reply, env, token);
+        const response: SecondFactorRequiredResponse = { status: "second_factor_required", methods: ["totp", "recovery_code"] };
+        return reply.code(202).send(response);
       }
 
       app.setSession(reply, user);
@@ -67,6 +95,44 @@ export async function registerAuthRoutes(
       return reply.send(response);
     }
   );
+
+  app.get("/api/auth/challenge", async (request) => {
+    const token = readChallengeToken(request);
+    return { required: Boolean(token && challengeService.resolve(token)) };
+  });
+
+  app.post(
+    "/api/auth/2fa",
+    { config: { rateLimit: { max: 5, timeWindow: "1 minute" } } },
+    async (request, reply) => {
+      const token = readChallengeToken(request);
+      const challenge = token ? challengeService.resolve(token) : null;
+      if (!token || !challenge) {
+        clearChallengeCookie(reply);
+        return reply.code(401).send(buildApiError("challenge_expired", "The sign-in challenge has expired. Start again."));
+      }
+      const body = request.body as { code?: unknown } | undefined;
+      const code = typeof body?.code === "string" ? body.code : "";
+      if (!authService.verifySecondFactor(code)) {
+        const failure = challengeService.recordFailure(token);
+        if (failure.expired) clearChallengeCookie(reply);
+        return reply.code(401).send(buildApiError(failure.expired ? "challenge_expired" : "invalid_second_factor", failure.expired ? "The sign-in challenge has expired. Start again." : "Invalid authenticator or recovery code."));
+      }
+      challengeService.consume(token);
+      clearChallengeCookie(reply);
+      app.setSession(reply, challenge.user);
+      auditService.record({ actor: challenge.user.id, action: "auth.login", payload: { method: challenge.method, secondFactor: "totp_or_recovery" } });
+      const response: AuthResponse = { user: challenge.user };
+      return reply.send(response);
+    }
+  );
+
+  app.post("/api/auth/2fa/cancel", async (request, reply) => {
+    const token = readChallengeToken(request);
+    if (token) challengeService.consume(token);
+    clearChallengeCookie(reply);
+    return reply.send({ status: "ok" });
+  });
 
   app.post("/api/auth/logout", async (request, reply) => {
     if (request.sessionId) {
@@ -139,6 +205,11 @@ export async function registerAuthRoutes(
         // Authenticated with GitHub, but not the bound owner account.
         request.log.warn({ login: identity.login }, "github login rejected: not the owner account");
         return reply.redirect("/login?error=github_unbound");
+      }
+      if (authService.totpEnabled) {
+        const token = challengeService.create(owner, "github");
+        setChallengeCookie(reply, env, token);
+        return reply.redirect("/login?step=second-factor");
       }
       app.setSession(reply, owner);
       auditService.record({ actor: owner.id, action: "auth.login", payload: { method: "github" } });

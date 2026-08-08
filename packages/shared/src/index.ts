@@ -359,12 +359,46 @@ export interface AuthUser {
 export interface LoginRequest {
   email: string;
   password: string;
-  totpCode?: string;
-  recoveryCode?: string;
+}
+
+export interface SecondFactorRequest {
+  code: string;
 }
 
 export interface AuthResponse {
   user: AuthUser;
+}
+
+export interface SecondFactorRequiredResponse {
+  status: "second_factor_required";
+  methods: ["totp", "recovery_code"];
+}
+
+export interface AuthChallengeResponse {
+  required: boolean;
+}
+
+export interface AdminAccountResponse {
+  user: AuthUser | null;
+  passwordLoginEnabled: boolean;
+  githubLoginEnabled: boolean;
+  totpEnabled: boolean;
+  recoveryCodesRemaining: number;
+}
+
+export interface TotpSetupResponse {
+  secret: string;
+  otpauthUri: string;
+}
+
+export interface TotpConfirmationResponse {
+  status: "ok";
+  recoveryCodes: string[];
+}
+
+export interface RecoveryCodesResponse {
+  status: "ok";
+  recoveryCodes: string[];
 }
 
 /** Public: tells the login page which sign-in methods are enabled. */

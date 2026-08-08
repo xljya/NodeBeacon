@@ -23,6 +23,7 @@ import { registerAuthGuard } from "./plugins/authGuard.js";
 import { createAuthService } from "./services/authService.js";
 import { openDatabase } from "./services/database.js";
 import { createSessionService } from "./services/sessionService.js";
+import { createAuthChallengeService } from "./services/authChallengeService.js";
 import { createAuditService } from "./services/auditService.js";
 import { createAlertmanagerService } from "./services/alertmanagerService.js";
 import { createIncidentService } from "./services/incidentService.js";
@@ -72,6 +73,7 @@ export async function createApp() {
   await authService.initialize();
   const settingsService = createSettingsService(database);
   const sessionService = createSessionService(database);
+  const challengeService = createAuthChallengeService();
   const auditService = createAuditService(database);
   const alertmanagerService = createAlertmanagerService(env);
   const incidentService = createIncidentService(database);
@@ -116,7 +118,7 @@ export async function createApp() {
   await registerNodeRoutes(app, env);
   await registerLatencyRoutes(app, env);
   await registerMetricsRoutes(app);
-  await registerAuthRoutes(app, env, authService, sessionService, auditService);
+  await registerAuthRoutes(app, env, authService, sessionService, auditService, challengeService);
   await registerAdminRoutes(app, env, authService, sessionService, auditService);
   await registerAdminFoundationRoutes(app, env, authService, auditService, settingsService, database);
   await registerAdminNotificationRoutes(app, env, database, auditService);

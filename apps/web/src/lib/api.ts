@@ -3,7 +3,7 @@
 import i18n from "../i18n/config";
 
 export class ApiError extends Error {
-  constructor(message: string, readonly status: number) {
+  constructor(message: string, readonly status: number, readonly code?: string) {
     super(message);
     this.name = "ApiError";
   }
@@ -12,7 +12,7 @@ export class ApiError extends Error {
 async function toError(res: Response): Promise<ApiError> {
   const body = await res.json().catch(() => null);
   const message = body?.error?.message ?? i18n.t("common.requestFailed", { status: res.status });
-  return new ApiError(message, res.status);
+  return new ApiError(message, res.status, body?.error?.code);
 }
 
 export async function apiGet<T>(path: string): Promise<T> {

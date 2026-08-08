@@ -1431,6 +1431,29 @@ button.admin-menu-btn {
   flex-direction: column;
   gap: 16px;
 }
+.login-step-intro {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-radius: 9px;
+  background: var(--surface-2);
+  color: var(--text-muted);
+  font-size: 13px;
+}
+.login-step-intro svg { flex: 0 0 auto; color: var(--accent); }
+.login-step-intro p { margin: 0; line-height: 1.45; }
+.login-link-button {
+  border: 0;
+  padding: 0;
+  background: transparent;
+  color: var(--accent);
+  font: inherit;
+  font-size: 13px;
+  cursor: pointer;
+}
+.login-link-button:hover { text-decoration: underline; }
 .login-divider {
   display: flex;
   align-items: center;
@@ -1474,6 +1497,48 @@ button.admin-menu-btn {
 }
 .spin {
   animation: nb-spin 0.8s linear infinite;
+}
+
+.totp-setup,
+.recovery-codes {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.totp-setup-instructions {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  text-align: center;
+}
+.totp-setup-instructions h4,
+.recovery-codes h4 { margin: 0; font-size: 15px; }
+.totp-setup-instructions p,
+.recovery-codes p { margin: 0; color: var(--text-muted); font-size: 13px; line-height: 1.45; }
+.totp-qr,
+.totp-qr-placeholder {
+  width: 220px;
+  height: 220px;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: #fff;
+  object-fit: contain;
+}
+.totp-qr-placeholder { background: repeating-linear-gradient(45deg, #f1f4f8, #f1f4f8 8px, #fff 8px, #fff 16px); }
+.totp-secret-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  max-width: 100%;
+}
+.totp-secret-row .selector { overflow: auto; }
+.recovery-confirm {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  color: var(--text-muted);
+  font-size: 13px;
 }
 @keyframes nb-spin {
   to {

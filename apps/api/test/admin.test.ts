@@ -4,6 +4,7 @@ import { tmpdir } from "node:os";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import type { FastifyInstance } from "fastify";
 import { buildTestApp, loginOwner, OWNER_EMAIL } from "./helpers.js";
+import { generateTotpCode } from "../src/services/totpService.js";
 
 describe("admin routes (owner-only)", () => {
   let app: FastifyInstance;
@@ -161,5 +162,21 @@ describe("admin routes (owner-only)", () => {
     });
     expect(res.statusCode).toBe(400);
     expect(res.json().error.code).toBe("invalid_node");
+  });
+
+  it("requires reauthentication and refuses to replace an enabled factor", async () => {
+    const wrong = await app.inject({ method: "POST", url: "/api/admin/2fa/setup", cookies, payload: { currentPassword: "wrong-password" } });
+    expect(wrong.statusCode).toBe(400);
+    expect(wrong.json().error.code).toBe("reauthentication_required");
+
+    const setup = await app.inject({ method: "POST", url: "/api/admin/2fa/setup", cookies, payload: { currentPassword: "test-password-123" } });
+    expect(setup.statusCode).toBe(200);
+    expect(setup.json().otpauthUri).toMatch(/^otpauth:\/\/totp\//);
+    const confirm = await app.inject({ method: "POST", url: "/api/admin/2fa/confirm", cookies, payload: { code: generateTotpCode(setup.json().secret) } });
+    expect(confirm.statusCode).toBe(200);
+
+    const duplicate = await app.inject({ method: "POST", url: "/api/admin/2fa/setup", cookies, payload: { currentPassword: "test-password-123" } });
+    expect(duplicate.statusCode).toBe(409);
+    expect(duplicate.json().error.code).toBe("totp_already_enabled");
   });
 });
