@@ -103,7 +103,7 @@ export function createAuthService(env: ApiEnv, db?: SqliteDatabase): AuthService
     },
 
     verifySecondFactor(code: string): boolean {
-      if (!db || !service.totpEnabled) return true;
+      if (!db || !service.totpEnabled) return false;
       if (service.verifyTotpFactor(code)) return true;
       const normalized = normalizeRecoveryCode(code);
       const recovery = db.prepare("SELECT id FROM recovery_codes WHERE user_id = 'owner' AND used_at IS NULL AND code_hash = ?").get(recoveryCodeHash(normalized)) as { id?: number } | undefined;
