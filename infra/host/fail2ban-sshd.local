@@ -1,0 +1,3 @@
+[sshd]
+# RS1000 moves sshd off the default port; keep the jail aligned with sshd.
+port = 9867

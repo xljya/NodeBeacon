@@ -261,6 +261,8 @@ and required Prometheus rules without logging in or changing production:
   allows Cloudflare HTTP(S), WireGuard, the cluster/WireGuard networks, and
   SSH; unknown inbound traffic is dropped. UDP 8472 (Flannel VXLAN) is
   explicitly blocked on this single-node host.
+- the fail2ban SSH jail source of truth is `infra/host/fail2ban-sshd.local`;
+  it targets the effective SSH port `9867`, not the default port 22.
 - Remote Exec entry points render the NodeBeacon security-boundary notice; this
   app does not expose browser shell or agent command execution.
 - `/admin/settings`: read-only appearance section shows browser-local theme
