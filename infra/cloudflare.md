@@ -113,7 +113,8 @@ Expected results:
 - Hashed asset: `Cache-Control: public, max-age=31536000, immutable`; repeated
   requests can become `HIT` after Cloudflare fills its cache.
 - A direct request to the origin IP, even with a forged `CF-Connecting-IP`
-  header, returns 404 because the source address is not a Cloudflare edge.
+  header, is rejected because the source address is not a Cloudflare edge. The
+  host firewall may drop it before nginx can return its usual 404.
 
 References:
 
