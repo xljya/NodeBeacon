@@ -5,6 +5,13 @@ origin headers authoritative: every `/api/*` response is `Cache-Control:
 no-store`, content-hashed `/assets/*` files are immutable for one year, and SPA
 HTML is `no-cache`.
 
+The origin also enforces a network boundary: nginx accepts the NodeBeacon
+hostname only when the TCP peer is in Cloudflare's published IPv4/IPv6 ranges.
+`CF-Connecting-IP` is used for the restored visitor address only after that
+source check; the presence of the header alone is not an authentication signal.
+The committed nginx copy is updated from Cloudflare's lists at
+<https://www.cloudflare.com/ips-v4> and <https://www.cloudflare.com/ips-v6>.
+
 The commands below intentionally contain no account IDs or tokens. Create a
 scoped API token only if these rules are later managed as code; the production
 host and repository do not currently store Cloudflare credentials.
@@ -105,6 +112,8 @@ Expected results:
 - API: `Cache-Control: no-store`; repeated requests never become a cache hit.
 - Hashed asset: `Cache-Control: public, max-age=31536000, immutable`; repeated
   requests can become `HIT` after Cloudflare fills its cache.
+- A direct request to the origin IP, even with a forged `CF-Connecting-IP`
+  header, returns 404 because the source address is not a Cloudflare edge.
 
 References:
 
@@ -115,6 +124,12 @@ References:
 - [Cloudflare Web Analytics CSP requirements](https://developers.cloudflare.com/web-analytics/faq/#what-do-i-need-to-add-to-my-content-security-policy-csp)
 
 ## Production rollout record
+
+The nginx source allowlist and real-IP restoration were applied to the origin
+on 2026-08-09 (Asia/Shanghai) together with the NodeBeacon 1.0.43 release.
+The same change added a default-drop host firewall with an explicit UDP 8472
+deny for the single-node Flannel VXLAN path. See the release acceptance record
+for the direct-origin and public-header checks.
 
 Applied to the `liucf.com` zone for `monitor.liucf.com` on 2026-07-11
 (Asia/Shanghai). Existing DNS, SSL, Tunnel, bot controls and managed WAF settings

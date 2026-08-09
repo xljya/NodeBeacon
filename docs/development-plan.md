@@ -516,7 +516,7 @@ monitor.liucf.com
 | DNS 记录 | `monitor.liucf.com` 继续代理到 RS1000 `152.53.171.134` | 已切换 |
 | Proxy 状态 | 继续开启橙云代理 | 不需要 |
 | Origin 链路 | 已上线：RS1000 nginx 反代到 NodeBeacon Service `http://10.77.0.1:31003` | 已切换 |
-| Cloudflare Header Guard | RS1000 nginx 要求 `CF-Connecting-IP`，直连源站返回 404 | 保持 |
+| Cloudflare Origin Guard | RS1000 nginx 仅允许 Cloudflare IPv4/IPv6 源地址，并在通过源地址校验后恢复 `CF-Connecting-IP`；伪造 Header 的直连请求返回 404 | 已加固 |
 | TLS / 证书 | RS1000 nginx 使用 Let’s Encrypt `monitor.liucf.com` 证书 | 保持自动续期 |
 | 缓存规则 | `/api/*`、`/auth/*` 不缓存；HTML 短缓存或不缓存；静态资源可长缓存 | 建议补充 |
 | WAF / Rate Limit | 对 `/api/auth/login` 做限速，保护登录接口 | 建议补充 |

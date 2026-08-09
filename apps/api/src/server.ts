@@ -30,6 +30,7 @@ import { createIncidentService } from "./services/incidentService.js";
 import { registerAlertRoutes } from "./routes/alerts.js";
 import { startRipeAtlasCollector } from "./services/ripeAtlasCollector.js";
 import { createSettingsService } from "./services/settingsService.js";
+import { migrateEncryptedSecrets } from "./services/secretService.js";
 import { registerAdminFoundationRoutes } from "./routes/adminFoundation.js";
 import { registerAdminNotificationRoutes } from "./routes/adminNotifications.js";
 import { registerAdminProbeRoutes } from "./routes/adminProbes.js";
@@ -40,6 +41,9 @@ const webDistPath = fileURLToPath(new URL("../../web/dist/", import.meta.url));
 
 export async function createApp() {
   const env = loadEnv();
+  if (process.env.NODE_ENV === "production" && !env.settingsEncryptionKey) {
+    throw new Error("SETTINGS_ENCRYPTION_KEY must be configured in production.");
+  }
   const app = fastify({
     logger: {
       level: process.env.LOG_LEVEL ?? "info"
@@ -68,6 +72,10 @@ export async function createApp() {
   });
 
   const database = openDatabase(env.databasePath);
+  const migratedSecrets = migrateEncryptedSecrets(env, database);
+  if (migratedSecrets > 0) {
+    app.log.info({ migratedSecrets }, "migrated encrypted settings to the independent settings key");
+  }
   configureBackupSuccessTimestamp(env.backupSuccessTimestampPath);
   const authService = createAuthService(env, database);
   await authService.initialize();

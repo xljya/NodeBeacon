@@ -39,7 +39,7 @@ if [ "${PLAN_ONLY}" != "true" ] && [ -n "$(git status --porcelain --untracked-fi
   exit 1
 fi
 
-for manifest in infra/k8s/deployment.yaml infra/k8s/restore-pod.example.yaml; do
+for manifest in infra/k8s/deployment.yaml infra/k8s/restore-pod.example.yaml infra/k8s/executor.yaml; do
   if ! grep -Eq "image:[[:space:]]+${VERSION_TAG}\$" "${manifest}"; then
     echo "ERROR: ${manifest} does not reference ${VERSION_TAG}." >&2
     echo "Bump both release image tags and commit first." >&2

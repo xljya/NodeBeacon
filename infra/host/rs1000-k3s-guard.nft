@@ -1,0 +1,54 @@
+table inet rs1000_k3s_guard {
+  set cloudflare_v4 {
+    type ipv4_addr
+    flags interval
+    elements = {
+      173.245.48.0/20, 103.21.244.0/22, 103.22.200.0/22,
+      103.31.4.0/22, 141.101.64.0/18, 108.162.192.0/18,
+      190.93.240.0/20, 188.114.96.0/20, 197.234.240.0/22,
+      198.41.128.0/17, 162.158.0.0/15, 104.16.0.0/13,
+      104.24.0.0/14, 172.64.0.0/13, 131.0.72.0/22
+    }
+  }
+
+  set cloudflare_v6 {
+    type ipv6_addr
+    flags interval
+    elements = {
+      2400:cb00::/32, 2606:4700::/32, 2803:f800::/32,
+      2405:b500::/32, 2405:8100::/32, 2a06:98c0::/29,
+      2c0f:f248::/32
+    }
+  }
+
+  chain input {
+    type filter hook input priority -20; policy drop;
+
+    ct state established,related accept
+    iifname "lo" accept
+    ip protocol icmp accept
+    ip6 nexthdr icmpv6 accept
+
+    # K3s pod/service networks and the WireGuard management path.
+    ip saddr { 10.42.0.0/16, 10.43.0.0/16, 10.77.0.0/24 } accept
+    ip saddr { 172.16.0.0/12 } accept
+
+    # WireGuard itself is the only public UDP service. Flannel VXLAN 8472 is
+    # intentionally not allowed from the Internet on this single-node host.
+    udp dport 51820 accept
+    udp dport 8472 drop
+
+    # SSH remains reachable for operational recovery and is protected by
+    # fail2ban; Kubernetes control/metrics ports are restricted to trusted
+    # cluster, WireGuard, and operator sources.
+    tcp dport 9867 accept
+    ip saddr @cloudflare_v4 tcp dport { 80, 443 } accept
+    ip6 saddr @cloudflare_v6 tcp dport { 80, 443 } accept
+    ip saddr { 152.53.171.134, 183.247.3.224, 104.249.174.143 } tcp dport { 6443, 9100, 10250 } accept
+    ip6 saddr { ::1, 2a0a:4cc0:2000:a98f:5838:d9ff:fe34:83e } tcp dport { 6443, 9100, 10250 } accept
+
+    # Explicitly retain the previous guard's deny surface. The chain policy
+    # above also rejects unknown ports, including cloudflared metrics.
+    tcp dport { 6443, 9100, 10250, 20241 } drop
+  }
+}

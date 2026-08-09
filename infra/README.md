@@ -139,6 +139,7 @@ kubectl -n nodebeacon create secret generic nodebeacon-secrets \
   --from-literal=GITHUB_CLIENT_ID="..." \
   --from-literal=GITHUB_CLIENT_SECRET="..." \
   --from-literal=ALERTMANAGER_WEBHOOK_TOKEN="$(openssl rand -hex 32)" \
+  --from-literal=SETTINGS_ENCRYPTION_KEY="$(openssl rand -base64 32)" \
   --dry-run=client -o yaml | kubectl apply -f -
 
 # The pod reads the Secret via envFrom; restart to pick up changes:
@@ -256,6 +257,10 @@ and required Prometheus rules without logging in or changing production:
   recovery before the release is considered fully accepted.
 - remote backup retention runs in dry-run first, then `--apply`, keeping 30 days
   of daily archives plus one archive per month for 12 months
+- the host firewall source of truth is `infra/host/rs1000-k3s-guard.nft`. It
+  allows Cloudflare HTTP(S), WireGuard, the cluster/WireGuard networks, and
+  SSH; unknown inbound traffic is dropped. UDP 8472 (Flannel VXLAN) is
+  explicitly blocked on this single-node host.
 - Remote Exec entry points render the NodeBeacon security-boundary notice; this
   app does not expose browser shell or agent command execution.
 - `/admin/settings`: read-only appearance section shows browser-local theme
