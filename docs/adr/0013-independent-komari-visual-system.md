@@ -2,7 +2,9 @@
 
 ## Status
 
-Accepted for the v1.0.44 public and operator interface refresh.
+Superseded by ADR 0014 for the v1.1.0 public interface. The independent
+implementation remains the owner/login/node-detail shell during the staged
+migration.
 
 ## Context
 

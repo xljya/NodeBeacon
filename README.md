@@ -95,7 +95,7 @@ Browser
 
 | 层级 | 技术 |
 | --- | --- |
-| 前端 | React 18、TypeScript、Vite、React Router、i18next |
+| 前端 | Komari Web public shell（React 19）+ NodeBeacon owner shell（React 18）、TypeScript、Vite、Radix Themes |
 | 后端 | Node.js 20、Fastify 5、TypeScript |
 | 指标与告警 | Prometheus、Alertmanager、node_exporter、blackbox_exporter |
 | 网络测量 | RIPE Atlas |
@@ -169,7 +169,7 @@ GitHub Actions 会在推送到 `main` 和 Pull Request 时执行类型检查、�
 
 ## 部署
 
-生产环境使用单容器交付：Fastify 提供 `/api/*`，并托管构建后的 React 静态资源。
+生产环境使用单容器交付：Fastify 提供 `/api/*`，并托管装配后的两个 React 静态资源包。
 SQLite 与运行时节点配置存放在 k3s PVC 中。
 
 ```sh
@@ -184,7 +184,8 @@ SQLite 与运行时节点配置存放在 k3s PVC 中。
 ## 仓库结构
 
 ```text
-apps/web          React/Vite 公共状态页、节点详情页和管理后台
+apps/status-web   从 NodeBeacon-Web 固定提交引入的 Komari Web 公共状态页
+apps/web          NodeBeacon 节点详情、登录和管理后台（/legacy/assets）
 apps/api          Fastify API、认证、Prometheus 查询和 SQLite
 packages/shared   Web 与 API 共用类型和契约
 e2e               Playwright 端到端测试
@@ -195,10 +196,11 @@ docs              ADR、API、实现计划、故障处理和发布记录
 
 ## 设计与致谢
 
-NodeBeacon 的仪表盘布局和交互方向参考了
-[Komari Monitor](https://github.com/komari-monitor/komari)。NodeBeacon 使用
-Prometheus 标准采集链路和服务端 BFF，不复用 Komari 的 Agent、RPC2、前端源码、
-主题包或远程控制模型。全站界面使用 NodeBeacon 自有组件与 Radix Themes 独立实现。
+NodeBeacon 的公开状态页基于
+[NodeBeacon-Web](https://github.com/xljya/NodeBeacon-Web) 中固定提交的 Komari Web fork
+进行数据适配；节点详情、登录和管理后台仍使用 NodeBeacon 自有组件。所有页面继续使用
+Prometheus 标准采集链路和 Fastify BFF，不复用 Komari 的 Agent、RPC2、Metric Store、
+插件、WebSSH、主题包执行或远程控制模型。详细边界见 ADR 0014。
 
 关键技术选择记录在 ADR 中：
 
@@ -207,8 +209,10 @@ Prometheus 标准采集链路和服务端 BFF，不复用 Komari 的 Agent、RPC
 - [ADR-0003：仅由服务端查询 Prometheus](docs/adr/0003-query-prometheus-server-side.md)
 - [ADR-0004：SQLite First](docs/adr/0004-use-sqlite-first.md)
 - [ADR-0005：Web 与 API 单容器交付](docs/adr/0005-single-container-first.md)
+- [ADR-0014：使用固定 Komari Web fork 作为公开外壳](docs/adr/0014-komari-web-public-shell.md)
 
 ## 许可说明
 
-本仓库当前公开用于项目展示和技术交流，尚未授予开源许可证。在正式选择许可证前，
-请勿将代码用于再分发或商业用途。
+本仓库当前公开用于项目展示和技术交流，尚未授予统一的开源许可证。`apps/status-web`
+保留其上游来源与固定提交记录；其上游仓库当前未展示许可证。仓库 fork、来源说明和致谢
+不替代对部署、复制或再分发权利的独立确认。

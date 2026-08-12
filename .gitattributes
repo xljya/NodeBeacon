@@ -17,6 +17,10 @@
 *.svg text eol=lf
 Dockerfile text eol=lf
 
+# Preserve the vendored NodeBeacon-Web commit byte-for-byte. Its upstream
+# sources contain historical trailing whitespace; formatting is owned there.
+apps/status-web/** -whitespace
+
 # Keep native Windows scripts in CRLF when they are added later.
 *.bat text eol=crlf
 *.cmd text eol=crlf

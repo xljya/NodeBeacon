@@ -1,5 +1,5 @@
 # NodeBeacon single-container image (ADR-0005).
-# The Fastify API serves /api/* and hosts the built web bundle from apps/web/dist.
+# The Fastify API serves /api/* and hosts the assembled public + owner web bundles.
 # Multi-stage: build the full pnpm workspace, then ship the built tree.
 
 # ---- builder ----
@@ -24,8 +24,8 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 COPY . .
 RUN pnpm install --frozen-lockfile
 
-# Build shared -> api -> web (tsc + vite). Web output lands in apps/web/dist,
-# which the API serves at runtime. Remove incremental metadata first so stale
+# Build shared -> api -> both web shells, then assemble the owner shell below
+# apps/status-web/dist/legacy. Remove incremental metadata first so stale
 # host tsbuildinfo files cannot make TypeScript skip emit in Docker.
 RUN find . -name '*.tsbuildinfo' -delete && pnpm build
 
@@ -37,7 +37,7 @@ ENV NODE_ENV=production \
 WORKDIR /app
 
 # Copy the whole built workspace. Preserving the apps/ + packages/ layout keeps
-# the API's relative paths (../../web/dist, ../../../../config) and the pnpm
+# the API's relative paths (../../status-web/dist, ../../../../config) and the pnpm
 # node_modules symlinks intact.
 COPY --from=builder /app /app
 

@@ -37,7 +37,17 @@ import { registerAdminProbeRoutes } from "./routes/adminProbes.js";
 import { registerAdminRemoteRoutes } from "./routes/adminRemote.js";
 import { reconcileManagedProbes } from "./services/k8sReconcileService.js";
 
-const webDistPath = fileURLToPath(new URL("../../web/dist/", import.meta.url));
+const webDistPath = fileURLToPath(new URL("../../status-web/dist/", import.meta.url));
+
+export function usesLegacyWebShell(rawUrl: string): boolean {
+  const pathname = rawUrl.split("?", 1)[0] ?? "/";
+  return pathname === "/login" ||
+    pathname.startsWith("/admin/") ||
+    pathname === "/admin" ||
+    pathname.startsWith("/nodes/") ||
+    pathname === "/nodes" ||
+    pathname.startsWith("/legacy/");
+}
 
 export async function createApp() {
   const env = loadEnv();
@@ -146,7 +156,7 @@ export async function createApp() {
       if (url.startsWith("/api/")) {
         return reply.code(404).send({ error: { code: "not_found", message: "API route not found." } });
       }
-      return reply.sendFile("index.html");
+      return reply.sendFile(usesLegacyWebShell(url) ? "legacy/index.html" : "index.html");
     });
   }
 

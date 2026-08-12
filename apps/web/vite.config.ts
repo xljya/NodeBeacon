@@ -2,6 +2,10 @@ import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
 
 export default defineConfig({
+  // Production assets live below the Komari-derived public shell. Keeping the
+  // legacy application on its own asset prefix lets Fastify route /admin,
+  // /login and /nodes to this bundle without asset-name collisions.
+  base: process.env.NB_WEB_BASE ?? "/legacy/",
   plugins: [react()],
   server: {
     proxy: {

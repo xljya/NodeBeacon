@@ -1,6 +1,6 @@
 {
   "name": "nodebeacon",
-  "version": "1.0.44",
+  "version": "1.1.0",
   "private": true,
   "description": "Self-hosted node monitoring and uptime dashboard powered by Prometheus.",
   "type": "module",
@@ -9,9 +9,9 @@
     "dev": "pnpm --filter @nodebeacon/shared build && pnpm --parallel --filter @nodebeacon/api --filter @nodebeacon/web dev",
     "dev:api": "pnpm --filter @nodebeacon/shared build && pnpm --filter @nodebeacon/api dev",
     "dev:web": "pnpm --filter @nodebeacon/shared build && pnpm --filter @nodebeacon/web dev",
-    "build": "pnpm -r build",
-    "typecheck": "pnpm -r typecheck",
-    "lint": "pnpm -r lint",
+    "build": "pnpm -r build && npm --prefix apps/status-web ci && npm --prefix apps/status-web run build && node scripts/assemble-web.mjs",
+    "typecheck": "pnpm -r typecheck && npm --prefix apps/status-web ci && npm --prefix apps/status-web exec -- tsc -b apps/status-web/tsconfig.json",
+    "lint": "pnpm -r lint && npm --prefix apps/status-web ci && npm --prefix apps/status-web run lint",
     "test": "pnpm --filter @nodebeacon/shared build && pnpm -r test",
     "test:e2e": "playwright test --project=edge",
     "test:e2e:ui": "playwright test --project=edge --ui"

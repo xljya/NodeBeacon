@@ -34,7 +34,7 @@ export default defineConfig({
 
   webServer: [
     {
-      command: "node scripts/prepare-e2e.mjs && pnpm --filter @nodebeacon/shared build && pnpm --filter @nodebeacon/api dev",
+      command: "node scripts/prepare-e2e.mjs && pnpm --filter @nodebeacon/shared build && npm --prefix apps/status-web ci && npm --prefix apps/status-web run build && pnpm --filter @nodebeacon/web build && node scripts/assemble-web.mjs && pnpm --filter @nodebeacon/api dev",
       url: "http://localhost:3001/healthz",
       reuseExistingServer: !process.env.CI,
       timeout: 60_000,
@@ -56,7 +56,7 @@ export default defineConfig({
       }
     },
     {
-      command: `pnpm --filter @nodebeacon/web exec vite --host 0.0.0.0 --port ${PORT} --strictPort`,
+      command: `pnpm --filter @nodebeacon/web exec vite --base / --host 0.0.0.0 --port ${PORT} --strictPort`,
       url: BASE_URL,
       reuseExistingServer: !process.env.CI,
       timeout: 60_000,

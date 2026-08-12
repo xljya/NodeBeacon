@@ -1,5 +1,8 @@
 packages:
   - "apps/*"
+  # The Komari-derived shell intentionally keeps its upstream npm lock and
+  # React 19 dependency graph isolated from NodeBeacon's React 18 workspace.
+  - "!apps/status-web"
   - "packages/*"
 allowBuilds:
   better-sqlite3: true

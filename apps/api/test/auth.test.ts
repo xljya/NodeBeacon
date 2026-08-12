@@ -62,6 +62,27 @@ describe("auth routes (env-provisioned owner, persisted cookie session)", () => 
     expect(res.headers["cache-control"]).toBe("no-store");
   });
 
+  it("provides a quiet public session probe for shared page chrome", async () => {
+    const anonymous = await app.inject({ method: "GET", url: "/api/auth/session" });
+    expect(anonymous.statusCode).toBe(200);
+    expect(anonymous.json()).toEqual({ user: null });
+    expect(anonymous.headers["cache-control"]).toBe("no-store");
+
+    const login = await app.inject({
+      method: "POST",
+      url: "/api/auth/login",
+      payload: { email: OWNER_EMAIL, password: OWNER_PASSWORD }
+    });
+    const session = login.cookies.find((cookie) => cookie.name === "nb_session");
+    const authenticated = await app.inject({
+      method: "GET",
+      url: "/api/auth/session",
+      cookies: { nb_session: session!.value }
+    });
+    expect(authenticated.statusCode).toBe(200);
+    expect(authenticated.json().user).toMatchObject({ id: "owner", role: "owner" });
+  });
+
   it("rejects a tampered session cookie", async () => {
     const res = await app.inject({
       method: "GET",
