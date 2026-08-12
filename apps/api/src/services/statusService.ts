@@ -3,6 +3,7 @@ import {
   statusFixture,
   type ApiStatusResponse,
   type NodeConfigEntry,
+  type PublicStatusNode,
   type StatusNode
 } from "@nodebeacon/shared";
 import { loadNodeRegistry } from "../config/nodeRegistry.js";
@@ -17,7 +18,11 @@ const fallbackOsById = new Map(statusFixture.nodes.map((node) => [node.id, node.
 interface CachedStatus {
   key: string;
   expiresAt: number;
-  value: ApiStatusResponse;
+  value: StatusSnapshot;
+}
+
+interface StatusSnapshot extends Omit<ApiStatusResponse, "nodes"> {
+  nodes: StatusNode[];
 }
 
 interface StatusServiceLogger {
@@ -91,7 +96,7 @@ function buildFallbackStatus(
   registry: NodeConfigEntry[],
   now: string,
   stale: boolean
-): ApiStatusResponse {
+): StatusSnapshot {
   // Fixtures are a local-development convenience only. If a real Prometheus
   // target is configured but unavailable at cold start, report unknown/zero
   // instead of presenting believable fake production metrics.
@@ -108,7 +113,7 @@ function buildFallbackStatus(
   };
 }
 
-function withStaleCache(value: ApiStatusResponse): ApiStatusResponse {
+function withStaleCache(value: StatusSnapshot): StatusSnapshot {
   return {
     ...value,
     cache: {
@@ -118,7 +123,7 @@ function withStaleCache(value: ApiStatusResponse): ApiStatusResponse {
   };
 }
 
-export async function getStatus(env: ApiEnv, logger?: StatusServiceLogger): Promise<ApiStatusResponse> {
+export async function getStatus(env: ApiEnv, logger?: StatusServiceLogger): Promise<StatusSnapshot> {
   const key = cacheKey(env);
   const nowMs = Date.now();
   if (cachedStatus && cachedStatus.key === key && cachedStatus.expiresAt > nowMs) {
@@ -130,7 +135,7 @@ export async function getStatus(env: ApiEnv, logger?: StatusServiceLogger): Prom
   const registry = await loadNodeRegistry(env.nodeConfigPath, env.nodeConfigSeedPath, logger);
   const now = new Date(nowMs).toISOString();
   const client = createPrometheusClient(env);
-  let response: ApiStatusResponse;
+  let response: StatusSnapshot;
 
   if (client) {
     try {
@@ -178,6 +183,43 @@ export async function getStatus(env: ApiEnv, logger?: StatusServiceLogger): Prom
   };
 
   return response;
+}
+
+export function toPublicStatusNode(node: StatusNode): PublicStatusNode {
+  return {
+    id: node.id,
+    name: node.name,
+    provider: node.provider,
+    group: node.group,
+    region: node.region,
+    countryCode: node.countryCode,
+    location: node.location,
+    displayOrder: node.displayOrder,
+    public: true,
+    tags: [...node.tags],
+    online: node.online,
+    status: node.status,
+    os: { ...node.os },
+    metrics: { ...node.metrics },
+    updatedAt: node.updatedAt
+  };
+}
+
+export async function getPublicStatus(
+  env: ApiEnv,
+  logger?: StatusServiceLogger
+): Promise<ApiStatusResponse> {
+  const status = await getStatus(env, logger);
+  const nodes = status.nodes
+    .filter((node) => node.public)
+    .map(toPublicStatusNode);
+
+  return {
+    generatedAt: status.generatedAt,
+    cache: { ...status.cache },
+    summary: buildSummary(nodes),
+    nodes
+  };
 }
 
 export function clearStatusCache(): void {

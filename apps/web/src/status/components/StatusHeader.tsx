@@ -2,17 +2,11 @@ import { Link } from "react-router-dom";
 import { Github, Moon, Radar, Sun } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { LanguageSwitch } from "../../components/LanguageSwitch";
+import { useAppearance } from "../../components/AppearanceProvider";
 
-type Theme = "light" | "dark";
-
-export function StatusHeader({
-  theme,
-  onToggleTheme
-}: {
-  theme: Theme;
-  onToggleTheme: () => void;
-}) {
+export function StatusHeader() {
   const { t } = useTranslation();
+  const { resolvedMode, updateAppearance } = useAppearance();
   return (
     <header className="status-header">
       <Link to="/" className="status-brand">
@@ -37,9 +31,10 @@ export function StatusHeader({
           type="button"
           className="status-iconbtn"
           title={t("status.theme")}
-          onClick={onToggleTheme}
+          aria-label={t("status.theme")}
+          onClick={() => updateAppearance({ mode: resolvedMode === "dark" ? "light" : "dark" })}
         >
-          {theme === "dark" ? <Sun size={18} /> : <Moon size={18} />}
+          {resolvedMode === "dark" ? <Sun size={18} /> : <Moon size={18} />}
         </button>
         <LanguageSwitch />
         <Link to="/login" className="status-login">

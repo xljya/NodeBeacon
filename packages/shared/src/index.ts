@@ -68,7 +68,8 @@ export interface StatusMetricSet {
   networkTxBytesTotal: number;
 }
 
-export interface StatusNode {
+/** Public status payload. Registry selectors and owner-only metadata never belong here. */
+export interface PublicStatusNode {
   id: string;
   name: string;
   provider: string;
@@ -78,7 +79,6 @@ export interface StatusNode {
   location?: string;
   displayOrder: number;
   public: boolean;
-  labels: Record<string, string>;
   tags: string[];
   online: boolean;
   status: NodeHealthStatus;
@@ -88,6 +88,11 @@ export interface StatusNode {
   };
   metrics: StatusMetricSet;
   updatedAt: string;
+}
+
+/** Internal/authenticated status payload used by API services and owner routes. */
+export interface StatusNode extends PublicStatusNode {
+  labels: Record<string, string>;
 }
 
 export interface StatusGroupSummary {
@@ -112,7 +117,49 @@ export interface ApiStatusResponse {
     stale: boolean;
   };
   summary: StatusSummary;
-  nodes: StatusNode[];
+  nodes: PublicStatusNode[];
+}
+
+export const APPEARANCE_MODES = ["system", "light", "dark"] as const;
+export const APPEARANCE_ACCENTS = ["iris", "blue", "teal", "orange"] as const;
+export const APPEARANCE_GRAYS = ["slate", "gray", "sand"] as const;
+export const APPEARANCE_RADII = ["none", "small", "medium", "large", "full"] as const;
+export const APPEARANCE_SCALINGS = ["90%", "95%", "100%", "105%", "110%"] as const;
+export const APPEARANCE_PANELS = ["solid", "translucent"] as const;
+
+export type AppearanceMode = (typeof APPEARANCE_MODES)[number];
+export type AppearanceAccent = (typeof APPEARANCE_ACCENTS)[number];
+export type AppearanceGray = (typeof APPEARANCE_GRAYS)[number];
+export type AppearanceRadius = (typeof APPEARANCE_RADII)[number];
+export type AppearanceScaling = (typeof APPEARANCE_SCALINGS)[number];
+export type AppearancePanel = (typeof APPEARANCE_PANELS)[number];
+
+/** Versioned, executable-code-free site appearance contract. */
+export interface AppearanceTokensV1 {
+  version: 1;
+  mode: AppearanceMode;
+  accent: AppearanceAccent;
+  grayColor: AppearanceGray;
+  radius: AppearanceRadius;
+  scaling: AppearanceScaling;
+  panelBackground: AppearancePanel;
+}
+
+export interface PublicThemePreset {
+  id: string;
+  name: string;
+  tokens: AppearanceTokensV1;
+  isDefault: boolean;
+}
+
+export interface ApiSiteConfigResponse {
+  site: {
+    name: string;
+    description: string;
+    defaultLocale: "en" | "zh-CN" | "zh-TW";
+    timezone: string;
+  };
+  theme: PublicThemePreset;
 }
 
 export interface ApiErrorResponse {
@@ -584,7 +631,6 @@ export const statusFixture: ApiStatusResponse = {
       location: "United States",
       displayOrder: 10,
       public: true,
-      labels: { job: "node-exporter", instance: "10.77.0.1:9100" },
       tags: ["k3s", "prometheus"],
       online: true,
       status: "online",
@@ -616,7 +662,6 @@ export const statusFixture: ApiStatusResponse = {
       location: "US West",
       displayOrder: 20,
       public: true,
-      labels: { job: "node-exporter", instance: "10.77.0.2:9100" },
       tags: ["ingress", "public"],
       online: true,
       status: "online",
@@ -648,7 +693,6 @@ export const statusFixture: ApiStatusResponse = {
       location: "Germany",
       displayOrder: 30,
       public: true,
-      labels: { job: "node-exporter", instance: "10.77.0.3:9100" },
       tags: ["storage"],
       online: true,
       status: "online",
@@ -680,7 +724,6 @@ export const statusFixture: ApiStatusResponse = {
       location: "Germany",
       displayOrder: 40,
       public: true,
-      labels: { job: "node-exporter", instance: "10.77.0.4:9100" },
       tags: ["vps"],
       online: true,
       status: "online",
@@ -712,7 +755,6 @@ export const statusFixture: ApiStatusResponse = {
       location: "China",
       displayOrder: 50,
       public: true,
-      labels: { job: "node-exporter", instance: "10.77.0.5:9100" },
       tags: ["vps"],
       online: true,
       status: "online",
@@ -737,7 +779,7 @@ export const statusFixture: ApiStatusResponse = {
   ]
 };
 
-export function buildSummary(nodes: StatusNode[]): StatusSummary {
+export function buildSummary(nodes: PublicStatusNode[]): StatusSummary {
   const groups = new Map<string, StatusGroupSummary>();
   for (const node of nodes) {
     const current = groups.get(node.group) ?? { group: node.group, total: 0, online: 0 };

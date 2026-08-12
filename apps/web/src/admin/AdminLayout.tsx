@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type CSSProperties } from "react";
+import { useEffect, useRef, useState } from "react";
 import { NavLink, Outlet, useLocation, useNavigate } from "react-router-dom";
 import {
   Activity,
@@ -35,13 +35,8 @@ import { useTranslation } from "react-i18next";
 import type { AdminSummaryResponse } from "@nodebeacon/shared";
 import { useAuth } from "../auth/AuthProvider";
 import { LanguageSwitch } from "../components/LanguageSwitch";
-import {
-  ADMIN_ACCENTS,
-  ADMIN_APPEARANCE_EVENT,
-  getAdminAppearance,
-  saveAdminAppearance,
-  type AdminAppearance
-} from "../lib/adminAppearance";
+import { APPEARANCE_ACCENTS } from "@nodebeacon/shared";
+import { useAppearance } from "../components/AppearanceProvider";
 import { useApi } from "../lib/useApi";
 import "./admin.css";
 
@@ -132,15 +127,9 @@ export function AdminLayout() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const sidebarRef = useRef<HTMLElement>(null);
   const sidebarTriggerRef = useRef<HTMLButtonElement>(null);
-  const [appearance, setAppearance] = useState<AdminAppearance>(getAdminAppearance);
+  const { appearance, resolvedMode, updateAppearance } = useAppearance();
   const [settingsOpen, setSettingsOpen] = useState(() => location.pathname.startsWith("/admin/settings"));
   const [notificationOpen, setNotificationOpen] = useState(() => location.pathname.startsWith("/admin/notification"));
-
-  useEffect(() => {
-    const syncAppearance = () => setAppearance(getAdminAppearance());
-    window.addEventListener(ADMIN_APPEARANCE_EVENT, syncAppearance);
-    return () => window.removeEventListener(ADMIN_APPEARANCE_EVENT, syncAppearance);
-  }, []);
 
   useEffect(() => {
     const inSettings = location.pathname.startsWith("/admin/settings");
@@ -172,8 +161,8 @@ export function AdminLayout() {
   }, [sidebarOpen]);
 
   const cycleAccent = () => {
-    const index = ADMIN_ACCENTS.indexOf(appearance.accent as (typeof ADMIN_ACCENTS)[number]);
-    saveAdminAppearance({ accent: ADMIN_ACCENTS[(index + 1) % ADMIN_ACCENTS.length] ?? ADMIN_ACCENTS[0] });
+    const index = APPEARANCE_ACCENTS.indexOf(appearance.accent);
+    updateAppearance({ accent: APPEARANCE_ACCENTS[(index + 1) % APPEARANCE_ACCENTS.length] ?? "iris" });
   };
 
   const handleLogout = async () => {
@@ -182,7 +171,7 @@ export function AdminLayout() {
   };
 
   return (
-    <div className="admin-shell komari-admin" data-theme={appearance.theme} style={{ "--accent": appearance.accent } as CSSProperties}>
+    <div className="admin-shell komari-admin nb-komari-surface" data-theme={resolvedMode}>
       {sidebarOpen && <button className="admin-scrim" aria-label={t("admin.topbar.closeMenu")} onClick={() => setSidebarOpen(false)} />}
 
       <aside ref={sidebarRef} className={sidebarOpen ? "admin-sidebar open" : "admin-sidebar"}>
@@ -239,9 +228,9 @@ export function AdminLayout() {
               className="top-icon"
               title={t("admin.topbar.toggleTheme")}
               aria-label={t("admin.topbar.toggleTheme")}
-              onClick={() => saveAdminAppearance({ theme: appearance.theme === "light" ? "dark" : "light" })}
+              onClick={() => updateAppearance({ mode: resolvedMode === "light" ? "dark" : "light" })}
             >
-              {appearance.theme === "light" ? <Moon size={18} /> : <Sun size={18} />}
+              {resolvedMode === "light" ? <Moon size={18} /> : <Sun size={18} />}
             </button>
             <button className="top-icon" title={t("admin.topbar.color")} aria-label={t("admin.topbar.color")} onClick={cycleAccent}>
               <Droplet size={18} />

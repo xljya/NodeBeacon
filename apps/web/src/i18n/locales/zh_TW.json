@@ -388,6 +388,8 @@
       "online": "在線",
       "offline": "離線",
       "degraded": "降級",
+      "unknown": "未知",
+      "degraded": "降級",
       "unknown": "未知"
     }
   },
@@ -428,6 +430,8 @@
       "uptime": "運行時間",
       "online": "在線",
       "offline": "離線",
+      "degraded": "降級",
+      "unknown": "未知",
       "load": "負載",
       "memory": "記憶體",
       "updatedAt": "最後回報"

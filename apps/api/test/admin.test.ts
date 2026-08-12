@@ -50,6 +50,42 @@ describe("admin routes (owner-only)", () => {
     expect(nodes[0].labels).toBeTypeOf("object");
   });
 
+  it("stores only whitelisted versioned appearance tokens", async () => {
+    const created = await app.inject({
+      method: "POST",
+      url: "/api/admin/themes",
+      cookies,
+      payload: {
+        name: "Unsafe theme input",
+        tokens: {
+          mode: "dark",
+          accent: "teal",
+          grayColor: "sand",
+          radius: "large",
+          scaling: "105%",
+          panelBackground: "solid",
+          css: "body{display:none}",
+          html: "<script>alert(1)</script>",
+          background: "javascript:alert(1)"
+        }
+      }
+    });
+    expect(created.statusCode).toBe(200);
+    const theme = created.json();
+    expect(theme.tokens).toEqual({
+      version: 1,
+      mode: "dark",
+      accent: "teal",
+      grayColor: "sand",
+      radius: "large",
+      scaling: "105%",
+      panelBackground: "solid"
+    });
+    expect(theme.tokens).not.toHaveProperty("css");
+    expect(theme.tokens).not.toHaveProperty("html");
+    await app.inject({ method: "DELETE", url: `/api/admin/themes/${theme.id}`, cookies });
+  });
+
   it("lists the env-provisioned owner account", async () => {
     const res = await app.inject({ method: "GET", url: "/api/admin/users", cookies });
     expect(res.statusCode).toBe(200);

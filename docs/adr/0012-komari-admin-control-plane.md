@@ -24,8 +24,10 @@ recovery operations.
 - Loki selectors, notification webhook hosts and remote task IDs are fixed
   server-side; browsers never submit LogQL, PromQL, Shell or Kubernetes object
   names.
-- Public default themes are server-selected JSON tokens. Owner browser
-  appearance remains local and cannot execute uploaded code.
+- Public default themes use the versioned `AppearanceTokensV1` JSON whitelist:
+  mode, Radix accent/gray scales, radius, scaling and panel background. Owner
+  browser overrides remain local. Raw CSS, HTML, JavaScript, remote assets and
+  theme archives are never accepted or executed.
 - Schema migrations are monotonic. A rollback across schema v5 requires the
   pre-migration SQLite backup as well as the previous image.
 

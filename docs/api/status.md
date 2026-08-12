@@ -35,10 +35,6 @@ backend owns PromQL, caching, error handling, and node metadata mapping.
       "location": "United States",
       "displayOrder": 10,
       "public": true,
-      "labels": {
-        "job": "node-exporter",
-        "instance": "10.77.0.1:9100"
-      },
       "tags": ["k3s", "prometheus"],
       "online": true,
       "status": "online",
@@ -92,8 +88,12 @@ All API errors should use the same JSON envelope:
   be inferred from `region` (for example, `EU` is not a country).
 - `displayOrder` controls stable ordering on the public page and later in the
   admin node table.
-- `labels` are the server-side Prometheus label mapping. The browser receives
-  them for transparency in P0, but PromQL execution remains server-only.
+- `/api/status` contains public nodes only. Prometheus `labels`, private or
+  internal IP addresses, client versions, private notes, billing metadata and
+  detail policy are explicitly excluded by a server-side whitelist serializer.
+- Prometheus labels remain available only to authenticated owner routes. They
+  are never needed by the public browser because PromQL execution is
+  server-only.
 - `generatedAt` describes when the response was produced. `updatedAt` is per
   node and will later reflect the last successful scrape or adapter update.
 - `cache.stale=true` means the API returned previous cached data or fixture

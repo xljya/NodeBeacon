@@ -42,7 +42,7 @@ import {
   type DetailAggregation,
   type DetailChartMetric,
   type DetailTimeRange,
-  type StatusNode,
+  type PublicStatusNode,
   type TrendUnit
 } from "@nodebeacon/shared";
 import { apiGet } from "../lib/api";
@@ -58,9 +58,9 @@ import {
 import { getStatusSnapshot, loadStatusSnapshot } from "./statusSnapshot";
 import { LatencySeriesInfo } from "./components/LatencySeriesInfo";
 import { NodeDetailLoadingSkeleton } from "./components/LoadingSkeletons";
+import { useAppearance } from "../components/AppearanceProvider";
 import "./status.css";
 
-type Theme = "light" | "dark";
 type ChartId = "cpu" | "memory" | "disk" | "network" | "latency" | "connections";
 type ChartSize = "s" | "m" | "l";
 type SeriesState = "loading" | "ready" | "error";
@@ -680,8 +680,8 @@ export function NodeDetailPage() {
   const { id = "" } = useParams();
   const navigate = useNavigate();
   const { t } = useTranslation();
+  const { resolvedMode } = useAppearance();
   const initialLayout = useMemo(loadLayout, []);
-  const [theme, setTheme] = useState<Theme>(() => (localStorage.getItem("nb-theme") as Theme) || "light");
   const [status, setStatus] = useState<ApiStatusResponse | null>(getStatusSnapshot());
   const [statusLoading, setStatusLoading] = useState(!getStatusSnapshot());
   const [detail, setDetail] = useState<ApiNodeDetailV2Response | null>(null);
@@ -702,7 +702,6 @@ export function NodeDetailPage() {
     useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
   );
 
-  useEffect(() => localStorage.setItem("nb-theme", theme), [theme]);
   useEffect(() => {
     localStorage.setItem(LAYOUT_KEY, JSON.stringify({ charts, aggregation, ewma } satisfies LayoutState));
   }, [charts, aggregation, ewma]);
@@ -842,7 +841,7 @@ export function NodeDetailPage() {
     return () => window.clearInterval(timer);
   }, [chartQuerySignature, loadSeries]);
 
-  const node: StatusNode | undefined = useMemo(
+  const node: PublicStatusNode | undefined = useMemo(
     () => status?.nodes.find((candidate) => candidate.id === id),
     [id, status]
   );
@@ -851,7 +850,7 @@ export function NodeDetailPage() {
     [t]
   );
   const view = useMemo(() => (node ? buildNodeView(node, units) : null), [node, units]);
-  const groupedNodes = useMemo(() => (status?.nodes ?? []).reduce<Record<string, StatusNode[]>>((groups, candidate) => {
+  const groupedNodes = useMemo(() => (status?.nodes ?? []).reduce<Record<string, PublicStatusNode[]>>((groups, candidate) => {
     (groups[candidate.group] ??= []).push(candidate);
     return groups;
   }, {}), [status]);
@@ -911,9 +910,9 @@ export function NodeDetailPage() {
       : t("status.detail.chartEmpty");
 
   return (
-    <div className="status-page" data-theme={theme}>
+    <div className="status-page nb-komari-surface" data-theme={resolvedMode}>
       <div className="status-container detail-layout">
-        <StatusHeader theme={theme} onToggleTheme={() => setTheme((previous) => (previous === "light" ? "dark" : "light"))} />
+        <StatusHeader />
         <div className="status-body">
           {statusLoading && !status && !detail ? (
             <NodeDetailLoadingSkeleton />

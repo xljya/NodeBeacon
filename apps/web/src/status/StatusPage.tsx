@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
-import type { ApiStatusResponse, StatusNode } from "@nodebeacon/shared";
+import type { ApiStatusResponse, PublicStatusNode } from "@nodebeacon/shared";
 import { fmtBytes, fmtRate } from "../lib/format";
 import { buildNodeView } from "./nodeView";
 import { StatusHeader } from "./components/StatusHeader";
@@ -11,9 +11,8 @@ import { NodeTable } from "./components/NodeTable";
 import { DataStatusBadge, type DataTone } from "./components/DataStatusBadge";
 import { StatusLoadingSkeleton } from "./components/LoadingSkeletons";
 import { getStatusSnapshot, loadStatusSnapshot } from "./statusSnapshot";
+import { useAppearance } from "../components/AppearanceProvider";
 import "./status.css";
-
-type Theme = "light" | "dark";
 
 const REFRESH_MS = 20000;
 const DEFAULT_CFG: StatVisibility = { time: true, online: true, region: true, traffic: true, speed: true };
@@ -29,21 +28,21 @@ function readJson<T>(key: string, fallback: T): T {
 
 export function StatusPage() {
   const { t } = useTranslation();
+  const { resolvedMode } = useAppearance();
   const initialStatus = getStatusSnapshot();
 
   const [data, setData] = useState<ApiStatusResponse | null>(initialStatus);
   const [loading, setLoading] = useState(!initialStatus);
   const [error, setError] = useState(false);
 
-  const [theme, setTheme] = useState<Theme>(() => (localStorage.getItem("nb-theme") as Theme) || "light");
   const [view, setView] = useState<ViewMode>(() => (localStorage.getItem("nb-view") as ViewMode) || "grid");
   const [cfg, setCfg] = useState<StatVisibility>(() => readJson("nb-status-cfg", DEFAULT_CFG));
-  const [group, setGroup] = useState("All");
+  const [group, setGroup] = useState(() => localStorage.getItem("nb-status-group") || "All");
   const [query, setQuery] = useState("");
 
-  useEffect(() => localStorage.setItem("nb-theme", theme), [theme]);
   useEffect(() => localStorage.setItem("nb-view", view), [view]);
   useEffect(() => localStorage.setItem("nb-status-cfg", JSON.stringify(cfg)), [cfg]);
+  useEffect(() => localStorage.setItem("nb-status-group", group), [group]);
 
   const mounted = useRef(true);
   const load = useCallback(async () => {
@@ -77,8 +76,8 @@ export function StatusPage() {
     };
   }, [load]);
 
-  const publicNodes: StatusNode[] = useMemo(
-    () => (data?.nodes ?? []).filter((n) => n.public !== false),
+  const publicNodes: PublicStatusNode[] = useMemo(
+    () => data?.nodes ?? [],
     [data]
   );
 
@@ -89,6 +88,10 @@ export function StatusPage() {
     }
     return ["All", ...seen];
   }, [publicNodes]);
+
+  useEffect(() => {
+    if (data && !groups.includes(group)) setGroup("All");
+  }, [data, group, groups]);
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -131,9 +134,9 @@ export function StatusPage() {
   const lastUpdated = data?.generatedAt ? new Date(data.generatedAt).toLocaleString() : "—";
 
   return (
-    <div className="status-page" data-theme={theme}>
+    <div className="status-page nb-komari-surface" data-theme={resolvedMode}>
       <div className="status-container">
-        <StatusHeader theme={theme} onToggleTheme={() => setTheme((p) => (p === "light" ? "dark" : "light"))} />
+        <StatusHeader />
 
         <div className="status-body">
           {initialLoading ? <StatusLoadingSkeleton view={view} /> : (

@@ -1,4 +1,4 @@
-import { useEffect, useState, type CSSProperties, type FormEvent } from "react";
+import { useEffect, useState, type FormEvent } from "react";
 import { Navigate, useLocation, useNavigate, useSearchParams } from "react-router-dom";
 import { Github, Loader2, LogIn, Radar, ShieldCheck } from "lucide-react";
 import type { AuthConfigResponse } from "@nodebeacon/shared";
@@ -6,7 +6,7 @@ import { useTranslation } from "react-i18next";
 import { useAuth } from "../auth/AuthProvider";
 import { apiGet, ApiError } from "../lib/api";
 import { LanguageSwitch } from "../components/LanguageSwitch";
-import { getAdminAppearance } from "../lib/adminAppearance";
+import { useAppearance } from "../components/AppearanceProvider";
 import "../admin/admin.css";
 
 const ERROR_KEYS: Record<string, string> = {
@@ -32,7 +32,7 @@ export function LoginPage() {
   const [step, setStep] = useState<"credentials" | "second-factor">("credentials");
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
-  const appearance = getAdminAppearance();
+  const { resolvedMode } = useAppearance();
 
   useEffect(() => {
     const codeFromRedirect = searchParams.get("error");
@@ -108,7 +108,7 @@ export function LoginPage() {
   const githubEnabled = config?.githubLoginEnabled ?? false;
 
   return (
-    <div className="login-screen" data-theme={appearance.theme} style={{ "--accent": appearance.accent } as CSSProperties}>
+    <div className="login-screen nb-komari-surface" data-theme={resolvedMode}>
       <div className="login-card">
         <div className="login-brand">
           <span className="login-logo" aria-hidden="true"><Radar size={26} strokeWidth={2.25} /></span>

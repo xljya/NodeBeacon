@@ -446,6 +446,8 @@
       "online": "在线",
       "offline": "离线",
       "degraded": "降级",
+      "unknown": "未知",
+      "degraded": "降级",
       "unknown": "未知"
     }
   },
@@ -486,6 +488,8 @@
       "uptime": "运行时间",
       "online": "在线",
       "offline": "离线",
+      "degraded": "降级",
+      "unknown": "未知",
       "load": "负载",
       "memory": "内存",
       "updatedAt": "最后上报"

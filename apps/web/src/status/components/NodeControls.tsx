@@ -1,3 +1,4 @@
+import { useEffect, useRef } from "react";
 import { LayoutGrid, List, Search } from "lucide-react";
 import { useTranslation } from "react-i18next";
 
@@ -21,16 +22,36 @@ export function NodeControls({
   onGroup: (g: string) => void;
 }) {
   const { t } = useTranslation();
+  const searchRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    const onKeyDown = (event: KeyboardEvent) => {
+      const target = event.target as HTMLElement | null;
+      const typing = target?.tagName === "INPUT" || target?.tagName === "TEXTAREA" || target?.isContentEditable;
+      if (event.key === "/" && !typing) {
+        event.preventDefault();
+        searchRef.current?.focus();
+      }
+      if (event.key === "Escape" && document.activeElement === searchRef.current) {
+        onQuery("");
+        searchRef.current?.blur();
+      }
+    };
+    document.addEventListener("keydown", onKeyDown);
+    return () => document.removeEventListener("keydown", onKeyDown);
+  }, [onQuery]);
   return (
     <>
       <div className="status-controls">
         <div className="search-box">
           <Search size={18} />
           <input
+            ref={searchRef}
             value={query}
             onChange={(e) => onQuery(e.target.value)}
             placeholder={t("status.controls.searchPlaceholder")}
           />
+          <kbd className="search-shortcut" aria-hidden="true">/</kbd>
         </div>
         <div className="view-wrap">
           <span className="view-label">{t("status.controls.viewMode")}</span>

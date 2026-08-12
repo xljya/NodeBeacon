@@ -28,6 +28,26 @@ html:lang(zh-SG) {
 
 body {
   font-family: var(--font-ui);
+  background: var(--gray-1);
+  color: var(--gray-12);
+}
+
+.nb-theme-root {
+  min-height: 100vh;
+  background: var(--gray-1);
+  color: var(--gray-12);
+}
+
+button,
+input,
+textarea,
+select {
+  font: inherit;
+}
+
+:focus-visible {
+  outline: 2px solid var(--accent-8);
+  outline-offset: 2px;
 }
 
 /* Only the public prototype page (full-screen iframe) locks page scroll. */

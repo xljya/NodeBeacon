@@ -1,32 +1,33 @@
 import { test, expect } from "./fixtures";
 
-test("node management defaults to the deep Komari-style operator theme", async ({ ownerPage: page }) => {
+test("node management uses the unified responsive Komari-style theme", async ({ ownerPage: page }) => {
   await page.setViewportSize({ width: 2048, height: 900 });
   await expect(page.getByRole("heading", { name: "Node list" })).toBeVisible();
-  await expect(page.locator(".komari-admin")).toHaveAttribute("data-theme", "dark");
+  await expect(page.locator(".komari-admin")).toHaveAttribute("data-theme", "light");
   await expect(page.getByRole("heading", { name: "Node list" })).toHaveCSS("font-size", "22px");
   await expect(page.locator(".komari-search")).toHaveCSS("width", "182px");
   await expect(page.locator(".komari-search")).toHaveCSS("height", "36px");
   await expect(page.locator(".komari-table-wrap")).toHaveCSS("width", "1776px");
   await expect(page.locator(".komari-table th").first()).toHaveCSS("height", "40px");
   await expect(page.locator(".komari-table td").first()).toHaveCSS("height", "48.5px");
-  await expect(page.locator(".komari-table th").first()).toHaveCSS("background-color", "rgb(14, 23, 49)");
+  await page.emulateMedia({ colorScheme: "dark" });
+  await expect(page.locator(".komari-admin")).toHaveAttribute("data-theme", "dark");
 });
 
-test("migrates the persisted legacy light theme once and then respects later choices", async ({ ownerPage: page }) => {
+test("migrates the persisted legacy admin theme and respects later choices", async ({ ownerPage: page }) => {
   await page.evaluate(() => {
     window.localStorage.setItem("nb-admin-theme", "light");
-    window.localStorage.removeItem("nb-admin-komari-theme-v1");
+    window.localStorage.removeItem("nb-theme");
+    window.localStorage.removeItem("nb-appearance-v1");
   });
   await page.reload();
 
-  await expect(page.locator(".komari-admin")).toHaveAttribute("data-theme", "dark");
-  await expect(page.locator(".komari-table th").first()).toHaveCSS("background-color", "rgb(14, 23, 49)");
+  await expect(page.locator(".komari-admin")).toHaveAttribute("data-theme", "light");
 
   await page.getByRole("button", { name: "Toggle theme" }).click();
-  await expect(page.locator(".komari-admin")).toHaveAttribute("data-theme", "light");
+  await expect(page.locator(".komari-admin")).toHaveAttribute("data-theme", "dark");
   await page.reload();
-  await expect(page.locator(".komari-admin")).toHaveAttribute("data-theme", "light");
+  await expect(page.locator(".komari-admin")).toHaveAttribute("data-theme", "dark");
 });
 
 test("sidebar follows the compact Komari menu structure", async ({ ownerPage: page }) => {

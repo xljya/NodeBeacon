@@ -1,4 +1,4 @@
-import type { StatusNode } from "@nodebeacon/shared";
+import type { NodeHealthStatus, PublicStatusNode } from "@nodebeacon/shared";
 import {
   fmtBytes,
   fmtRate,
@@ -23,6 +23,7 @@ export interface NodeView {
   group: string;
   flag: string;
   online: boolean;
+  status: NodeHealthStatus;
   osSlug: OsSlug;
   osText: string;
   tags: string[];
@@ -31,6 +32,8 @@ export interface NodeView {
   disk: MetricView;
   upSpeed: string;
   downSpeed: string;
+  upSpeedValue: number;
+  downSpeedValue: number;
   upTotal: string;
   downTotal: string;
   traffic: string;
@@ -43,7 +46,7 @@ export interface NodeView {
 const DASH = "—";
 
 /** Derive all display strings for a node card/row from the raw API node. */
-export function buildNodeView(node: StatusNode, units: UptimeUnits): NodeView {
+export function buildNodeView(node: PublicStatusNode, units: UptimeUnits): NodeView {
   const m = node.metrics;
   const tx = Number(m.networkTxBytesPerSecond) || 0;
   const rx = Number(m.networkRxBytesPerSecond) || 0;
@@ -70,6 +73,7 @@ export function buildNodeView(node: StatusNode, units: UptimeUnits): NodeView {
     group: node.group || "",
     flag: countryFlag(node.countryCode, node.region),
     online: !!node.online,
+    status: node.status,
     osSlug: osSlug(node.os?.name),
     osText: `${node.os?.name ?? "Linux"} / ${node.os?.arch ?? "amd64"}`,
     tags,
@@ -88,6 +92,8 @@ export function buildNodeView(node: StatusNode, units: UptimeUnits): NodeView {
     },
     upSpeed,
     downSpeed,
+    upSpeedValue: tx,
+    downSpeedValue: rx,
     upTotal,
     downTotal,
     traffic: `${upTotal}  ${downTotal}`,

@@ -31,8 +31,8 @@ export function NodeCard({ node }: { node: NodeView }) {
           <span className="node-flag">{node.flag}</span>
           <span className="node-name">{node.name}</span>
         </div>
-        <span className={`status-pill ${node.online ? "online" : "offline"}`}>
-          {node.online ? t("status.card.online") : t("status.card.offline")}
+        <span className={`status-pill ${node.status}`}>
+          {t(`status.card.${node.status}`)}
         </span>
       </div>
 

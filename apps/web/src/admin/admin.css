@@ -20,6 +20,137 @@
   color: var(--text);
 }
 
+/* ---------- Unified Radix-backed Komari appearance ---------- */
+
+.admin-shell.nb-komari-surface,
+.login-screen.nb-komari-surface {
+  --bg: var(--gray-1);
+  --surface: color-mix(in srgb, var(--gray-2) 90%, transparent);
+  --surface-2: var(--gray-3);
+  --border: var(--gray-a6);
+  --text: var(--gray-12);
+  --text-muted: var(--gray-10);
+  --accent: var(--accent-9);
+  --accent-fg: var(--accent-contrast);
+  --ok: var(--green-10);
+  --bad: var(--red-10);
+  --warn: var(--amber-10);
+  --shadow: 0 1px 2px var(--black-a3), 0 10px 30px var(--black-a3);
+  background: var(--gray-1);
+}
+
+.admin-shell.nb-komari-surface[data-theme="dark"],
+.login-screen.nb-komari-surface[data-theme="dark"] {
+  --bg: var(--gray-1);
+  --surface: color-mix(in srgb, var(--gray-2) 90%, transparent);
+  --surface-2: var(--gray-3);
+  --border: var(--gray-a6);
+  --text: var(--gray-12);
+  --text-muted: var(--gray-10);
+  --accent: var(--accent-9);
+  --accent-fg: var(--accent-contrast);
+}
+
+.nb-komari-surface .admin-sidebar,
+.nb-komari-surface .admin-topbar,
+.nb-komari-surface .section-panel,
+.nb-komari-surface .setting-card,
+.nb-komari-surface .login-card,
+.nb-komari-surface .komari-table-wrap {
+  border-color: var(--gray-a6);
+  background: var(--surface);
+  backdrop-filter: blur(14px);
+}
+
+.nb-komari-surface .admin-sidebar {
+  width: 240px;
+  padding: 12px 10px;
+}
+
+.nb-komari-surface .admin-topbar {
+  height: 56px;
+  padding-inline: 18px;
+}
+
+.nb-komari-surface .admin-nav-item {
+  min-height: 40px;
+  box-sizing: border-box;
+  border-left: 0;
+  border-radius: var(--radius-2);
+  color: var(--gray-11);
+}
+
+.nb-komari-surface .admin-nav-item:hover {
+  background: var(--gray-a3);
+  color: var(--gray-12);
+}
+
+.nb-komari-surface .admin-nav-item.active {
+  background: var(--accent-a4);
+  color: var(--accent-11);
+}
+
+.nb-komari-surface .top-icon,
+.nb-komari-surface .ghost-btn,
+.nb-komari-surface .primary-btn,
+.nb-komari-surface .text-input,
+.nb-komari-surface select,
+.nb-komari-surface textarea {
+  border-radius: var(--radius-2);
+}
+
+.nb-komari-surface .top-icon:hover,
+.nb-komari-surface .ghost-btn:hover {
+  background: var(--gray-a4);
+  border-color: var(--gray-a8);
+}
+
+.nb-komari-surface .primary-btn,
+.nb-komari-surface .login-submit {
+  background: var(--accent-9);
+  color: var(--accent-contrast);
+}
+
+.nb-komari-surface .section-panel,
+.nb-komari-surface .setting-card,
+.nb-komari-surface .login-card {
+  border-radius: var(--radius-4);
+  box-shadow: 0 1px 2px var(--black-a3);
+}
+
+.login-screen.nb-komari-surface {
+  background:
+    radial-gradient(circle at 50% -10%, var(--accent-a4), transparent 32rem),
+    var(--gray-1);
+}
+
+.nb-komari-surface .login-card {
+  width: min(100% - 28px, 430px);
+}
+
+.nb-komari-surface .login-logo {
+  background: var(--accent-a4);
+  color: var(--accent-11);
+}
+
+.nb-komari-surface .login-field input {
+  background: var(--gray-a2);
+  border-color: var(--gray-a6);
+  color: var(--gray-12);
+}
+
+.nb-komari-surface .appearance-segment {
+  background: var(--gray-a3);
+  border-color: var(--gray-a5);
+  flex-wrap: wrap;
+}
+
+.nb-komari-surface .appearance-segment button.active {
+  background: var(--gray-1);
+  color: var(--accent-11);
+  box-shadow: 0 1px 3px var(--black-a4);
+}
+
 .admin-shell[data-theme="dark"],
 .login-screen[data-theme="dark"] {
   --bg: #0b0e14;

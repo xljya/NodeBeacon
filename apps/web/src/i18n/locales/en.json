@@ -446,6 +446,8 @@
       "online": "Online",
       "offline": "Offline",
       "degraded": "Degraded",
+      "unknown": "Unknown",
+      "degraded": "Degraded",
       "unknown": "Unknown"
     }
   },
@@ -486,6 +488,8 @@
       "uptime": "Uptime",
       "online": "Online",
       "offline": "Offline",
+      "degraded": "Degraded",
+      "unknown": "Unknown",
       "load": "Load",
       "memory": "Memory",
       "updatedAt": "Last report"

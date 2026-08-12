@@ -279,7 +279,7 @@ test("anonymous node detail shows a layout skeleton while initial data is pendin
 test("non-realtime chart ranges keep their accessible labels visually hidden", async ({ page }) => {
   await page.addInitScript(() => {
     localStorage.setItem("nb-lang", "zh-CN");
-    if (!localStorage.getItem("nb-theme")) localStorage.setItem("nb-theme", "light");
+    if (!localStorage.getItem("nb-appearance-v1")) localStorage.setItem("nb-appearance-v1", JSON.stringify({ version: 1, mode: "light" }));
   });
   await mockNodeDetail(page);
 
@@ -288,7 +288,7 @@ test("non-realtime chart ranges keep their accessible labels visually hidden", a
 
     for (const theme of ["light", "dark"] as const) {
       await page.goto("/nodes/rs1000");
-      await page.evaluate((nextTheme) => localStorage.setItem("nb-theme", nextTheme), theme);
+      await page.evaluate((nextTheme) => localStorage.setItem("nb-appearance-v1", JSON.stringify({ version: 1, mode: nextTheme })), theme);
       await page.reload();
       await expect(page.locator(".status-page")).toHaveAttribute("data-theme", theme);
 

@@ -1,4 +1,13 @@
 import { randomUUID } from "node:crypto";
+import {
+  APPEARANCE_ACCENTS,
+  APPEARANCE_GRAYS,
+  APPEARANCE_MODES,
+  APPEARANCE_PANELS,
+  APPEARANCE_RADII,
+  APPEARANCE_SCALINGS,
+  type AppearanceTokensV1
+} from "@nodebeacon/shared";
 import type { SqliteDatabase } from "./database.js";
 
 export interface SiteSettings {
@@ -15,15 +24,7 @@ export interface GeneralSettings {
   executionRetentionDays: number;
 }
 
-export interface ThemeTokens {
-  background: string;
-  surface: string;
-  text: string;
-  muted: string;
-  accent: string;
-  radius: number;
-  fontFamily: string;
-}
+export type ThemeTokens = AppearanceTokensV1;
 
 export interface ThemePreset {
   id: string;
@@ -49,13 +50,13 @@ const DEFAULT_GENERAL: GeneralSettings = {
 };
 
 export const DEFAULT_THEME_TOKENS: ThemeTokens = {
-  background: "#eef3f9",
-  surface: "#ffffff",
-  text: "#1c2530",
-  muted: "#6b7887",
-  accent: "#2f6bff",
-  radius: 10,
-  fontFamily: "Space Grotesk"
+  version: 1,
+  mode: "system",
+  accent: "iris",
+  grayColor: "slate",
+  radius: "medium",
+  scaling: "110%",
+  panelBackground: "translucent"
 };
 
 function parse<T>(value: string | undefined, fallback: T): T {
@@ -79,20 +80,32 @@ function writeValue(db: SqliteDatabase, key: string, value: unknown): void {
   `).run(key, JSON.stringify(value), Date.now());
 }
 
-function validColor(value: string): boolean {
-  return /^#[0-9a-f]{6}$/i.test(value);
+function oneOf<T extends readonly string[]>(value: unknown, values: T, fallback: T[number]): T[number] {
+  return typeof value === "string" && values.includes(value) ? value as T[number] : fallback;
 }
 
 export function sanitizeThemeTokens(value: unknown): ThemeTokens {
   const input = typeof value === "object" && value !== null ? value as Record<string, unknown> : {};
+  const legacyAccent: Record<string, AppearanceTokensV1["accent"]> = {
+    "#2f6bff": "iris",
+    "#0ea67a": "teal",
+    "#d55b2d": "orange"
+  };
+  const legacyRadius = typeof input.radius === "number"
+    ? input.radius <= 2 ? "none" : input.radius <= 7 ? "small" : input.radius <= 14 ? "medium" : "large"
+    : undefined;
   const tokens: ThemeTokens = {
-    background: typeof input.background === "string" && validColor(input.background) ? input.background : DEFAULT_THEME_TOKENS.background,
-    surface: typeof input.surface === "string" && validColor(input.surface) ? input.surface : DEFAULT_THEME_TOKENS.surface,
-    text: typeof input.text === "string" && validColor(input.text) ? input.text : DEFAULT_THEME_TOKENS.text,
-    muted: typeof input.muted === "string" && validColor(input.muted) ? input.muted : DEFAULT_THEME_TOKENS.muted,
-    accent: typeof input.accent === "string" && validColor(input.accent) ? input.accent : DEFAULT_THEME_TOKENS.accent,
-    radius: typeof input.radius === "number" && Number.isFinite(input.radius) ? Math.min(24, Math.max(0, input.radius)) : DEFAULT_THEME_TOKENS.radius,
-    fontFamily: typeof input.fontFamily === "string" && /^[a-zA-Z0-9 ,.'-]{1,80}$/.test(input.fontFamily) ? input.fontFamily : DEFAULT_THEME_TOKENS.fontFamily
+    version: 1,
+    mode: oneOf(input.mode, APPEARANCE_MODES, DEFAULT_THEME_TOKENS.mode),
+    accent: oneOf(
+      typeof input.accent === "string" ? legacyAccent[input.accent.toLowerCase()] ?? input.accent : input.accent,
+      APPEARANCE_ACCENTS,
+      DEFAULT_THEME_TOKENS.accent
+    ),
+    grayColor: oneOf(input.grayColor, APPEARANCE_GRAYS, DEFAULT_THEME_TOKENS.grayColor),
+    radius: oneOf(legacyRadius ?? input.radius, APPEARANCE_RADII, DEFAULT_THEME_TOKENS.radius),
+    scaling: oneOf(input.scaling, APPEARANCE_SCALINGS, DEFAULT_THEME_TOKENS.scaling),
+    panelBackground: oneOf(input.panelBackground, APPEARANCE_PANELS, DEFAULT_THEME_TOKENS.panelBackground)
   };
   return tokens;
 }

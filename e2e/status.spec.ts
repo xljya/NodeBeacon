@@ -114,6 +114,81 @@ test("public status page matches the persisted table view while loading", async 
   await expect(skeleton).toHaveCount(0);
 });
 
+test("search shortcut, group and view preferences remain keyboard-friendly and persistent", async ({ page }) => {
+  await page.goto("/");
+  const search = page.getByPlaceholder(/Search nodes/);
+  await expect(search).toBeVisible();
+  await page.keyboard.press("/");
+  await expect(search).toBeFocused();
+  await search.fill("RS1000");
+  await expect(page.locator(".node-card")).toHaveCount(1);
+  await page.keyboard.press("Escape");
+  await expect(search).toHaveValue("");
+  await expect(search).not.toBeFocused();
+
+  await page.getByRole("button", { name: "Core", exact: true }).click();
+  await expect(page.locator(".node-card")).toHaveCount(1);
+  await page.reload();
+  await expect(page.getByRole("button", { name: "Core", exact: true })).toHaveClass(/active/);
+  await expect(page.locator(".node-card")).toHaveCount(1);
+
+  await page.getByTitle("Table").click();
+  await expect(page.locator(".node-table")).toBeVisible();
+  await page.reload();
+  await expect(page.locator(".node-table")).toBeVisible();
+});
+
+test("table view sorts and expands nodes using real public detail data", async ({ page }) => {
+  await page.addInitScript(() => localStorage.setItem("nb-view", "table"));
+  await page.route("**/api/public/nodes/*/series?**", async (route) => {
+    await route.fulfill({
+      json: {
+        nodeId: "rs1000",
+        from: "2026-08-12T00:00:00.000Z",
+        to: "2026-08-13T00:00:00.000Z",
+        dataFrom: "2026-08-12T00:00:00.000Z",
+        dataTo: "2026-08-13T00:00:00.000Z",
+        stepSeconds: 300,
+        aggregation: "avg",
+        series: [{ metric: "latency", key: "ping", unit: "milliseconds", points: [[1, 20], [2, 23], [3, 18]] }]
+      }
+    });
+  });
+  await page.goto("/");
+  await page.getByRole("button", { name: "Node", exact: true }).click();
+  const expand = page.getByRole("button", { name: /Expand/ }).first();
+  await expand.click();
+  await expect(page.locator(".node-row-detail")).toBeVisible();
+  await expect(page.getByLabel("24 hour latency trend")).toContainText("24h latency");
+  await expect(page.getByRole("img", { name: "Latency trend" })).toBeVisible();
+});
+
+test("appearance migrates safely and follows the system color scheme", async ({ page }) => {
+  await page.addInitScript(() => {
+    if (!sessionStorage.getItem("appearance-migration-seeded")) {
+      localStorage.removeItem("nb-appearance-v1");
+      localStorage.setItem("nb-theme", "dark");
+      sessionStorage.setItem("appearance-migration-seeded", "1");
+    }
+  });
+  await page.goto("/");
+  await expect(page.locator("html")).toHaveAttribute("data-theme", "dark");
+  await expect.poll(() => page.evaluate(() => JSON.parse(localStorage.getItem("nb-appearance-v1") ?? "{}").mode)).toBe("dark");
+  await page.getByTitle("Theme").click();
+  await expect(page.locator("html")).toHaveAttribute("data-theme", "light");
+  await expect.poll(() => page.evaluate(() => JSON.parse(localStorage.getItem("nb-appearance-v1") ?? "{}").mode)).toBe("light");
+  await page.reload();
+  await expect(page.locator("html")).toHaveAttribute("data-theme", "light");
+});
+
+test("corrupt appearance storage falls back without breaking mobile layout", async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.addInitScript(() => localStorage.setItem("nb-appearance-v1", "not-json"));
+  await page.goto("/");
+  await expect(page.locator(".node-card")).toHaveCount(5);
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
+});
+
 test("mobile loading skeleton is static for reduced-motion users", async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await page.emulateMedia({ reducedMotion: "reduce" });

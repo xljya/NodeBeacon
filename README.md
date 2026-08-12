@@ -197,7 +197,8 @@ docs              ADR、API、实现计划、故障处理和发布记录
 
 NodeBeacon 的仪表盘布局和交互方向参考了
 [Komari Monitor](https://github.com/komari-monitor/komari)。NodeBeacon 使用
-Prometheus 标准采集链路和服务端 BFF，不复用 Komari 的 Agent 或远程控制模型。
+Prometheus 标准采集链路和服务端 BFF，不复用 Komari 的 Agent、RPC2、前端源码、
+主题包或远程控制模型。全站界面使用 NodeBeacon 自有组件与 Radix Themes 独立实现。
 
 关键技术选择记录在 ADR 中：
 
