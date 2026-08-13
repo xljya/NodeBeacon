@@ -4,6 +4,7 @@ import {
   buildApiError,
   type AuthConfigResponse,
   type AuthResponse,
+  type AuthSessionResponse,
   type LoginRequest,
   type SecondFactorRequiredResponse
 } from "@nodebeacon/shared";
@@ -103,7 +104,7 @@ export async function registerAuthRoutes(
 
   // Public session probe for UI chrome. Unlike /api/auth/me it deliberately
   // returns 200 when signed out, avoiding expected 401 noise on public pages.
-  app.get("/api/auth/session", async (request) => ({ user: request.user ?? null }));
+  app.get("/api/auth/session", async (request): Promise<AuthSessionResponse> => ({ user: request.user ?? null }));
 
   app.post(
     "/api/auth/2fa",

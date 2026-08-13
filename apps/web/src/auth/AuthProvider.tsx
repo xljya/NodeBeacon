@@ -7,7 +7,7 @@ import {
   useState,
   type ReactNode
 } from "react";
-import type { AuthResponse, AuthChallengeResponse, AuthUser, SecondFactorRequiredResponse } from "@nodebeacon/shared";
+import type { AuthResponse, AuthChallengeResponse, AuthSessionResponse, AuthUser, SecondFactorRequiredResponse } from "@nodebeacon/shared";
 import { apiGet, apiPost, ApiError } from "../lib/api";
 
 interface AuthState {
@@ -31,7 +31,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const refresh = useCallback(async () => {
     const generation = authGeneration.current;
     try {
-      const data = await apiGet<AuthResponse>("/api/auth/me");
+      const data = await apiGet<AuthSessionResponse>("/api/auth/session");
       if (generation === authGeneration.current) setUser(data.user);
     } catch {
       if (generation === authGeneration.current) setUser(null);

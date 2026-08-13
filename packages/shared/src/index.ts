@@ -416,6 +416,11 @@ export interface AuthResponse {
   user: AuthUser;
 }
 
+/** Public session probe; signed-out visitors receive HTTP 200 with a null user. */
+export interface AuthSessionResponse {
+  user: AuthUser | null;
+}
+
 export interface SecondFactorRequiredResponse {
   status: "second_factor_required";
   methods: ["totp", "recovery_code"];

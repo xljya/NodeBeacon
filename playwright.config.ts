@@ -37,7 +37,9 @@ export default defineConfig({
       command: "node scripts/prepare-e2e.mjs && pnpm --filter @nodebeacon/shared build && npm --prefix apps/status-web ci && npm --prefix apps/status-web run build && pnpm --filter @nodebeacon/web build && node scripts/assemble-web.mjs && pnpm --filter @nodebeacon/api dev",
       url: "http://localhost:3001/healthz",
       reuseExistingServer: !process.env.CI,
-      timeout: 60_000,
+      // The isolated Komari-derived shell performs a reproducible npm ci before
+      // building. A cold Windows cache can legitimately exceed one minute.
+      timeout: 120_000,
       stdout: "pipe",
       env: {
         NODE_ENV: "development",

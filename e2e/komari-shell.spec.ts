@@ -3,6 +3,20 @@ import { expect, test } from "@playwright/test";
 const PUBLIC_SHELL_URL = "http://localhost:3001";
 
 test.describe("Komari-derived public shell", () => {
+  test("loads the public shell without CSP-blocked inline scripts", async ({ page }) => {
+    const cspErrors: string[] = [];
+    page.on("console", (message) => {
+      if (message.type() === "error" && message.text().includes("Content Security Policy")) {
+        cspErrors.push(message.text());
+      }
+    });
+
+    await page.goto(`${PUBLIC_SHELL_URL}/`);
+    await expect(page.locator(".km-page-index")).toBeVisible();
+    await expect(page.locator("script:not([src])")).toHaveCount(0);
+    expect(cspErrors).toEqual([]);
+  });
+
   test("renders NodeBeacon status without RPC2 and preserves search/view preferences", async ({ page }) => {
     const rpcRequests: string[] = [];
     page.on("request", (request) => {
@@ -29,6 +43,11 @@ test.describe("Komari-derived public shell", () => {
   });
 
   test("routes node details and owner pages to the existing secure shell", async ({ page }) => {
+    const unauthorizedProbes: string[] = [];
+    page.on("response", (response) => {
+      if (response.status() === 401) unauthorizedProbes.push(response.url());
+    });
+
     await page.goto(`${PUBLIC_SHELL_URL}/`);
     await page.locator('a[href^="/instance/"]').first().click();
     await expect(page).toHaveURL(/\/nodes\/[^/]+$/);
@@ -37,6 +56,7 @@ test.describe("Komari-derived public shell", () => {
     await page.goto(`${PUBLIC_SHELL_URL}/admin`);
     await expect(page).toHaveURL(/\/login$/);
     await expect(page.locator("form")).toBeVisible();
+    expect(unauthorizedProbes).toEqual([]);
   });
 
   test("fits the mobile viewport without horizontal page overflow", async ({ page }) => {
