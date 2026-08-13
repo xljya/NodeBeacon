@@ -1,7 +1,9 @@
 # NodeBeacon Web repository instructions
 
-本文件适用于整个仓库。本仓库是 Komari Web fork 的 NodeBeacon 前端产品源，不是独立部署
-仓库；开始任务前先阅读 `README.md` 与 `docs/NODEBEACON_GATEWAY.md`。
+本文件适用于整个仓库。开始任何任务时，第一步必须完整阅读 `README.md`，先确认 fork
+来历、三仓库职责、当前路由与单向交付链路；第二步阅读本文件，第三步阅读
+`docs/NODEBEACON_GATEWAY.md`。本仓库是 Komari Web fork 的 NodeBeacon 前端产品源，不是
+独立部署仓库，不能仅凭本仓源码或构建结果声称生产已经更新。
 
 ## 仓库职责与分支
 
@@ -21,9 +23,9 @@
 - `src/pages/nb-admin/` 是适配 NodeBeacon REST 契约的 Owner 页面；通用请求、错误和鉴权
   行为集中在 `src/lib/adminGateway.ts`，正式/影子路径转换集中在
   `src/lib/adminPaths.ts`。不要在页面中另造第二套 Gateway 或路径规则。
-- 当前产品阶段同时声明 `/login-v2`、`/admin-v2` 影子入口和未来正式 `/login`、`/admin`
-  路由；是否真正由该壳提供 HTML 由产品仓库 Fastify 路由决定。不要仅凭本仓库 routes
-  宣称正式切换已经完成。
+- 当前产品声明正式 `/login`、`/admin/*`，并将 `/login-v2`、`/admin-v2/*` 旧影子入口
+  重定向到正式路径；是否真正由该壳提供生产 HTML 仍由产品仓库 Fastify 路由和已发布提交
+  决定。不要仅凭本仓库 routes 宣称切换或发布已经完成。
 - `/instance/:id` 只负责转交到产品仓库的 `/nodes/:id` React 18 详情页；除非有单独迁移
   决策，不要在这里恢复 Komari instance/Agent 数据链路。
 - 菜单只展示 NodeBeacon 已实现的能力。插件市场、主题 ZIP、pprof、Metric Store 迁移、

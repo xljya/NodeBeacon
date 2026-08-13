@@ -1,150 +1,184 @@
 # NodeBeacon
 
-[English](README.en.md) | **简体中文**
-
 [![CI](https://github.com/xljya/NodeBeacon/actions/workflows/ci.yml/badge.svg)](https://github.com/xljya/NodeBeacon/actions/workflows/ci.yml)
 ![TypeScript](https://img.shields.io/badge/TypeScript-5.8-3178C6?logo=typescript&logoColor=white)
-![Production](https://img.shields.io/badge/production-online-22c55e)
+![Production](https://img.shields.io/badge/production-monitor.liucf.com-22c55e)
 
-NodeBeacon 是一个面向个人服务器、Homelab 和小型基础设施的轻量级自托管监控与运维平台。
-它以 Prometheus 为指标数据源，通过 React 管理界面与 Fastify BFF，统一展示服务器资源、
-网站可用性、告警事件和多地域网络延迟。
+NodeBeacon 是一个面向个人服务器、Homelab 和小型基础设施的自托管监控与运维平台。
+它以 Prometheus 和 Alertmanager 为监控数据面，以 Fastify 作为安全 BFF，并用 React
+提供公共状态页、节点详情和 Owner 管理后台。
 
-[在线体验](https://monitor.liucf.com) ·
-[生产部署](infra/README.md) ·
+[在线站点](https://monitor.liucf.com) ·
+[生产运维](infra/README.md) ·
 [架构决策](docs/adr/) ·
+[API 文档](docs/api/) ·
 [故障处理](docs/troubleshooting.md)
 
-> NodeBeacon 1.0 已在生产环境持续运行。Web 与 API 使用单容器交付至 k3s，
-> Prometheus 凭据和 PromQL 查询能力始终保留在服务端。
+> 这是 NodeBeacon 当前产品、发布和生产部署的唯一来源。要修改
+> `monitor.liucf.com`、Fastify API、共享契约、基础设施或发布流程，应从本仓库开始。
 
-![NodeBeacon 桌面端监控面板](screenshots/nodebeacon-dashboard-desktop.png)
+## 30 秒理解这个仓库
 
-## 为什么做 NodeBeacon
+| 问题 | 答案 |
+| --- | --- |
+| 这是什么？ | NodeBeacon 当前可运行的完整产品仓库 |
+| 负责什么？ | API、认证、数据契约、双前端装配、测试、k3s 基础设施和生产发布 |
+| 默认分支 | `main` |
+| 是否直接发布生产？ | 是，只有本仓库可以发布 `monitor.liucf.com` |
+| React 19 前端在哪里开发？ | 先在 `xljya/NodeBeacon-Web:nodebeacon` 开发，再固定提交引入这里 |
+| `NodeBeacon1` 是什么？ | 迁移前完整实现的历史保留仓库，不是当前生产来源 |
 
-Prometheus、Grafana 和 Alertmanager 提供了完整的监控能力，但对个人服务器和小型环境来说，
-日常查看节点状态、网络质量与近期事故仍需要在多个界面之间切换。NodeBeacon 在这些基础设施
-之上提供一个专注的状态页和管理入口，同时保持数据采集、告警和长期指标仍由标准监控组件负责。
+如果你是 AI 或第一次参与项目，请按这个顺序开始：
 
-NodeBeacon 不替代 Prometheus、Grafana 或 Alertmanager。它是浏览器与监控基础设施之间的
-Backend for Frontend（BFF），负责查询适配、缓存、权限控制和面向用户的状态展示。
+1. 完整阅读本 README，先确认项目身份和三仓边界。
+2. 阅读根目录 [`AGENTS.md`](AGENTS.md)，遵守分支、测试、同步和生产发布规则。
+3. 再阅读与任务直接相关的 ADR、API、infra 或发布记录，不要只靠文件名猜行为。
 
-## 核心能力
+## 项目来历
 
-- **节点监控**：展示 CPU、内存、磁盘、负载、网络流量、连接数和运行时间。
-- **可用性探测**：通过 `blackbox_exporter` 检查 HTTP、HTTPS、TCP 和 ICMP 目标。
-- **节点详情**：提供实时指标、1h/4h/24h/7d 趋势和负载视图。
-- **网络质量**：接入 RIPE Atlas 四个互联网视角，展示延迟、丢包、分位数和波动。
-- **告警闭环**：读取 Alertmanager 活跃告警，并在 SQLite 中保存 firing/resolved 事故历史。
-- **Owner 管理后台**：支持节点配置与排序、会话撤销、审计日志、通知和运行状态查看。
-- **多语言与响应式**：支持简体中文、繁体中文、英文，以及明暗主题、桌面端和移动端布局。
-- **生产运维**：包含不可变镜像发布、健康检查、备份新鲜度监控、异地备份和恢复演练。
+NodeBeacon 最初是一套独立实现的 Prometheus-first 监控产品：React 18 前端负责公共页、
+节点详情和管理界面，Fastify 在服务端查询 Prometheus/Alertmanager，并用 SQLite 与 YAML
+保存会话、审计、事故和节点注册信息。迁移前的完整代码与基础设施历史保存在
+[`xljya/NodeBeacon1`](https://github.com/xljya/NodeBeacon1)。
 
-<details>
-<summary>查看移动端截图</summary>
+为了采用 Komari Web 成熟的布局、组件、主题和响应式体验，项目随后从
+[`komari-monitor/komari-web`](https://github.com/komari-monitor/komari-web) fork 出
+[`xljya/NodeBeacon-Web`](https://github.com/xljya/NodeBeacon-Web)，并在 `nodebeacon`
+分支把它改造成只调用 NodeBeacon REST 契约的 React 19 前端。这个过程复用的是前端外壳，
+不是 Komari Server、Agent 或 RPC2 数据面。
 
-<br>
+本仓库是最终集成点：它将经过审核的 `NodeBeacon-Web` 精确提交固定到
+`apps/status-web`，与现有 Fastify、React 18 节点详情、Prometheus、SQLite 和 k3s 发布
+流程装配成一个产品。架构决策与来源说明见
+[`ADR 0014`](docs/adr/0014-komari-web-public-shell.md)。
 
-<img src="screenshots/nodebeacon-dashboard-mobile.png" alt="NodeBeacon 移动端监控面板" width="390">
+## 三个仓库怎样配合
 
-</details>
+| 仓库 | 定位 | 日常修改入口 | 能否发布生产 |
+| --- | --- | --- | --- |
+| [`xljya/NodeBeacon`](https://github.com/xljya/NodeBeacon) | 当前产品、后端、契约、基础设施和发布仓库 | `main` | **可以，且仅此仓库可以** |
+| [`xljya/NodeBeacon-Web`](https://github.com/xljya/NodeBeacon-Web) | Komari-derived React 19 前端的可维护源 | `nodebeacon` | 不可以；必须由产品仓库固定提交引入 |
+| [`xljya/NodeBeacon1`](https://github.com/xljya/NodeBeacon1) | 迁移前 NodeBeacon/infra 历史快照 | `main`，仅历史审计或明确授权修复 | 不可以 |
+
+React 19 前端改动的唯一正确交付链路是：
+
+```mermaid
+flowchart LR
+    upstream["komari-monitor/komari-web\n上游来源"]
+    web["NodeBeacon-Web:nodebeacon\n开发、测试、提交"]
+    pin["固定 40 位提交 SHA\n同步 apps/status-web"]
+    product["NodeBeacon:main\n集成与根门禁"]
+    production["RS1000 k3s\n生产发布与验收"]
+    history["NodeBeacon1\n历史参考"]
+
+    upstream -. "选择性同步" .-> web
+    web --> pin --> product --> production
+    history -. "审计/对照，不自动回写" .-> product
+```
+
+不要只修改 `apps/status-web` 的 vendored 副本；也不要从 `NodeBeacon1` 直接部署或把历史
+代码自动回写当前产品。
+
+## 当前产品边界
+
+### 路由归属
+
+| 路由 | 实现 |
+| --- | --- |
+| `/`, `/instance/*` | `apps/status-web`，React 19 Komari-derived 公共壳 |
+| `/login`, `/admin/*` | `apps/status-web`，React 19 NodeBeacon Owner 壳 |
+| `/login-v2`, `/admin-v2/*` | 永久重定向到正式路径 |
+| `/nodes/*` | `apps/web`，保留的 React 18 节点详情 |
+| `/api/*` | `apps/api`，Fastify BFF |
+
+两套前端共享同一套 Fastify API、Owner Cookie、Prometheus 查询和 SQLite 数据，但保持独立
+依赖图：根 pnpm workspace 使用 React 18；`apps/status-web` 使用自己的 npm lock 与
+React 19。构建时静态资源会隔离装配，避免 React runtime 和文件名冲突。
+
+### 安全与数据边界
+
+- 浏览器不能获得 Prometheus 凭据，也不能提交任意 PromQL。
+- Komari-derived 前端只能调用 NodeBeacon 明确提供的 REST 契约。
+- 不实现 `/api/rpc2`、Komari Agent、Metric Store、WebSSH、插件市场、任意命令或可执行主题。
+- 公共 `/api/status` 不包含私有 IP、Prometheus labels、账单、Owner 备注或管理配置。
+- 登录、会话、审计和事故记录保存在 SQLite；节点注册表使用运行时可写 YAML。
+- Secret 由生产环境注入，不能写入 Git、日志、截图或发布记录。
 
 ## 系统架构
 
 ```mermaid
 flowchart LR
-    ne["node_exporter"]
-    bb["blackbox_exporter"]
-    atlas["RIPE Atlas"]
-    prom["Prometheus"]
-    am["Alertmanager"]
-    nb["NodeBeacon<br/>React + Fastify"]
-    sqlite["SQLite / YAML"]
-    browser["浏览器"]
-
-    ne --> prom
-    bb --> prom
-    prom --> nb
-    prom --> am
-    atlas -->|"公开 ICMP 结果"| nb
-    am -->|"firing / resolved webhook"| nb
-    nb --> sqlite
-    nb --> browser
+    exporters["node_exporter / blackbox_exporter"] --> prom["Prometheus"]
+    prom --> api["NodeBeacon Fastify BFF"]
+    prom --> am["Alertmanager"]
+    atlas["RIPE Atlas"] --> api
+    am -->|"firing / resolved"| api
+    api <--> state["SQLite / YAML / PVC"]
+    api --> public["React 19\n公共页 + Owner Admin"]
+    api --> detail["React 18\n节点详情"]
+    public --> browser["Browser"]
+    detail --> browser
 ```
 
-生产流量路径：
+生产流量路径为：
 
 ```text
-Browser
-  -> Cloudflare
-  -> nginx
-  -> k3s Service / NodePort
-  -> NodeBeacon (React + Fastify)
-  -> Prometheus / Alertmanager / SQLite
+Browser -> Cloudflare -> nginx -> k3s Service / NodePort
+        -> NodeBeacon single container
+        -> Prometheus / Alertmanager / SQLite / YAML
 ```
 
-关键安全边界：
+## 主要能力
 
-- 浏览器不会获得 Prometheus 凭据，也不能执行任意 PromQL。
-- 登录、会话、审计和事故记录保存在 SQLite 中，节点注册表使用可写 YAML。
-- 运行时 Secret 通过 Kubernetes Secret 注入，不提交到仓库。
-- 公共页面、API、静态资源和认证接口使用不同的缓存与限速策略。
-- 生产环境不向公网暴露 `/metrics`、Alertmanager webhook 或管理 API。
+- 节点 CPU、内存、磁盘、负载、网络流量、运行时间和在线状态。
+- HTTP、HTTPS、TCP、ICMP 可用性探测与 Prometheus 趋势查询。
+- 1h/4h/24h/7d 节点详情和 RIPE Atlas 多地域网络质量。
+- Alertmanager 活跃告警与 SQLite-backed firing/resolved 事故历史。
+- Owner 登录、TOTP/GitHub OAuth、节点配置、会话撤销、审计、通知和告警规则管理。
+- 简体中文、繁体中文、英文等多语言，明暗主题与桌面/移动响应式布局。
+- 不可变镜像、健康检查、备份新鲜度、恢复和生产验收记录。
 
-## 技术栈
+![NodeBeacon 桌面端监控面板](screenshots/nodebeacon-dashboard-desktop.png)
 
-| 层级 | 技术 |
-| --- | --- |
-| 前端 | Komari Web public shell（React 19）+ NodeBeacon owner shell（React 18）、TypeScript、Vite、Radix Themes |
-| 后端 | Node.js 20、Fastify 5、TypeScript |
-| 指标与告警 | Prometheus、Alertmanager、node_exporter、blackbox_exporter |
-| 网络测量 | RIPE Atlas |
-| 状态存储 | SQLite、YAML、k3s PersistentVolume |
-| 交付 | Docker、k3s / Kubernetes、nginx、Cloudflare |
-| 质量保障 | Vitest、Playwright、GitHub Actions |
+## 仓库结构
 
-## 数据更新策略
+```text
+apps/status-web   从 NodeBeacon-Web 固定提交引入的 React 19 源码；独立 npm lock
+apps/web          React 18 节点详情与待清理的旧壳源码
+apps/api          Fastify API、认证、Prometheus、Alertmanager、SQLite、节点注册表
+packages/shared   Web/API 共用类型和显式 REST 契约
+e2e               Playwright 浏览器回归
+docs              ADR、API、实现计划、故障处理和发布验收记录
+infra             k3s、Prometheus、Cloudflare、nginx 与生产运维
+scripts           构建装配、部署、生产验收、备份与恢复
+config            本地/种子配置；不是生产运行时事实来源
+```
 
-页面刷新频率和数据源采样频率彼此独立：
-
-| 数据链路 | 生产频率 |
-| --- | ---: |
-| 主机 CPU、内存、磁盘、负载、网络和连接数 | Prometheus 每 5 秒抓取 |
-| 全局状态摘要 | 浏览器每 20 秒刷新 |
-| 事故记录 | 浏览器每 60 秒刷新 |
-| RIPE Atlas 延迟 | 每个探针到目标每 300 秒测量 |
-| RIPE Atlas 最新结果采集 | NodeBeacon 每 60 秒轮询 |
-
-节点详情页可以每 5 秒请求延迟曲线，但不会把重复的 Prometheus 查询当作新的 RIPE 测量。
-完整数据链路、统计口径和成本限制见
-[RIPE Atlas 延迟说明](docs/ripe-atlas-latency.md)。
-
-## 本地运行
+## 本地开发
 
 ### 环境要求
 
 - Node.js `>= 20.19`
-- pnpm `>= 9`
-- 可选：Prometheus 和 Alertmanager
+- pnpm（以 `package.json#packageManager` 固定版本为准）
+- npm（用于隔离构建 `apps/status-web`）
+- Chromium（运行完整 Playwright 门禁时需要）
 
-未设置 `PROMETHEUS_URL` 时，应用仍可启动并展示节点注册表；依赖实时序列的接口会按预期
-返回降级状态。
+安装并启动 API 与 React 18 开发入口：
 
 ```powershell
 pnpm install
 pnpm dev
 ```
 
-默认地址：
-
 - Web 开发服务器：<http://localhost:5173>
 - Fastify API：<http://localhost:3001>
+- 未配置 Prometheus/Alertmanager 时应用仍能启动；依赖实时时序的接口会返回明确的降级响应。
+- API 只读取 `process.env`，不会自动加载 `.env`。
+- 本地演示 Owner 功能需要显式设置 Owner 凭据，并让
+  `NODEBEACON_NODE_CONFIG` 指向一份可写的 YAML；不要直接修改示例配置。
 
-环境变量示例位于 [`.env.example`](.env.example)。API 只读取 `process.env`，
-不会自动加载 `.env` 文件。若要在本地体验 Owner 登录和管理后台，请在启动 `pnpm dev`
-的同一终端中显式设置 `COOKIE_SECRET`、`INITIAL_OWNER_EMAIL` 和
-`INITIAL_OWNER_PASSWORD`。节点编辑还需要把 `NODEBEACON_NODE_CONFIG` 指向一份
-可写的 YAML 文件，不要直接修改示例配置。
+开发 React 19 公共/Admin 壳时，应进入 `NodeBeacon-Web` 仓库；不要在 vendored 副本里建立
+长期分叉。
 
 ## 测试与质量门禁
 
@@ -154,23 +188,28 @@ pnpm typecheck
 pnpm test
 pnpm build
 pnpm exec playwright test --project=chromium
+git diff --check
 ```
 
-GitHub Actions 会在推送到 `main` 和 Pull Request 时执行类型检查、单元测试、生产构建、
-部署计划测试和隔离 Chromium 端到端测试。生产发布还会执行：
+根构建会分别安装和构建两套前端，并扫描 React 19 产物中是否出现禁用接口。GitHub
+Actions 在 `main` push 和 Pull Request 上执行类型检查、单测、构建、部署计划测试和隔离
+Chromium E2E。
 
-1. 版本与镜像标签一致性检查。
-2. 基于完整 Git SHA 的不可变镜像构建。
-3. k3s rollout、readiness 和 smoke checks。
-4. 公网 API、认证边界、缓存、安全响应头、备份及 Prometheus 规则验收。
-5. 带版本、部署 SHA、Deployment revision 和回滚方式的发布记录。
+## 引入 NodeBeacon-Web 改动
 
-最近的生产验收记录位于 [`docs/releases/`](docs/releases/)。
+1. 在 `NodeBeacon-Web:nodebeacon` 完成源码改动。
+2. 运行 `npm ci`、lint、test、build、forbidden scan 和相关 UI 验证。
+3. 提交并推送 Web 仓库，记录完整 40 位 SHA。
+4. 将该精确提交的完整相关改动同步到 `apps/status-web`。
+5. 更新 [`apps/status-web/NODEBEACON_WEB_COMMIT`](apps/status-web/NODEBEACON_WEB_COMMIT)。
+6. 在本仓库运行完整根门禁；需要上线时再升版本、发布和生产验收。
 
-## 部署
+指针声称的提交必须与 vendored 源码一致，不能只挑部分文件却记录完整上游 SHA。
 
-生产环境使用单容器交付：Fastify 提供 `/api/*`，并托管装配后的两个 React 静态资源包。
-SQLite 与运行时节点配置存放在 k3s PVC 中。
+## 生产发布
+
+生产位于 RS1000 的 `nodebeacon` namespace，使用单容器和不可变 Git SHA 镜像。完整流程、
+备份、恢复与回滚说明见 [`infra/README.md`](infra/README.md)。标准入口是：
 
 ```sh
 ./scripts/deploy.sh --plan
@@ -178,43 +217,28 @@ SQLite 与运行时节点配置存放在 k3s PVC 中。
 ./scripts/verify-production.sh
 ```
 
-部署、备份、恢复与回滚步骤见 [生产运维文档](infra/README.md)。请勿将示例 Secret
-直接用于生产环境，也不要使用 `latest` 镜像。
+发布必须从干净的精确 Git 提交执行，经过本地门禁、计划、部署、生产专项验收和真实浏览器
+检查后，才能更新 `/root/deploy/nodebeacon-current` 并撰写 `docs/releases/v<version>.md`。
+不要使用 `latest` 镜像，也不要从 `NodeBeacon-Web` 或 `NodeBeacon1` 直接部署。
 
-## 仓库结构
+## 文档导航
 
-```text
-apps/status-web   从 NodeBeacon-Web 固定提交引入的公共状态页与正式 Owner Admin
-apps/web          NodeBeacon 节点详情与待清理的 React 18 旧壳（/legacy/assets）
-apps/api          Fastify API、认证、Prometheus 查询和 SQLite
-packages/shared   Web 与 API 共用类型和契约
-e2e               Playwright 端到端测试
-infra             k3s、Prometheus、Cloudflare 和 nginx 配置
-scripts           发布、验收、备份和恢复脚本
-docs              ADR、API、实现计划、故障处理和发布记录
-```
+| 任务 | 先读 |
+| --- | --- |
+| 了解架构选择 | [`docs/adr/`](docs/adr/) |
+| 了解 Web fork、来源和双壳边界 | [`ADR 0014`](docs/adr/0014-komari-web-public-shell.md) |
+| 修改 API 或数据结构 | [`docs/api/`](docs/api/) 与 `packages/shared` |
+| 修改生产、备份、恢复或回滚 | [`infra/README.md`](infra/README.md) |
+| 排查线上故障 | [`docs/troubleshooting.md`](docs/troubleshooting.md) |
+| 查看实际上线版本和证据 | [`docs/releases/`](docs/releases/) |
+| 处理跨平台/换行问题 | [`docs/cross-platform-sync.md`](docs/cross-platform-sync.md) |
 
-## 设计与致谢
+## 来源、致谢与许可
 
-NodeBeacon 的公开状态页基于
-[NodeBeacon-Web](https://github.com/xljya/NodeBeacon-Web) 中固定提交的 Komari Web fork
-进行数据适配。v1.1.3 将正式 `/login` 与 `/admin/*` 切到同一 React 19 Owner 外壳，
-`/login-v2` 与 `/admin-v2/*` 重定向到正式路径；`/nodes/:id` 仍由 React 18 壳处理。
-所有页面继续使用
-Prometheus 标准采集链路和 Fastify BFF，不复用 Komari 的 Agent、RPC2、Metric Store、
-插件、WebSSH、主题包执行或远程控制模型。详细边界见 ADR 0014。
+NodeBeacon 的监控数据面、Fastify BFF、SQLite 状态和生产基础设施是 NodeBeacon 项目自身的
+实现。React 19 外壳来源于 `NodeBeacon-Web` 对 Komari Web 的 fork 与适配；仓库、固定提交
+和 ADR 保留了技术来源。Komari Web 在采用时未展示许可证文件，因此这些来源说明不是对
+再分发权利的法律判断。
 
-关键技术选择记录在 ADR 中：
-
-- [ADR-0001：生产环境使用 RS1000 k3s](docs/adr/0001-use-rs1000-k3s.md)
-- [ADR-0002：使用 Fastify BFF](docs/adr/0002-use-fastify-bff.md)
-- [ADR-0003：仅由服务端查询 Prometheus](docs/adr/0003-query-prometheus-server-side.md)
-- [ADR-0004：SQLite First](docs/adr/0004-use-sqlite-first.md)
-- [ADR-0005：Web 与 API 单容器交付](docs/adr/0005-single-container-first.md)
-- [ADR-0014：使用固定 Komari Web fork 作为公开外壳](docs/adr/0014-komari-web-public-shell.md)
-
-## 许可说明
-
-本仓库当前公开用于项目展示和技术交流，尚未授予统一的开源许可证。`apps/status-web`
-保留其上游来源与固定提交记录；其上游仓库当前未展示许可证。仓库 fork、来源说明和致谢
-不替代对部署、复制或再分发权利的独立确认。
+本仓库当前公开用于项目展示和技术交流，尚未授予开源许可证。在正式选择许可证前，请勿
+将代码用于再分发或商业用途。

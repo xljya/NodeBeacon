@@ -1,7 +1,9 @@
 # NodeBeacon repository instructions
 
-本文件适用于整个仓库。开始任何任务前先阅读本文件；进入子目录后，若存在更深层的
-`AGENTS.md`，同时遵守更具体的说明。
+本文件适用于整个仓库。开始任何任务时，第一步必须完整阅读根目录 `README.md`，先确认
+项目作用、来历、三仓库职责和交付方向；第二步再阅读本文件的执行约束。进入子目录后，若
+存在更深层的 `AGENTS.md`，同时遵守更具体的说明。不要跳过 README 后仅凭目录名或旧经验
+判断本仓库与 `NodeBeacon-Web`、`NodeBeacon1` 的关系。
 
 ## 工作原则
 
@@ -75,7 +77,7 @@
 - 重大架构选择：`docs/adr/`。不得无意中破坏其中的约束，尤其是 RS1000 k3s、
   Fastify BFF、服务端 Prometheus 查询、SQLite-first 和单容器部署。
 - Komari Web 来源、双壳路由和安全边界：`docs/adr/0014-komari-web-public-shell.md`；
-  当前影子 Admin 状态和验收证据：`docs/releases/v1.1.2.md`。
+  当前正式 Admin 切换状态和验收证据：`docs/releases/v1.1.3.md`。
 - 发布前查看最近的 `docs/releases/`，沿用现有验收记录格式。
 
 若代码、清单、脚本与文档互相矛盾，先通过只读检查确认生产实际状态；不要静默选择其一。
