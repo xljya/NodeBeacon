@@ -48,7 +48,7 @@ describe("health and readiness", () => {
     expect(readiness.json()).toMatchObject({
       status: "ready",
       components: {
-        database: { status: "ok", schemaVersion: 6 },
+        database: { status: "ok", schemaVersion: 7 },
         registry: { status: "ok" }
       }
     });

@@ -683,6 +683,12 @@
       "desc": "Batch TCP probes from RS1000 Blackbox to nationwide China Telecom, Unicom, and Mobile nodes. This is not per-server Agent ping.",
       "ip_families": "IP families",
       "added": "Added {{created}} probes, skipped {{skipped}} existing targets",
+      "saved_not_synced": "Saved {{created}} probes (skipped {{skipped}}), but Blackbox was not updated. Probes are not live yet.",
+      "deleted_not_synced": "Deleted {{deleted}} probes, but Blackbox was not updated",
+      "unsynced_callout": "Tasks were saved, but they have not been synced to Blackbox. Probes are not live yet.",
+      "retry_sync": "Retry Blackbox sync",
+      "retry_failed": "Still unable to sync to Blackbox",
+      "synced": "Synced to Blackbox",
       "preview": "{{count}} TCP probes will be created from the monitor node",
       "provinces": "Provinces",
       "title": "Nationwide ISP TCP-Ping"

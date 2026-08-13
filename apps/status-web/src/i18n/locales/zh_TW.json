@@ -683,6 +683,12 @@
       "desc": "從 RS1000 Blackbox 批次探測各省電信、聯通、移動 TCP 延遲。這不是各台被監控機器上的 Agent 探測。",
       "ip_families": "IP 協定",
       "added": "已新增 {{created}} 條，跳過 {{skipped}} 條既有目標",
+      "saved_not_synced": "已儲存 {{created}} 條（跳過 {{skipped}} 條），但尚未同步到 Blackbox。探測尚未上線。",
+      "deleted_not_synced": "已刪除 {{deleted}} 條，但尚未同步到 Blackbox",
+      "unsynced_callout": "任務已寫入資料庫，但還沒有同步到 Blackbox。探測尚未上線。",
+      "retry_sync": "重試同步到 Blackbox",
+      "retry_failed": "仍然無法同步到 Blackbox",
+      "synced": "已同步到 Blackbox",
       "preview": "將從監控節點建立 {{count}} 條 TCP 探測",
       "provinces": "省份",
       "title": "全國三網 TCP-Ping"

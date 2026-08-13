@@ -683,6 +683,12 @@
       "desc": "RS1000 の Blackbox から中国の電信・聯通・移動へ TCP 遅延を一括測定します。各監視対象サーバー上の Agent ping ではありません。",
       "ip_families": "IP ファミリー",
       "added": "{{created}} 件を追加し、既存の {{skipped}} 件をスキップしました",
+      "saved_not_synced": "{{created}} 件を保存しました（{{skipped}} 件スキップ）が、Blackbox には同期されていません。プローブはまだ稼働していません。",
+      "deleted_not_synced": "{{deleted}} 件を削除しましたが、Blackbox には同期されていません",
+      "unsynced_callout": "タスクは保存されましたが、Blackbox に同期されていません。プローブはまだ稼働していません。",
+      "retry_sync": "Blackbox への同期を再試行",
+      "retry_failed": "Blackbox への同期に失敗しました",
+      "synced": "Blackbox に同期しました",
       "preview": "監視ノードから {{count}} 件の TCP プローブを作成します",
       "provinces": "省",
       "title": "全国 ISP TCP-Ping"

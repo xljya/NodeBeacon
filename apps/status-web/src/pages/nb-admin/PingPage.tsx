@@ -22,7 +22,9 @@ import type {
   ChinaIspPingBatchDeleteResponse,
   ChinaIspPingBatchResponse,
   ChinaIspPingCatalog,
+  ProbeReconcileResponse,
 } from "@/lib/contracts";
+import { isProbeReconciled } from "@/lib/probeSync";
 import { AdminError, AdminLoading, AdminPage } from "./AdminPage";
 
 function toggleCode(list: string[], code: string, checked: boolean): string[] {
@@ -42,6 +44,7 @@ export default function PingPage() {
   const [carriers, setCarriers] = useState<string[]>([]);
   const [families, setFamilies] = useState<string[]>(["v4"]);
   const [busy, setBusy] = useState(false);
+  const [unsynced, setUnsynced] = useState(false);
 
   const reloadResults = () =>
     adminGet<{ probes: AdminProbeResult[] }>("/api/admin/probes/results")
@@ -68,11 +71,21 @@ export default function PingPage() {
   if (probes.loading || catalog.loading) return <AdminLoading />;
   if (probes.error) return <AdminError message={probes.error} onRetry={() => void probes.reload()} />;
 
+  const noteReconcile = (result: { reconciled?: boolean }) => {
+    const synced = isProbeReconciled(result);
+    setUnsynced(!synced);
+    return synced;
+  };
+
   const runBatch = async () => {
     setBusy(true);
     try {
       const result = await adminPost<ChinaIspPingBatchResponse>("/api/admin/probes/batch", selection);
-      toast.success(t("ping.china_isp.added", { created: result.created, skipped: result.skipped }));
+      if (noteReconcile(result)) {
+        toast.success(t("ping.china_isp.added", { created: result.created, skipped: result.skipped }));
+      } else {
+        toast.warning(t("ping.china_isp.saved_not_synced", { created: result.created, skipped: result.skipped }));
+      }
       await probes.reload();
       await reloadResults();
     } finally {
@@ -84,9 +97,28 @@ export default function PingPage() {
     setBusy(true);
     try {
       const result = await adminPost<ChinaIspPingBatchDeleteResponse>("/api/admin/probes/batch/delete", selection);
-      toast.success(t("ping.china_isp.deleted", { deleted: result.deleted }));
+      if (noteReconcile(result)) {
+        toast.success(t("ping.china_isp.deleted", { deleted: result.deleted }));
+      } else {
+        toast.warning(t("ping.china_isp.deleted_not_synced", { deleted: result.deleted }));
+      }
       await probes.reload();
       await reloadResults();
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const retrySync = async () => {
+    setBusy(true);
+    try {
+      const result = await adminPost<ProbeReconcileResponse>("/api/admin/probes/reconcile", {});
+      if (noteReconcile(result)) {
+        toast.success(t("ping.china_isp.synced"));
+        await reloadResults();
+      } else {
+        toast.warning(t("ping.china_isp.retry_failed"));
+      }
     } finally {
       setBusy(false);
     }
@@ -111,7 +143,10 @@ export default function PingPage() {
           <TextField.Root value={target} onChange={(event) => setTarget(event.target.value)} placeholder={t("ping.target")} />
           <Button
             onClick={() =>
-              void adminPost("/api/admin/probes", { name, protocol, target, intervalSeconds: 60, enabled: true }).then(() => probes.reload())
+              void adminPost<{ reconciled?: boolean }>("/api/admin/probes", { name, protocol, target, intervalSeconds: 60, enabled: true }).then((result) => {
+                if (!noteReconcile(result)) toast.warning(t("ping.china_isp.saved_not_synced", { created: 1, skipped: 0 }));
+                return probes.reload();
+              })
             }
           >
             {t("common.add", "Add")}
@@ -189,9 +224,17 @@ export default function PingPage() {
                 </Flex>
               </Flex>
               <Text size="2" color="gray">{t("ping.china_isp.preview", { count: previewCount })}</Text>
+              {unsynced ? (
+                <Callout.Root color="amber">
+                  <Callout.Text>{t("ping.china_isp.unsynced_callout")}</Callout.Text>
+                </Callout.Root>
+              ) : null}
               <Flex gap="2" wrap="wrap">
                 <Button disabled={busy || previewCount === 0} onClick={() => void runBatch()}>
                   {t("ping.china_isp.add_batch")}
+                </Button>
+                <Button variant="soft" disabled={busy} onClick={() => void retrySync()}>
+                  {t("ping.china_isp.retry_sync")}
                 </Button>
                 <ConfirmDeleteButton
                   itemName={t("ping.china_isp.title")}
@@ -221,7 +264,12 @@ export default function PingPage() {
               <Flex gap="2" align="center">
                 <Switch
                   checked={Boolean(probe.enabled)}
-                  onCheckedChange={(checked) => void adminPatch(`/api/admin/probes/${probe.id}`, { enabled: Boolean(checked) }).then(() => probes.reload())}
+                  onCheckedChange={(checked) =>
+                    void adminPatch<{ reconciled?: boolean }>(`/api/admin/probes/${probe.id}`, { enabled: Boolean(checked) }).then((result) => {
+                      if (!noteReconcile(result)) toast.warning(t("ping.china_isp.unsynced_callout"));
+                      return probes.reload();
+                    })
+                  }
                 />
                 <ConfirmDeleteButton itemName={probe.name} onConfirm={() => adminDelete(`/api/admin/probes/${probe.id}`).then(() => probes.reload())}>
                   <Button color="red" variant="soft">{t("common.delete")}</Button>

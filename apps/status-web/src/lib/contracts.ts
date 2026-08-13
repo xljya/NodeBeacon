@@ -173,6 +173,8 @@ export interface TrafficReport {
   enabled: boolean;
 }
 
+export type AdminProbeSource = "manual" | "china_isp";
+
 export interface AdminProbe {
   id: string;
   name: string;
@@ -180,6 +182,7 @@ export interface AdminProbe {
   target: string;
   intervalSeconds: number;
   enabled: boolean | number;
+  source?: AdminProbeSource;
   updatedAt: number;
 }
 
@@ -205,6 +208,10 @@ export interface ChinaIspPingBatchResponse {
 
 export interface ChinaIspPingBatchDeleteResponse {
   deleted: number;
+  reconciled: boolean;
+}
+
+export interface ProbeReconcileResponse {
   reconciled: boolean;
 }
 

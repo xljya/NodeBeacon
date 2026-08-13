@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   buildChinaIspPingTasks,
   chinaIspPingCatalog,
+  isChinaIspCatalogTarget,
   CHINA_ISP_DEFAULT_PROVINCE_CODES
 } from "../src/services/chinaIspPingCatalog.js";
 import { groupManagedProbeTargets, isIpv6TcpTarget } from "../src/services/managedProbes.js";
@@ -39,6 +40,13 @@ describe("china ISP ping catalog", () => {
     });
     expect(tasks).toHaveLength(60);
     expect(tasks.every((task) => task.target.endsWith(".ip.zstaticcdn.com:80"))).toBe(true);
+  });
+
+  it("recognizes only allow-listed catalog hostnames", () => {
+    expect(isChinaIspCatalogTarget("xj-ct-v4.ip.zstaticcdn.com:80")).toBe(true);
+    expect(isChinaIspCatalogTarget("xj-ct-v6.ip.zstaticcdn.com:80")).toBe(true);
+    expect(isChinaIspCatalogTarget("evil.example.com:80")).toBe(false);
+    expect(isChinaIspCatalogTarget("xj-ct-v4.ip.zstaticcdn.com.evil:80")).toBe(false);
   });
 
   it("rejects unknown codes instead of interpolating attacker-controlled hostnames", () => {

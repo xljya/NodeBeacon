@@ -1,10 +1,11 @@
 import { mkdirSync } from "node:fs";
 import { dirname, resolve } from "node:path";
 import Database from "better-sqlite3";
+import { isChinaIspCatalogTarget } from "./chinaIspPingCatalog.js";
 
 export type SqliteDatabase = Database.Database;
 
-export const CURRENT_SCHEMA_VERSION = 6;
+export const CURRENT_SCHEMA_VERSION = 7;
 
 function migrateToV1(db: SqliteDatabase): void {
   db.exec(`
@@ -165,6 +166,16 @@ function migrateToV6(db: SqliteDatabase): void {
   `);
 }
 
+function migrateToV7(db: SqliteDatabase): void {
+  db.exec(`ALTER TABLE latency_tasks ADD COLUMN source TEXT NOT NULL DEFAULT 'manual'`);
+  const rows = db.prepare("SELECT id, protocol, target FROM latency_tasks").all() as Array<{ id: string; protocol: string; target: string }>;
+  const markCatalog = db.prepare("UPDATE latency_tasks SET source = 'china_isp' WHERE id = ?");
+  for (const row of rows) {
+    if (row.protocol === "tcp" && isChinaIspCatalogTarget(row.target)) markCatalog.run(row.id);
+  }
+  db.exec("PRAGMA user_version = 7");
+}
+
 export function migrateDatabase(db: SqliteDatabase): void {
   const version = db.pragma("user_version", { simple: true }) as number;
   if (version > CURRENT_SCHEMA_VERSION) {
@@ -188,6 +199,9 @@ export function migrateDatabase(db: SqliteDatabase): void {
   }
   if (version < 6) {
     db.transaction(() => migrateToV6(db))();
+  }
+  if (version < 7) {
+    db.transaction(() => migrateToV7(db))();
   }
 }
 

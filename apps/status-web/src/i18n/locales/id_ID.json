@@ -683,6 +683,12 @@
       "desc": "Probe TCP batch dari RS1000 Blackbox ke node China Telecom, Unicom, dan Mobile. Ini bukan ping Agent per server.",
       "ip_families": "Keluarga IP",
       "added": "Menambah {{created}} probe, melewati {{skipped}} target yang sudah ada",
+      "saved_not_synced": "Menyimpan {{created}} probe (melewati {{skipped}}), tetapi Blackbox belum diperbarui. Probe belum aktif.",
+      "deleted_not_synced": "Menghapus {{deleted}} probe, tetapi Blackbox belum diperbarui",
+      "unsynced_callout": "Tugas sudah disimpan, tetapi belum disinkronkan ke Blackbox. Probe belum aktif.",
+      "retry_sync": "Coba sinkronkan Blackbox lagi",
+      "retry_failed": "Masih gagal menyinkronkan ke Blackbox",
+      "synced": "Tersinkron ke Blackbox",
       "preview": "{{count}} probe TCP akan dibuat dari node pemantau",
       "provinces": "Provinsi",
       "title": "TCP-Ping ISP nasional"

@@ -3,6 +3,7 @@ import { join } from "node:path";
 import { tmpdir } from "node:os";
 import { afterEach, describe, expect, it } from "vitest";
 import type { FastifyInstance } from "fastify";
+import Database from "better-sqlite3";
 import { openDatabase } from "../src/services/database.js";
 import { backupDatabase } from "../src/cli/backupDatabase.js";
 import { buildTestApp, loginOwner } from "./helpers.js";
@@ -43,14 +44,37 @@ describe("SQLite sessions and audit events", () => {
   it("applies the schema migration idempotently", async () => {
     const { databasePath } = await paths();
     const first = openDatabase(databasePath);
-    expect(first.pragma("user_version", { simple: true })).toBe(6);
+    expect(first.pragma("user_version", { simple: true })).toBe(7);
     first.close();
 
     const second = openDatabase(databasePath);
-    expect(second.pragma("user_version", { simple: true })).toBe(6);
+    expect(second.pragma("user_version", { simple: true })).toBe(7);
     const tables = second.prepare("SELECT name FROM sqlite_master WHERE type = 'table'").all() as Array<{ name: string }>;
     expect(tables.map((table) => table.name)).toEqual(expect.arrayContaining(["sessions", "audit_events", "incidents"]));
     second.close();
+  });
+
+  it("adds latency_tasks.source and backfills catalog TCP targets", async () => {
+    const { databasePath } = await paths();
+    const legacy = new Database(databasePath);
+    legacy.exec(`
+      CREATE TABLE latency_tasks (
+        id TEXT PRIMARY KEY, name TEXT NOT NULL, protocol TEXT NOT NULL,
+        target TEXT NOT NULL, interval_seconds INTEGER NOT NULL DEFAULT 60, enabled INTEGER NOT NULL DEFAULT 1,
+        created_at INTEGER NOT NULL, updated_at INTEGER NOT NULL
+      );
+      PRAGMA user_version = 6;
+    `);
+    const insert = legacy.prepare("INSERT INTO latency_tasks(id,name,protocol,target,interval_seconds,enabled,created_at,updated_at) VALUES (?,?,?,?,?,?,?,?)");
+    insert.run("catalog", "新疆电信 IPv4", "tcp", "xj-ct-v4.ip.zstaticcdn.com:80", 60, 1, 1, 1);
+    insert.run("manual", "custom", "tcp", "example.com:80", 60, 1, 1, 1);
+    legacy.close();
+
+    const migrated = openDatabase(databasePath);
+    expect(migrated.pragma("user_version", { simple: true })).toBe(7);
+    expect(migrated.prepare("SELECT source FROM latency_tasks WHERE id = 'catalog'").get()).toEqual({ source: "china_isp" });
+    expect(migrated.prepare("SELECT source FROM latency_tasks WHERE id = 'manual'").get()).toEqual({ source: "manual" });
+    migrated.close();
   });
 
   it("creates an integrity-checked online backup", async () => {

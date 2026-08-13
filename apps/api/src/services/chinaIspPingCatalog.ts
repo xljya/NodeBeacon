@@ -129,3 +129,15 @@ export function buildChinaIspPingTasks(input: {
   }
   return tasks;
 }
+
+const CATALOG_TARGETS = new Set(
+  buildChinaIspPingTasks({
+    provinces: CHINA_ISP_PROVINCES.map((item) => item.code),
+    carriers: CHINA_ISP_CARRIERS.map((item) => item.code),
+    ipFamilies: [...CHINA_ISP_IP_FAMILIES]
+  }).map((task) => task.target)
+);
+
+export function isChinaIspCatalogTarget(target: string): boolean {
+  return CATALOG_TARGETS.has(target.trim().toLowerCase());
+}

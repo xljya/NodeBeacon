@@ -34,8 +34,12 @@ function parseChinaIspSelection(body: Record<string, unknown>): { tasks: ChinaIs
   }
 }
 
-function enabledTcpCounts(db: SqliteDatabase): { tcp: number; tcp6: number } {
-  const rows = db.prepare("SELECT target FROM latency_tasks WHERE protocol = 'tcp' AND enabled = 1").all() as Array<{ target: string }>;
+function enabledTcpCounts(db: SqliteDatabase, excludeId?: string): { tcp: number; tcp6: number } {
+  const rows = (
+    excludeId
+      ? db.prepare("SELECT target FROM latency_tasks WHERE protocol = 'tcp' AND enabled = 1 AND id != ?").all(excludeId)
+      : db.prepare("SELECT target FROM latency_tasks WHERE protocol = 'tcp' AND enabled = 1").all()
+  ) as Array<{ target: string }>;
   let tcp = 0;
   let tcp6 = 0;
   for (const row of rows) {
@@ -45,16 +49,24 @@ function enabledTcpCounts(db: SqliteDatabase): { tcp: number; tcp6: number } {
   return { tcp, tcp6 };
 }
 
+function tcpFamilyLimitError(family: "tcp" | "tcp6") {
+  return buildApiError("probe_limit", `At most ${MANAGED_PROBE_TARGET_LIMIT} enabled ${family} probes are allowed.`);
+}
+
 export async function registerAdminProbeRoutes(app: FastifyInstance, env: ApiEnv, db: SqliteDatabase): Promise<void> {
   const owner = { preHandler: app.requireOwner };
 
   app.get("/api/admin/probes", owner, async () => ({
-    probes: db.prepare("SELECT id,name,protocol,target,interval_seconds AS intervalSeconds,enabled,updated_at AS updatedAt FROM latency_tasks ORDER BY name COLLATE NOCASE").all()
+    probes: db.prepare("SELECT id,name,protocol,target,interval_seconds AS intervalSeconds,enabled,source,updated_at AS updatedAt FROM latency_tasks ORDER BY name COLLATE NOCASE").all()
   }));
 
   app.get("/api/admin/probes/catalog", owner, async () => chinaIspPingCatalog());
 
   app.get("/api/admin/probes/results", owner, async (request) => getAdminProbeResults(env, request.log));
+
+  app.post("/api/admin/probes/reconcile", owner, async (request) => ({
+    reconciled: await reconcileManagedProbes(db, request.log)
+  }));
 
   app.post("/api/admin/probes", owner, async (request, reply) => {
     const body = bodyRecord(request.body);
@@ -67,13 +79,13 @@ export async function registerAdminProbeRoutes(app: FastifyInstance, env: ApiEnv
       const family = tcpFamilyForTarget(target);
       const counts = enabledTcpCounts(db);
       if ((family === "tcp6" ? counts.tcp6 : counts.tcp) >= MANAGED_PROBE_TARGET_LIMIT) {
-        return reply.code(400).send(buildApiError("probe_limit", `At most ${MANAGED_PROBE_TARGET_LIMIT} enabled ${family} probes are allowed.`));
+        return reply.code(400).send(tcpFamilyLimitError(family));
       }
     }
     const id = `probe-${randomUUID()}`;
     const now = Date.now();
-    db.prepare("INSERT INTO latency_tasks(id,name,protocol,target,interval_seconds,enabled,created_at,updated_at) VALUES (?,?,?,?,?,?,?,?)")
-      .run(id, String(body.name ?? target).slice(0, 80), protocol, target, clampInterval(body.intervalSeconds), body.enabled === false ? 0 : 1, now, now);
+    db.prepare("INSERT INTO latency_tasks(id,name,protocol,target,interval_seconds,enabled,source,created_at,updated_at) VALUES (?,?,?,?,?,?,?,?,?)")
+      .run(id, String(body.name ?? target).slice(0, 80), protocol, target, clampInterval(body.intervalSeconds), body.enabled === false ? 0 : 1, "manual", now, now);
     const reconciled = await reconcileManagedProbes(db, request.log);
     return { id, reconciled };
   });
@@ -100,10 +112,10 @@ export async function registerAdminProbeRoutes(app: FastifyInstance, env: ApiEnv
       }
     }
     const now = Date.now();
-    const insert = db.prepare("INSERT INTO latency_tasks(id,name,protocol,target,interval_seconds,enabled,created_at,updated_at) VALUES (?,?,?,?,?,?,?,?)");
+    const insert = db.prepare("INSERT INTO latency_tasks(id,name,protocol,target,interval_seconds,enabled,source,created_at,updated_at) VALUES (?,?,?,?,?,?,?,?,?)");
     const create = db.transaction((tasks: ChinaIspPingTask[]) => {
       for (const task of tasks) {
-        insert.run(`probe-${randomUUID()}`, task.name.slice(0, 80), task.protocol, task.target, intervalSeconds, enabled, now, now);
+        insert.run(`probe-${randomUUID()}`, task.name.slice(0, 80), task.protocol, task.target, intervalSeconds, enabled, "china_isp", now, now);
       }
     });
     create(createdTasks);
@@ -121,27 +133,29 @@ export async function registerAdminProbeRoutes(app: FastifyInstance, env: ApiEnv
     const targets = parsed.tasks.map((task) => task.target);
     if (!targets.length) return { deleted: 0, reconciled: false };
     const placeholders = targets.map(() => "?").join(",");
-    const deleted = db.prepare(`DELETE FROM latency_tasks WHERE protocol = 'tcp' AND target IN (${placeholders})`).run(...targets).changes;
+    const deleted = db.prepare(`DELETE FROM latency_tasks WHERE protocol = 'tcp' AND source = 'china_isp' AND target IN (${placeholders})`).run(...targets).changes;
     return { deleted, reconciled: await reconcileManagedProbes(db, request.log) };
   });
 
   app.patch<{ Params: { id: string } }>("/api/admin/probes/:id", owner, async (request, reply) => {
-    const current = db.prepare("SELECT * FROM latency_tasks WHERE id = ?").get(request.params.id) as { name: string; protocol: string; target: string; interval_seconds: number; enabled: number } | undefined;
+    const current = db.prepare("SELECT * FROM latency_tasks WHERE id = ?").get(request.params.id) as { name: string; protocol: string; target: string; interval_seconds: number; enabled: number; source: string } | undefined;
     if (!current) return reply.code(404).send(buildApiError("not_found", "Probe not found."));
     const body = bodyRecord(request.body);
     const nextEnabled = body.enabled === undefined ? current.enabled : body.enabled === true ? 1 : 0;
-    if (current.protocol === "tcp" && current.enabled !== 1 && nextEnabled === 1) {
-      const family = tcpFamilyForTarget(current.target);
-      const counts = enabledTcpCounts(db);
+    const nextTarget = typeof body.target === "string" ? body.target.trim().slice(0, 240) : current.target;
+    if (!nextTarget) return reply.code(400).send(buildApiError("invalid_probe", "Protocol and target are invalid."));
+    if (current.protocol === "tcp" && nextEnabled === 1) {
+      const family = tcpFamilyForTarget(nextTarget);
+      const counts = enabledTcpCounts(db, request.params.id);
       if ((family === "tcp6" ? counts.tcp6 : counts.tcp) >= MANAGED_PROBE_TARGET_LIMIT) {
-        return reply.code(400).send(buildApiError("probe_limit", `At most ${MANAGED_PROBE_TARGET_LIMIT} enabled ${family} probes are allowed.`));
+        return reply.code(400).send(tcpFamilyLimitError(family));
       }
     }
     db.prepare("UPDATE latency_tasks SET name=?,protocol=?,target=?,interval_seconds=?,enabled=?,updated_at=? WHERE id=?")
       .run(
         typeof body.name === "string" ? body.name.slice(0, 80) : current.name,
         current.protocol,
-        typeof body.target === "string" ? body.target.slice(0, 240) : current.target,
+        nextTarget,
         clampInterval(body.intervalSeconds, current.interval_seconds),
         nextEnabled,
         Date.now(),
