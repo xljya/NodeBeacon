@@ -3,7 +3,7 @@ kind: Probe
 metadata:
   name: nodebeacon-managed-http
   namespace: nodebeacon
-  labels: { app.kubernetes.io/name: nodebeacon }
+  labels: { app.kubernetes.io/name: nodebeacon, release: monitoring }
 spec:
   jobName: nodebeacon-managed-http
   interval: 60s
@@ -16,7 +16,7 @@ kind: Probe
 metadata:
   name: nodebeacon-managed-tcp
   namespace: nodebeacon
-  labels: { app.kubernetes.io/name: nodebeacon }
+  labels: { app.kubernetes.io/name: nodebeacon, release: monitoring }
 spec:
   jobName: nodebeacon-managed-tcp
   interval: 60s
@@ -29,7 +29,7 @@ kind: Probe
 metadata:
   name: nodebeacon-managed-tcp6
   namespace: nodebeacon
-  labels: { app.kubernetes.io/name: nodebeacon }
+  labels: { app.kubernetes.io/name: nodebeacon, release: monitoring }
 spec:
   jobName: nodebeacon-managed-tcp6
   interval: 60s
@@ -42,7 +42,7 @@ kind: Probe
 metadata:
   name: nodebeacon-managed-icmp
   namespace: nodebeacon
-  labels: { app.kubernetes.io/name: nodebeacon }
+  labels: { app.kubernetes.io/name: nodebeacon, release: monitoring }
 spec:
   jobName: nodebeacon-managed-icmp
   interval: 60s
