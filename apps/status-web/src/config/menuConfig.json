@@ -21,6 +21,11 @@
           "icon": "Home"
         },
         {
+          "labelKey": "theme.title",
+          "path": "/admin/settings/theme",
+          "icon": "Palette"
+        },
+        {
           "labelKey": "settings.sign_on.title",
           "path": "/admin/settings/sign-on",
           "icon": "CircleArrowRight"
@@ -36,53 +41,9 @@
           "icon": "Ellipsis"
         },
         {
-          "labelKey": "settings.xtermjs.title",
-          "path": "/admin/settings/xtermjs",
-          "icon": "Terminal"
-        },
-        {
           "labelKey": "settings.metrics.title",
           "path": "/admin/settings/metrics",
           "icon": "Database"
-        }
-      ]
-    },
-    {
-      "labelKey": "theme.menu",
-      "path": "/admin/theme",
-      "icon": "Palette",
-      "children": [
-        {
-          "labelKey": "theme.title",
-          "path": "/admin/settings/theme",
-          "icon": "Palette"
-        },
-        {
-          "labelKey": "market.themes",
-          "path": "/admin/market/themes",
-          "icon": "Store"
-        }
-      ]
-    },
-    {
-      "labelKey": "plugin.title",
-      "path": "/admin/plugins",
-      "icon": "Blocks",
-      "children": [
-        {
-          "labelKey": "plugin.manage",
-          "path": "/admin/plugins",
-          "icon": "Blocks"
-        },
-        {
-          "labelKey": "plugin.market",
-          "path": "/admin/market/plugins",
-          "icon": "Store"
-        },
-        {
-          "labelKey": "plugin.config",
-          "path": "/admin/plugins/config",
-          "icon": "Settings2"
         }
       ]
     },
@@ -91,6 +52,11 @@
       "path": "/admin/notification",
       "icon": "Bell",
       "children": [
+        {
+          "labelKey": "settings.general.title",
+          "path": "/admin/notification/general",
+          "icon": "Ellipsis"
+        },
         {
           "labelKey": "notification.offline.title",
           "path": "/admin/notification/offline",
@@ -105,23 +71,18 @@
           "labelKey": "notification.traffic_report.title",
           "path": "/admin/notification/traffic-report",
           "icon": "BarChart2"
-        },
-        {
-          "labelKey": "settings.general.title",
-          "path": "/admin/notification/general",
-          "icon": "Ellipsis"
         }
       ]
-    },
-    {
-      "labelKey": "exec.title",
-      "path": "/admin/exec",
-      "icon": "Code"
     },
     {
       "labelKey": "ping.title",
       "path": "/admin/ping",
       "icon": "Activity"
+    },
+    {
+      "labelKey": "exec.title",
+      "path": "/admin/exec",
+      "icon": "Code"
     },
     {
       "labelKey": "sessions.title",
@@ -142,12 +103,6 @@
       "labelKey": "common.about",
       "path": "/admin/about",
       "icon": "AtSign"
-    },
-    {
-      "labelKey": "common.documentation",
-      "path": "https://komari-document.pages.dev/",
-      "icon": "Book",
-      "newTab": true
     },
     {
       "labelKey": "common.home",

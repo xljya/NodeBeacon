@@ -21,10 +21,12 @@ Metric Store、插件或 WebSSH。
 - `/api/site-config`：站点名称与白名单主题 token
 - `/api/auth/*`：登录、二次验证和当前账户
 - `/api/public/nodes/:id/series`：服务端白名单 Prometheus 趋势查询
-- `/nodes/:id`、`/login`、`/admin`：由 NodeBeacon 产品仓库中的现有应用处理
+- `/api/admin/*`：Owner 管理契约；登录与 Admin 外壳使用同一 Fastify BFF
+- `/nodes/:id`：由 NodeBeacon 产品仓库中的现有 React 18 详情页处理
+- `/login-v2`、`/admin-v2`：影子 Admin（v1.1.2）；验收后切换 `/login` 与 `/admin`
 
-前端不得请求 `/api/rpc2`，不得直接请求 Prometheus，也不得显示 API 没有公开的 IP、
-labels、账单、私密备注或客户端版本。
+前端不得请求 `/api/rpc2`，不得直接请求 Prometheus，也不得把 Admin 私有字段写进公共 `/api/status`。
+插件市场、主题 ZIP、pprof、Metric Store 迁移、WebSSH、xterm 和任意命令页面不注册路由。
 
 ## 本地开发
 

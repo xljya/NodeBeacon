@@ -20,6 +20,7 @@ import { useRoutes } from "react-router-dom";
 import { routes } from "./routes";
 import Loading from "./components/loading";
 import { PublicInfoProvider } from "./contexts/PublicInfoContext";
+import { AccountProvider } from "./contexts/AccountContext";
 import { OfflineIndicator } from "./components/OfflineIndicator";
 import { Toaster } from "./components/ui/sonner";
 import { NodeListProvider } from "./contexts/NodeListContext";
@@ -75,11 +76,13 @@ const App = () => {
           }}
         >
           <PublicInfoProvider>
-            <NodeListProvider>
-              <Toaster />
-              <OfflineIndicator />
-              {routing}
-            </NodeListProvider>
+            <AccountProvider>
+              <NodeListProvider>
+                <Toaster />
+                <OfflineIndicator />
+                {routing}
+              </NodeListProvider>
+            </AccountProvider>
           </PublicInfoProvider>
         </Theme>
       </ThemeContext.Provider>

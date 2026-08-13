@@ -602,6 +602,148 @@ export interface AdminIncidentsResponse {
   incidents: AdminIncident[];
 }
 
+export interface SiteSettings {
+  name: string;
+  description: string;
+  defaultLocale: "en" | "zh-CN" | "zh-TW";
+  timezone: string;
+}
+
+export interface GeneralSettings {
+  statusCacheTtlSeconds: number;
+  incidentRetentionDays: number;
+  auditRetentionDays: number;
+  executionRetentionDays: number;
+}
+
+export interface AdminThemePreset extends PublicThemePreset {
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+export type NotificationChannelType = "telegram" | "smtp" | "webhook";
+
+export interface NotificationChannel {
+  id: string;
+  name: string;
+  type: NotificationChannelType;
+  enabled: boolean;
+  config: Record<string, unknown>;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export type AlertRuleType = "offline" | "load";
+
+export interface AlertRule {
+  id: string;
+  type: AlertRuleType;
+  name: string;
+  nodeId?: string;
+  config: Record<string, unknown>;
+  channelIds: string[];
+  enabled: boolean;
+  reconcileStatus: string;
+  reconcileError?: string;
+}
+
+export type TrafficReportPeriod = "daily" | "weekly" | "monthly";
+
+export interface TrafficReport {
+  id: string;
+  name: string;
+  period: TrafficReportPeriod;
+  time: string;
+  timezone: string;
+  nodeIds: string[];
+  channelIds: string[];
+  enabled: boolean;
+}
+
+export interface TrafficReportMutation {
+  name?: string;
+  period?: TrafficReportPeriod;
+  time?: string;
+  timezone?: string;
+  nodeIds?: string[];
+  channelIds?: string[];
+  enabled?: boolean;
+}
+
+export interface AdminProbe {
+  id: string;
+  name: string;
+  protocol: "http" | "tcp" | "icmp";
+  target: string;
+  intervalSeconds: number;
+  enabled: boolean | number;
+  updatedAt: number;
+}
+
+export interface AdminLogEntry {
+  timestamp: string;
+  labels: Record<string, string>;
+  line: string;
+}
+
+export interface AdminLogsResponse {
+  source: string;
+  entries: AdminLogEntry[];
+  nextCursor: string | null;
+}
+
+export interface AdminBackupStatus {
+  request: unknown;
+  lastResult: unknown;
+  lastSuccess: string | null;
+}
+
+export interface AdminDataSource {
+  id: string;
+  configured: boolean;
+  reachable: boolean;
+  host?: string;
+  bytes?: number;
+}
+
+export interface RemoteTask {
+  id: string;
+  label: string;
+  risk: string;
+}
+
+export interface RemoteTarget {
+  id: string;
+  nodeId: string;
+  hostname: string;
+  port: number;
+  enabled: boolean | number;
+  updatedAt: number;
+}
+
+export interface RemoteRun {
+  id: string;
+  targetId: string;
+  taskId: string;
+  status: string;
+  exitCode?: number | null;
+  summary: string;
+  startedAt: number;
+  finishedAt?: number | null;
+  actor: string;
+}
+
+export interface NotificationDelivery {
+  id: number;
+  channelId: string;
+  eventType: string;
+  status: string;
+  attempts: number;
+  lastError?: string | null;
+  sentAt?: number | null;
+  createdAt: number;
+}
+
 const gib = 1024 ** 3;
 const mib = 1024 ** 2;
 

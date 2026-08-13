@@ -9,6 +9,9 @@ describe("web shell routing", () => {
     ["/admin", true],
     ["/admin/nodes?tab=all", true],
     ["/login", true],
+    ["/login-v2", false],
+    ["/admin-v2", false],
+    ["/admin-v2/servers", false],
     ["/nodes/rs1000", true],
     ["/legacy/assets/app.js", true]
   ])("routes %s to the expected shell", (url, legacy) => {
