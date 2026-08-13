@@ -4,6 +4,7 @@ import NavBar from "../components/NavBar";
 import { Outlet } from "react-router-dom";
 import { usePublicInfo } from "@/contexts/PublicInfoContext";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { getMainContentWidth } from "@/lib/layoutSizing";
 
 const IndexLayout = () => {
   // 使用我们的LiveDataContext
@@ -30,7 +31,7 @@ const IndexLayout = () => {
           <main
             className="km-main main-content m-1 h-full"
             style={{
-              width: `${mainContentWidth}vw`,
+              width: getMainContentWidth(mainContentWidth),
               marginLeft: "auto",
               marginRight: "auto",
             }}
