@@ -45,7 +45,8 @@
 - `xljya/NodeBeacon-Web` 是 Komari Web fork 的可维护前端源；产品改动在 `nodebeacon`
   分支进行。涉及 `apps/status-web` 的功能修改时，必须先在该仓库实现、验证、提交并推送，
   再把该精确提交引入本仓库，同时更新 `apps/status-web/NODEBEACON_WEB_COMMIT`。不要只改
-  vendored 副本而让两个仓库永久分叉。
+  vendored 副本而让两个仓库永久分叉。`NodeBeacon-Web` 本身不发布生产；只有本仓库完成
+  固定提交引入、根门禁、版本发布和 RS1000 验收后，前端改动才算交付。
 - `xljya/NodeBeacon1` 仅保留迁移前的 NodeBeacon/infra 历史，不参与当前产品构建或生产
   数据面；除非用户明确要求，不要向该仓库回写当前功能。
 - `apps/status-web` 被排除在 pnpm workspace 外，必须使用其 `package-lock.json` 和 npm；
