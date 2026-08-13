@@ -21,12 +21,16 @@
   提交或使用强制推送。
 - 这是个人项目，默认直接以 `main` 作为唯一开发与同步分支：开始任务时切换到
   `main` 并与 `origin/main` 同步，不要自动创建 `codex/*`、`agent/*` 或其他功能
-  分支。只有用户明确要求隔离开发、PR 或专用分支时才能新建分支。
+  分支。只有用户明确要求隔离开发、PR 或专用分支时才能新建分支。该规则适用于本产品
+  仓库；配套前端仓库 `NodeBeacon-Web` 的产品分支固定为 `nodebeacon`。
 - 不输出 Secret、Cookie、OAuth 凭据、备份密钥、数据库内容或其他敏感信息。
 
 ## 项目结构
 
-- `apps/web`: React/Vite 公共状态页、节点详情页和管理界面。
+- `apps/status-web`: 从 `NodeBeacon-Web` 固定提交引入的 Komari Web/React 19 源码；负责
+  公共状态页以及当前 `/login-v2`、`/admin-v2` 影子 Owner 界面，使用独立 npm lock。
+- `apps/web`: NodeBeacon React 18 壳；当前负责节点详情以及正式 `/login`、`/admin`，
+  构建后静态资源装配到 `/legacy/assets`。
 - `apps/api`: Fastify API、认证、Prometheus 查询、SQLite 和节点注册表逻辑。
 - `packages/shared`: Web 与 API 共用的类型和契约。
 - `e2e`: Playwright 浏览器测试。
@@ -34,6 +38,24 @@
 - `infra`: RS1000 k3s、Prometheus、Cloudflare、nginx 和生产运维说明。
 - `scripts`: 部署、生产验收、备份、恢复相关脚本。
 - `config`: 本地或种子配置；生产运行时状态位于 PVC，不应从本地文件臆测。
+
+## 三仓库与前端同步边界
+
+- `xljya/NodeBeacon`（本仓库）是产品、发布和生产部署的唯一来源。
+- `xljya/NodeBeacon-Web` 是 Komari Web fork 的可维护前端源；产品改动在 `nodebeacon`
+  分支进行。涉及 `apps/status-web` 的功能修改时，必须先在该仓库实现、验证、提交并推送，
+  再把该精确提交引入本仓库，同时更新 `apps/status-web/NODEBEACON_WEB_COMMIT`。不要只改
+  vendored 副本而让两个仓库永久分叉。
+- `xljya/NodeBeacon1` 仅保留迁移前的 NodeBeacon/infra 历史，不参与当前产品构建或生产
+  数据面；除非用户明确要求，不要向该仓库回写当前功能。
+- `apps/status-web` 被排除在 pnpm workspace 外，必须使用其 `package-lock.json` 和 npm；
+  不要把 React 19/Radix 依赖并入 React 18 workspace，也不要用根 pnpm lock 替代其 lock。
+- 当前路由分阶段迁移：`/` 与 `/instance/*` 使用 Komari-derived 壳，`/login-v2` 与
+  `/admin-v2` 用于影子验收，正式 `/login`、`/admin/*` 和 `/nodes/*` 仍使用 React 18
+  壳。改变正式路由归属必须有单独发布、浏览器验收和明确回滚路径。
+- Komari-derived 前端只能调用 NodeBeacon 的显式 REST 契约。禁止新增或模拟 Komari
+  RPC2、Agent 上报、Metric Store、浏览器直连 Prometheus、WebSSH、任意命令、插件市场、
+  ZIP/可执行主题等接口；构建产物必须继续通过 forbidden-endpoint scan。
 
 ## 文档优先与路由
 
@@ -51,6 +73,8 @@
 - 跨平台、换行符和同步：`docs/cross-platform-sync.md` 与 `.gitattributes`。
 - 重大架构选择：`docs/adr/`。不得无意中破坏其中的约束，尤其是 RS1000 k3s、
   Fastify BFF、服务端 Prometheus 查询、SQLite-first 和单容器部署。
+- Komari Web 来源、双壳路由和安全边界：`docs/adr/0014-komari-web-public-shell.md`；
+  当前影子 Admin 状态和验收证据：`docs/releases/v1.1.2.md`。
 - 发布前查看最近的 `docs/releases/`，沿用现有验收记录格式。
 
 若代码、清单、脚本与文档互相矛盾，先通过只读检查确认生产实际状态；不要静默选择其一。
@@ -91,6 +115,11 @@
   是请求 HTML。
 - API 或数据结构变更要同步检查 `packages/shared`、API 路由/服务、Web 消费端、测试和
   API 文档。
+- 修改 Komari-derived 页面时同时在 `NodeBeacon-Web` 运行 `npm run lint`、`npm test`
+  和 `npm run build`；引入产品仓库后再运行根门禁。上游已有 warning 要如实记录，新增
+  error 或 warning 不得静默接受。
+- 涉及 Admin/Login 路由时必须分别验证正式与影子入口、匿名重定向、登录后安全回跳、
+  Owner-only API、移动端抽屉以及控制台/网络请求；不得因影子页面可用而误判正式路由已切换。
 - 基础设施变更先渲染或 dry-run，再应用；生产状态、PVC、Secret、监控栈和备份均按
   `infra/README.md` 的专门流程处理。
 - 修改后运行与风险相称的测试。生产发布的标准本地门禁为：
@@ -112,10 +141,11 @@ pnpm exec playwright test --project=chromium
 当任务默认或明确要求发布到 `monitor.liucf.com` 时，严格执行以下顺序：
 
 1. 阅读 `infra/README.md`、`scripts/deploy.sh` 和最近的发布记录。
-2. 将 patch 版本同步提升到以下三处，三者必须一致：
+2. 将 patch 版本同步提升到以下四处，四者必须一致：
    - 根目录 `package.json` 的 `version`；
    - `infra/k8s/deployment.yaml` 的 `nodebeacon:<version>`；
-   - `infra/k8s/restore-pod.example.yaml` 的 `nodebeacon:<version>`。
+   - `infra/k8s/restore-pod.example.yaml` 的 `nodebeacon:<version>`；
+   - `infra/k8s/executor.yaml` 的 `nodebeacon:<version>`。
 3. 完成全部本地门禁与 diff 检查。
 4. 提交发布代码并推送 `main`；推送前再次同步 `origin/main`，不要强推。
 5. 在 RS1000 使用包含 `.git` 的干净检出目录同步该精确提交。优先使用 Git；若 RS1000
@@ -175,6 +205,7 @@ pnpm exec playwright test --project=chromium
   --project=chromium`。`pnpm test:e2e` 默认用 `edge`（msedge channel），Cloud VM 内
   一般只装了 chromium，跑 e2e 请用 `--project=chromium`。Playwright 会自行拉起 API
   (3001) 和 web (4173) 两个 webServer，无需先手动启动 `pnpm dev`。
-- `pnpm lint` 实为 `tsc --noEmit` 类型检查（无 ESLint）。`better-sqlite3` 是原生模块，
-  由 `pnpm install` 在 `onlyBuiltDependencies` 下自动编译（镜像已带 gcc/g++/make/
+- 根 `pnpm lint` 先检查 workspace TypeScript，再以 npm 运行 `apps/status-web` 的 ESLint；
+  `pnpm typecheck` 另外检查两套前端的 TypeScript。`better-sqlite3` 是原生模块，由
+  `pnpm install` 在 `onlyBuiltDependencies` 下自动编译（镜像已带 gcc/g++/make/
   python3）。
