@@ -97,7 +97,8 @@ flowchart LR
 
 | 路由 | 实现 |
 | --- | --- |
-| `/`, `/instance/*` | `apps/status-web`，React 19 Komari-derived 公共壳 |
+| `/` | `apps/status-web`，React 19 Komari-derived 公共壳 |
+| `/instance/*` | Fastify 308 到 `/nodes/:id` |
 | `/login`, `/admin/*` | `apps/status-web`，React 19 NodeBeacon Owner 壳 |
 | `/login-v2`, `/admin-v2/*` | 永久重定向到正式路径 |
 | `/nodes/*` | `apps/web`，保留的 React 18 节点详情 |

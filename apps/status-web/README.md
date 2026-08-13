@@ -69,8 +69,8 @@ flowchart LR
 
 | 路由 | 本仓职责 |
 | --- | --- |
-| `/` | 公共节点状态、筛选、分组、卡片/表格视图 |
-| `/instance/:id` | 转交产品仓库的 `/nodes/:id` React 18 详情页 |
+| `/` | 公共节点状态、筛选、分组、卡片/表格视图；节点名直接链到产品仓 `/nodes/:id` |
+| `/instance/:id` | 兼容旧链接；由产品仓 308 到 `/nodes/:id`，本仓只保留无布局的兜底跳转 |
 | `/login` | NodeBeacon Owner 正式登录页 |
 | `/admin/*` | NodeBeacon Owner 正式管理后台 |
 | `/login-v2`, `/admin-v2/*` | 兼容旧影子入口并重定向到正式路径 |

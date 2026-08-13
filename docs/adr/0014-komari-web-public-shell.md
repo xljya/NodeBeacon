@@ -32,8 +32,9 @@ Metric Store, WebSocket, plugins, WebSSH, terminal or executable themes.
 
 Migration is staged inside the existing single container:
 
-- `/` and `/instance/*` use the Komari-derived public shell;
-- `/instance/:id` redirects to `/nodes/:id`;
+- `/` uses the Komari-derived public shell;
+- `/instance/:id` is a server 308 to `/nodes/:id`; public-shell node links
+  navigate directly to `/nodes/:id` so the public layout is not painted first;
 - `/login` and `/admin/*` use the reviewed Komari-derived NodeBeacon Owner shell;
 - `/login-v2` and `/admin-v2/*` permanently redirect to the official paths;
 - `/nodes/*` continues to use the existing NodeBeacon React shell;

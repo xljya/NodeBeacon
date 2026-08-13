@@ -1,12 +1,14 @@
-import { useEffect } from "react";
+import { useLayoutEffect } from "react";
 import { useParams } from "react-router-dom";
+import { getNodeDetailPath } from "@/lib/nodebeacon";
 
 export default function InstanceRedirect() {
   const { uuid } = useParams<{ uuid: string }>();
+  const target = getNodeDetailPath(uuid ?? "");
 
-  useEffect(() => {
-    window.location.replace(`/nodes/${encodeURIComponent(uuid ?? "")}`);
-  }, [uuid]);
+  useLayoutEffect(() => {
+    window.location.replace(target);
+  }, [target]);
 
   return null;
 }

@@ -9,7 +9,7 @@ import {
 } from "./ui/table";
 import { Badge, Flex, IconButton } from "@radix-ui/themes";
 import { useTranslation } from "react-i18next";
-import { Link } from "react-router-dom";
+import { getNodeDetailPath } from "@/lib/nodebeacon";
 import { ChevronRight, ChevronUp, ChevronDown } from "lucide-react";
 import type { NodeBasicInfo } from "@/contexts/NodeListContext";
 import type { LiveData, Record } from "../types/LiveData";
@@ -365,8 +365,8 @@ const NodeTable: React.FC<NodeTableProps> = ({ nodes, liveData, onlineSet }) => 
                   <TableCell className="node-name-cell">
                     <Flex align="center" gap="1">
                       <Flag flag={node.region} />
-                      <Link
-                        to={`/instance/${node.uuid}`}
+                      <a
+                        href={getNodeDetailPath(node.uuid)}
                         className="hover:underline"
                         onClick={(e) => e.stopPropagation()}
                       >
@@ -384,7 +384,7 @@ const NodeTable: React.FC<NodeTableProps> = ({ nodes, liveData, onlineSet }) => 
                             </label>
                           )}
                         </Flex>
-                      </Link>
+                      </a>
                     </Flex>
                   </TableCell>
 

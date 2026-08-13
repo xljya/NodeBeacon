@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { getLegacyAdminRedirect, usesLegacyWebShell } from "../src/server.js";
+import { getInstanceDetailRedirect, getLegacyAdminRedirect, usesLegacyWebShell } from "../src/server.js";
 
 describe("web shell routing", () => {
   it.each([
@@ -27,5 +27,17 @@ describe("web shell routing", () => {
     ["/instance/admin-v2", null]
   ])("redirects retired shadow route %s to %s", (url, expected) => {
     expect(getLegacyAdminRedirect(url)).toBe(expected);
+  });
+
+  it.each([
+    ["/instance/rs1000", "/nodes/rs1000"],
+    ["/instance/rs1000/", "/nodes/rs1000"],
+    ["/instance/rs1000?tab=cpu", "/nodes/rs1000?tab=cpu"],
+    ["/instance", null],
+    ["/instance/", null],
+    ["/instance/foo/bar", null],
+    ["/instance/../admin", null]
+  ])("redirects retired instance route %s to %s", (url, expected) => {
+    expect(getInstanceDetailRedirect(url)).toBe(expected);
   });
 });

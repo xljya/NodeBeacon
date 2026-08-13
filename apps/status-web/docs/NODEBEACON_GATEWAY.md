@@ -16,5 +16,5 @@
 价格、到期时间、IP、Swap、GPU、连接数和进程数不从私有字段推导。没有公开真实值时，
 映射层提供零值，使现有展示组件隐藏相应能力。
 
-首页轮询间隔固定为 20 秒。延迟弹层使用
+首页轮询间隔固定为 20 秒。节点名称链到 `getNodeDetailPath(id)`（`/nodes/:id`），由浏览器整页进入 React 18 详情壳，不经过 Komari `/instance/:uuid` 客户端路由。延迟弹层使用
 `/api/public/nodes/:id/series?metrics=latency`，只传 API 允许的枚举，不传 PromQL 或 labels。

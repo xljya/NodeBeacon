@@ -3,6 +3,7 @@ import type { RouteObject } from "react-router-dom";
 import React from "react";
 import { Navigate, useLocation, useSearchParams } from "react-router-dom";
 import { getOfficialAdminPath, withAdminBase } from "./lib/adminPaths";
+import InstanceRedirect from "./pages/InstanceRedirect";
 
 const Index = lazy(() => import("./pages/Index"));
 const NotFound = lazy(() => import("./pages/404"));
@@ -80,12 +81,9 @@ export const routes: RouteObject[] = [
     element: React.createElement(lazy(() => import("./pages/_layout"))),
     children: [
       { index: true, element: React.createElement(Index) },
-      {
-        path: "instance/:uuid",
-        element: React.createElement(lazy(() => import("./pages/InstanceRedirect"))),
-      },
     ],
   },
+  { path: "/instance/:uuid", element: React.createElement(InstanceRedirect) },
   { path: "/login", element: React.createElement(LoginPage) },
   { path: "/login-v2", element: React.createElement(ShadowAdminRedirect) },
   {

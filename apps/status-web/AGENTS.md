@@ -30,8 +30,8 @@
 - 当前产品声明正式 `/login`、`/admin/*`，并将 `/login-v2`、`/admin-v2/*` 旧影子入口
   重定向到正式路径；是否真正由该壳提供生产 HTML 仍由产品仓库 Fastify 路由和已发布提交
   决定。不要仅凭本仓库 routes 宣称切换或发布已经完成。
-- `/instance/:id` 只负责转交到产品仓库的 `/nodes/:id` React 18 详情页；除非有单独迁移
-  决策，不要在这里恢复 Komari instance/Agent 数据链路。
+- 首页节点名直接链到产品仓库的 `/nodes/:id`；`/instance/:id` 只作为无布局兜底跳转。
+  除非有单独迁移决策，不要在这里恢复 Komari instance/Agent 数据链路。
 - 菜单只展示 NodeBeacon 已实现的能力。插件市场、主题 ZIP、pprof、Metric Store 迁移、
   WebSSH、xterm、Agent 管理和任意命令页面不得注册为可达路由。
 

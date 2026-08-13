@@ -58,6 +58,20 @@ export function getLegacyAdminRedirect(rawUrl: string): string | null {
   return null;
 }
 
+export function getInstanceDetailRedirect(rawUrl: string): string | null {
+  const queryIndex = rawUrl.indexOf("?");
+  const pathname = queryIndex === -1 ? rawUrl : rawUrl.slice(0, queryIndex);
+  const query = queryIndex === -1 ? "" : rawUrl.slice(queryIndex);
+  const normalized = pathname.replace(/\/+$/, "") || "/";
+  if (!normalized.startsWith("/instance/")) return null;
+
+  const id = normalized.slice("/instance/".length);
+  if (!id || id.includes("/") || id.includes("\\") || id.includes("..")) {
+    return null;
+  }
+  return `/nodes/${encodeURIComponent(id)}${query}`;
+}
+
 export async function createApp() {
   const env = loadEnv();
   if (process.env.NODE_ENV === "production" && !env.settingsEncryptionKey) {
@@ -165,7 +179,7 @@ export async function createApp() {
       if (url.startsWith("/api/")) {
         return reply.code(404).send({ error: { code: "not_found", message: "API route not found." } });
       }
-      const redirect = getLegacyAdminRedirect(url);
+      const redirect = getLegacyAdminRedirect(url) ?? getInstanceDetailRedirect(url);
       if (redirect) {
         return reply.code(308).redirect(redirect);
       }

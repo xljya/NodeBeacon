@@ -84,8 +84,8 @@ const Node = React.memo(
         <Flex justify="between" align="center" my={isMobile ? "-1" : "0"}>
           <Flex justify="start" align="center" style={{ flex: 1, minWidth: 0 }} className="km-node-region">
             <Flag flag={basic.region} />
-            <Link
-              to={`/instance/${basic.uuid}`}
+            <a
+              href={getNodeDetailPath(basic.uuid)}
               style={{ flex: 1, minWidth: 0 }}
             >
               <Flex direction="column" style={{ minWidth: 0 }}>
@@ -120,7 +120,7 @@ const Node = React.memo(
                   ip6={showIpTagsInCard ? basic.ipv6 : undefined}
                 />
               </Flex>
-            </Link>
+            </a>
           </Flex>
           <Flex gap="2" align="center" style={{ flex: "none" }} className="km-node-chart">
             {live?.message && <Tips color="#CE282E">{live.message}</Tips>}
@@ -296,9 +296,9 @@ type NodeGridProps = {
 
 import { Box } from "@radix-ui/themes";
 import type { TFunction } from "i18next";
-import { Link } from "react-router-dom";
 import { useIsMobile } from "@/hooks/use-mobile";
 import type { NodeBasicInfo } from "@/contexts/NodeListContext";
+import { getNodeDetailPath } from "@/lib/nodebeacon";
 import PriceTags from "./PriceTags";
 import { TrendingUp } from "lucide-react";
 import MiniPingChartFloat from "./MiniPingChartFloat";

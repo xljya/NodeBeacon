@@ -167,3 +167,7 @@ export function toKomariLiveData(status: NodeBeaconStatusResponse): LiveDataResp
     },
   };
 }
+
+export function getNodeDetailPath(id: string): string {
+  return `/nodes/${encodeURIComponent(id)}`;
+}

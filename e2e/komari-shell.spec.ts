@@ -49,9 +49,16 @@ test.describe("Komari-derived public shell", () => {
     });
 
     await page.goto(`${PUBLIC_SHELL_URL}/`);
-    await page.locator('a[href^="/instance/"]').first().click();
+    await expect(page.locator('a[href^="/instance/"]')).toHaveCount(0);
+    await page.locator('.km-node-card a[href^="/nodes/"]').first().click();
     await expect(page).toHaveURL(/\/nodes\/[^/]+$/);
     await expect(page.locator(".detail-main-content")).toBeVisible();
+    await expect(page.locator(".km-footer")).toHaveCount(0);
+
+    await page.goto(`${PUBLIC_SHELL_URL}/instance/rs1000`);
+    await expect(page).toHaveURL(/\/nodes\/rs1000$/);
+    await expect(page.locator(".detail-main-content")).toBeVisible();
+    await expect(page.locator(".km-footer")).toHaveCount(0);
 
     await page.goto(`${PUBLIC_SHELL_URL}/admin`);
     await expect(page).toHaveURL(/\/login\?next=/);

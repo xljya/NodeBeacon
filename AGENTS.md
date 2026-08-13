@@ -58,9 +58,9 @@ Web 辅助仓源码被 vendored 进 NodeBeacon 镜像，不等于部署该仓库
   数据面；除非用户明确要求，不要向该仓库回写当前功能。
 - `apps/status-web` 被排除在 pnpm workspace 外，必须使用其 `package-lock.json` 和 npm；
   不要把 React 19/Radix 依赖并入 React 18 workspace，也不要用根 pnpm lock 替代其 lock。
-- 当前路由分阶段迁移：`/`、`/instance/*`、`/login` 与 `/admin/*` 使用 Komari-derived
-  壳，`/login-v2` 与 `/admin-v2/*` 重定向到正式路径，`/nodes/*` 仍使用 React 18 壳。
-  改变正式路由归属必须有单独发布、浏览器验收和明确回滚路径。
+- 当前路由分阶段迁移：`/`、`/login` 与 `/admin/*` 使用 Komari-derived 壳，
+  `/instance/*` 308 到 `/nodes/:id`，`/login-v2` 与 `/admin-v2/*` 重定向到正式路径，
+  `/nodes/*` 仍使用 React 18 壳。改变正式路由归属必须有单独发布、浏览器验收和明确回滚路径。
 - Komari-derived 前端只能调用 NodeBeacon 的显式 REST 契约。禁止新增或模拟 Komari
   RPC2、Agent 上报、Metric Store、浏览器直连 Prometheus、WebSSH、任意命令、插件市场、
   ZIP/可执行主题等接口；构建产物必须继续通过 forbidden-endpoint scan。
