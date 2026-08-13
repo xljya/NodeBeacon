@@ -524,7 +524,7 @@
     "title": "Log"
   },
   "login": {
-    "desc": "Masuk ke panel kontrol Komari.",
+    "desc": "Masuk ke panel kontrol NodeBeacon.",
     "login_with": "Masuk dengan {{provider}}",
     "login_with_github": "Masuk dengan GitHub",
     "password": "Kata Sandi",

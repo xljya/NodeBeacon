@@ -17,6 +17,30 @@ import type { AuthChallengeService } from "../services/authChallengeService.js";
 import { AUTH_CHALLENGE_COOKIE, AUTH_CHALLENGE_TTL_SECONDS } from "../services/authChallengeService.js";
 
 const OAUTH_STATE_COOKIE = "nb_oauth_state";
+const OAUTH_RETURN_COOKIE = "nb_oauth_return";
+
+function sanitizeOauthReturnPath(value: unknown): string | null {
+  if (typeof value !== "string") return null;
+  const path = value.trim();
+  if (
+    (!path.startsWith("/admin/") && path !== "/admin" && !path.startsWith("/admin-v2/") && path !== "/admin-v2") ||
+    path.startsWith("//") ||
+    path.includes("://") ||
+    path.includes("\\") ||
+    /[\n\r\t]/.test(path)
+  ) return null;
+  return path;
+}
+
+function oauthLoginPath(returnPath: string | null): "/login" | "/login-v2" {
+  return returnPath === "/admin-v2" || returnPath?.startsWith("/admin-v2/") ? "/login-v2" : "/login";
+}
+
+function oauthLoginRedirect(returnPath: string | null, params: Record<string, string>): string {
+  const query = new URLSearchParams(params);
+  if (returnPath) query.set("next", returnPath);
+  return `${oauthLoginPath(returnPath)}?${query.toString()}`;
+}
 
 function setChallengeCookie(reply: FastifyReply, env: ApiEnv, token: string): void {
   reply.setCookie(AUTH_CHALLENGE_COOKIE, token, {
@@ -165,9 +189,10 @@ export async function registerAuthRoutes(
 
   // --- GitHub OAuth ---
 
-  app.get("/api/auth/github", async (request, reply) => {
+  app.get<{ Querystring: { next?: string } }>("/api/auth/github", async (request, reply) => {
+    const returnPath = sanitizeOauthReturnPath(request.query.next);
     if (!authService.githubLoginEnabled) {
-      return reply.redirect("/login?error=github_disabled");
+      return reply.redirect(oauthLoginRedirect(returnPath, { error: "github_disabled" }));
     }
     const state = randomBytes(16).toString("hex");
     reply.setCookie(OAUTH_STATE_COOKIE, state, {
@@ -178,29 +203,46 @@ export async function registerAuthRoutes(
       path: "/",
       maxAge: 600
     });
+    if (returnPath) {
+      reply.setCookie(OAUTH_RETURN_COOKIE, returnPath, {
+        signed: true,
+        httpOnly: true,
+        sameSite: "lax",
+        secure: env.secureCookie,
+        path: "/api/auth",
+        maxAge: 600
+      });
+    }
     const redirectUri = computeRedirectUri(env, request);
     return reply.redirect(buildAuthorizeUrl(env, state, redirectUri));
   });
 
   app.get("/api/auth/github/callback", async (request, reply) => {
     const query = request.query as { code?: string; state?: string; error?: string };
+    const rawReturn = request.cookies[OAUTH_RETURN_COOKIE];
+    const unsignedReturn = rawReturn ? request.unsignCookie(rawReturn) : { valid: false, value: null };
+    const returnPath = unsignedReturn.valid ? sanitizeOauthReturnPath(unsignedReturn.value) : null;
 
-    const clearState = () => reply.clearCookie(OAUTH_STATE_COOKIE, { path: "/" });
+    const clearOauthCookies = () => {
+      reply.clearCookie(OAUTH_STATE_COOKIE, { path: "/" });
+      reply.clearCookie(OAUTH_RETURN_COOKIE, { path: "/api/auth" });
+    };
 
     if (!authService.githubLoginEnabled) {
-      return reply.redirect("/login?error=github_disabled");
+      clearOauthCookies();
+      return reply.redirect(oauthLoginRedirect(returnPath, { error: "github_disabled" }));
     }
     if (query.error || !query.code || !query.state) {
-      clearState();
-      return reply.redirect("/login?error=github_failed");
+      clearOauthCookies();
+      return reply.redirect(oauthLoginRedirect(returnPath, { error: "github_failed" }));
     }
 
     // CSRF: the state param must match the signed cookie we set.
     const rawState = request.cookies[OAUTH_STATE_COOKIE];
     const unsigned = rawState ? request.unsignCookie(rawState) : { valid: false, value: null };
-    clearState();
+    clearOauthCookies();
     if (!unsigned.valid || !unsigned.value || unsigned.value !== query.state) {
-      return reply.redirect("/login?error=github_failed");
+      return reply.redirect(oauthLoginRedirect(returnPath, { error: "github_failed" }));
     }
 
     try {
@@ -209,19 +251,19 @@ export async function registerAuthRoutes(
       if (!owner) {
         // Authenticated with GitHub, but not the bound owner account.
         request.log.warn({ login: identity.login }, "github login rejected: not the owner account");
-        return reply.redirect("/login?error=github_unbound");
+        return reply.redirect(oauthLoginRedirect(returnPath, { error: "github_unbound" }));
       }
       if (authService.totpEnabled) {
         const token = challengeService.create(owner, "github");
         setChallengeCookie(reply, env, token);
-        return reply.redirect("/login?step=second-factor");
+        return reply.redirect(oauthLoginRedirect(returnPath, { step: "second-factor" }));
       }
       app.setSession(reply, owner);
       auditService.record({ actor: owner.id, action: "auth.login", payload: { method: "github" } });
-      return reply.redirect("/admin");
+      return reply.redirect(returnPath ?? "/admin");
     } catch (error) {
       request.log.error({ error }, "github oauth callback failed");
-      return reply.redirect("/login?error=github_failed");
+      return reply.redirect(oauthLoginRedirect(returnPath, { error: "github_failed" }));
     }
   });
 }

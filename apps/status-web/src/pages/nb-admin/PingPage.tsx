@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Badge, Button, Card, Flex, Switch, Text, TextField } from "@radix-ui/themes";
 import { useTranslation } from "react-i18next";
 import { adminDelete, adminPatch, adminPost, adminGet } from "@/lib/adminGateway";
+import ConfirmDeleteButton from "@/components/admin/ConfirmDeleteButton";
 import { useAdminResource } from "@/lib/useAdminResource";
 import type { AdminProbe, ProbeResult } from "@/lib/contracts";
 import { AdminError, AdminLoading, AdminPage } from "./AdminPage";
@@ -39,7 +40,9 @@ export default function PingPage() {
               </Flex>
               <Flex gap="2" align="center">
                 <Switch checked={Boolean(probe.enabled)} onCheckedChange={(checked) => void adminPatch(`/api/admin/probes/${probe.id}`, { enabled: Boolean(checked) }).then(() => probes.reload())} />
-                <Button color="red" variant="soft" onClick={() => void adminDelete(`/api/admin/probes/${probe.id}`).then(() => probes.reload())}>{t("common.delete")}</Button>
+                <ConfirmDeleteButton itemName={probe.name} onConfirm={() => adminDelete(`/api/admin/probes/${probe.id}`).then(() => probes.reload())}>
+                  <Button color="red" variant="soft">{t("common.delete")}</Button>
+                </ConfirmDeleteButton>
               </Flex>
             </Flex>
           </Card>

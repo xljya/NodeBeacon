@@ -42,7 +42,7 @@ test.describe("Komari-derived public shell", () => {
     expect(rpcRequests).toEqual([]);
   });
 
-  test("routes node details and owner pages to the existing secure shell", async ({ page }) => {
+  test("routes node details to the legacy shell and owner pages to the official Admin", async ({ page }) => {
     const unauthorizedProbes: string[] = [];
     page.on("response", (response) => {
       if (response.status() === 401) unauthorizedProbes.push(response.url());
@@ -54,8 +54,9 @@ test.describe("Komari-derived public shell", () => {
     await expect(page.locator(".detail-main-content")).toBeVisible();
 
     await page.goto(`${PUBLIC_SHELL_URL}/admin`);
-    await expect(page).toHaveURL(/\/login$/);
-    await expect(page.locator("form")).toBeVisible();
+    await expect(page).toHaveURL(/\/login\?next=/);
+    expect(new URL(page.url()).searchParams.get("next")).toBe("/admin");
+    await expect(page.locator(".km-login-card")).toBeVisible();
     expect(unauthorizedProbes).toEqual([]);
   });
 

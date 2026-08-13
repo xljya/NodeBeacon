@@ -1,8 +1,8 @@
 import { lazy } from "react";
 import type { RouteObject } from "react-router-dom";
 import React from "react";
-import { Navigate, useSearchParams } from "react-router-dom";
-import { withAdminBase } from "./lib/adminPaths";
+import { Navigate, useLocation, useSearchParams } from "react-router-dom";
+import { getOfficialAdminPath, withAdminBase } from "./lib/adminPaths";
 
 const Index = lazy(() => import("./pages/Index"));
 const NotFound = lazy(() => import("./pages/404"));
@@ -32,6 +32,14 @@ function AdminRedirect({ to, search }: { to: string; search?: string }) {
   const target = withAdminBase(to);
   const query = search ?? (params.toString() ? `?${params.toString()}` : "");
   return React.createElement(Navigate, { to: `${target}${query}`, replace: true });
+}
+
+function ShadowAdminRedirect() {
+  const location = useLocation();
+  return React.createElement(Navigate, {
+    to: getOfficialAdminPath(location.pathname, location.search),
+    replace: true,
+  });
 }
 
 const adminChildren: RouteObject[] = [
@@ -79,16 +87,13 @@ export const routes: RouteObject[] = [
     ],
   },
   { path: "/login", element: React.createElement(LoginPage) },
-  { path: "/login-v2", element: React.createElement(LoginPage) },
+  { path: "/login-v2", element: React.createElement(ShadowAdminRedirect) },
   {
     path: "/admin",
     element: React.createElement(AdminLayout),
     children: adminChildren,
   },
-  {
-    path: "/admin-v2",
-    element: React.createElement(AdminLayout),
-    children: adminChildren,
-  },
+  { path: "/admin-v2", element: React.createElement(ShadowAdminRedirect) },
+  { path: "/admin-v2/*", element: React.createElement(ShadowAdminRedirect) },
   { path: "*", element: React.createElement(NotFound) },
 ];

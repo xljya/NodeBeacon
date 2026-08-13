@@ -2,6 +2,7 @@ import { Badge, Button, Card, Flex, Text } from "@radix-ui/themes";
 import { useTranslation } from "react-i18next";
 import { adminDelete } from "@/lib/adminGateway";
 import { getLoginPath } from "@/lib/adminPaths";
+import ConfirmDeleteButton from "@/components/admin/ConfirmDeleteButton";
 import { useAdminResource } from "@/lib/useAdminResource";
 import type { AdminSession } from "@/lib/contracts";
 import { AdminError, AdminLoading, AdminPage } from "./AdminPage";
@@ -33,7 +34,15 @@ export default function SessionsPage() {
               </Flex>
               <Flex gap="2" align="center">
                 {session.current ? <Badge color="green">{t("nb.sessions.current", "Current")}</Badge> : null}
-                <Button color="red" variant="soft" onClick={() => void revoke(session)}>{t("nb.sessions.revoke", "Revoke")}</Button>
+                <ConfirmDeleteButton
+                  itemName={session.userAgent || session.id}
+                  onConfirm={() => revoke(session)}
+                  actionLabel={t("nb.sessions.revoke", "Revoke")}
+                  title={t("nb.sessions.revokeTitle", "Revoke this session?")}
+                  description={t("nb.sessions.revokeDescription", "This session will be signed out and must authenticate again.")}
+                >
+                  <Button color="red" variant="soft">{t("nb.sessions.revoke", "Revoke")}</Button>
+                </ConfirmDeleteButton>
               </Flex>
             </Flex>
           </Card>

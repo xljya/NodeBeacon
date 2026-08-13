@@ -41,12 +41,21 @@ const webDistPath = fileURLToPath(new URL("../../status-web/dist/", import.meta.
 
 export function usesLegacyWebShell(rawUrl: string): boolean {
   const pathname = rawUrl.split("?", 1)[0] ?? "/";
-  return pathname === "/login" ||
-    pathname.startsWith("/admin/") ||
-    pathname === "/admin" ||
-    pathname.startsWith("/nodes/") ||
+  return pathname.startsWith("/nodes/") ||
     pathname === "/nodes" ||
     pathname.startsWith("/legacy/");
+}
+
+export function getLegacyAdminRedirect(rawUrl: string): string | null {
+  const queryIndex = rawUrl.indexOf("?");
+  const pathname = queryIndex === -1 ? rawUrl : rawUrl.slice(0, queryIndex);
+  const query = queryIndex === -1 ? "" : rawUrl.slice(queryIndex);
+
+  if (pathname === "/login-v2") return `/login${query}`;
+  if (pathname === "/admin-v2" || pathname.startsWith("/admin-v2/")) {
+    return `/admin${pathname.slice("/admin-v2".length)}${query}`;
+  }
+  return null;
 }
 
 export async function createApp() {
@@ -155,6 +164,10 @@ export async function createApp() {
       const url = request.raw.url ?? "";
       if (url.startsWith("/api/")) {
         return reply.code(404).send({ error: { code: "not_found", message: "API route not found." } });
+      }
+      const redirect = getLegacyAdminRedirect(url);
+      if (redirect) {
+        return reply.code(308).redirect(redirect);
       }
       return reply.sendFile(usesLegacyWebShell(url) ? "legacy/index.html" : "index.html");
     });

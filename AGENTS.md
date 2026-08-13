@@ -28,8 +28,8 @@
 ## 项目结构
 
 - `apps/status-web`: 从 `NodeBeacon-Web` 固定提交引入的 Komari Web/React 19 源码；负责
-  公共状态页以及当前 `/login-v2`、`/admin-v2` 影子 Owner 界面，使用独立 npm lock。
-- `apps/web`: NodeBeacon React 18 壳；当前负责节点详情以及正式 `/login`、`/admin`，
+  公共状态页以及正式 `/login`、`/admin` Owner 界面，使用独立 npm lock。
+- `apps/web`: NodeBeacon React 18 壳；当前负责节点详情，旧 Admin/Login 代码等待后续清理，
   构建后静态资源装配到 `/legacy/assets`。
 - `apps/api`: Fastify API、认证、Prometheus 查询、SQLite 和节点注册表逻辑。
 - `packages/shared`: Web 与 API 共用的类型和契约。
@@ -51,9 +51,9 @@
   数据面；除非用户明确要求，不要向该仓库回写当前功能。
 - `apps/status-web` 被排除在 pnpm workspace 外，必须使用其 `package-lock.json` 和 npm；
   不要把 React 19/Radix 依赖并入 React 18 workspace，也不要用根 pnpm lock 替代其 lock。
-- 当前路由分阶段迁移：`/` 与 `/instance/*` 使用 Komari-derived 壳，`/login-v2` 与
-  `/admin-v2` 用于影子验收，正式 `/login`、`/admin/*` 和 `/nodes/*` 仍使用 React 18
-  壳。改变正式路由归属必须有单独发布、浏览器验收和明确回滚路径。
+- 当前路由分阶段迁移：`/`、`/instance/*`、`/login` 与 `/admin/*` 使用 Komari-derived
+  壳，`/login-v2` 与 `/admin-v2/*` 重定向到正式路径，`/nodes/*` 仍使用 React 18 壳。
+  改变正式路由归属必须有单独发布、浏览器验收和明确回滚路径。
 - Komari-derived 前端只能调用 NodeBeacon 的显式 REST 契约。禁止新增或模拟 Komari
   RPC2、Agent 上报、Metric Store、浏览器直连 Prometheus、WebSSH、任意命令、插件市场、
   ZIP/可执行主题等接口；构建产物必须继续通过 forbidden-endpoint scan。

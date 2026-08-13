@@ -524,7 +524,7 @@
     "title": "日誌"
   },
   "login": {
-    "desc": "登入到 Komari 控制面板。",
+    "desc": "登入到 NodeBeacon 控制面板。",
     "login_with": "使用 {{provider}} 登入",
     "login_with_github": "使用 GitHub 登入",
     "password": "密碼",

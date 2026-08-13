@@ -14,7 +14,7 @@ import ThemeSwitch from "@/components/ThemeSwitch";
 import { useAccount } from "@/contexts/AccountContext";
 import { usePublicInfo } from "@/contexts/PublicInfoContext";
 import { adminGet, adminPost, AdminGatewayError } from "@/lib/adminGateway";
-import { readNextParam } from "@/lib/adminPaths";
+import { buildGithubLoginUrl, readNextParam } from "@/lib/adminPaths";
 import type { AuthConfigResponse, AuthResponse, SecondFactorRequiredResponse } from "@/lib/contracts";
 
 const ERROR_KEYS: Record<string, string> = {
@@ -182,7 +182,7 @@ export default function LoginPage() {
                   type="button"
                   variant={passwordLoginEnabled ? "soft" : "solid"}
                   onClick={() => {
-                    window.location.assign("/api/auth/github");
+                    window.location.assign(buildGithubLoginUrl(next));
                   }}
                 >
                   {t("login.login_with_github")}
@@ -241,9 +241,6 @@ export default function LoginPage() {
             </Flex>
           </form>
         )}
-        <Text size="1" color="gray" mt="4">
-          {t("nb.login.shadowHint", "This is the NodeBeacon Admin shell. Owner sessions use the existing Fastify cookie.")}
-        </Text>
       </Card>
     </Flex>
   );

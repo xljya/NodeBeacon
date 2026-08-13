@@ -27,13 +27,42 @@ function maskConfig(config: Record<string, unknown>): Record<string, unknown> {
   return Object.fromEntries(Object.entries(config).map(([key, value]) => [key, /token|password|secret|auth/i.test(key) && value ? "••••••" : value]));
 }
 
+function validateChannelConfig(type: NotificationChannelType, config: Record<string, unknown>, env: ApiEnv): void {
+  if (type === "webhook") {
+    const url = String(config.url ?? "");
+    const parsed = new URL(url);
+    if (parsed.protocol !== "https:") throw new Error("Webhook must use HTTPS");
+    if (env.notificationAllowedHosts.length > 0 && !env.notificationAllowedHosts.includes(parsed.hostname.toLowerCase())) {
+      throw new Error("Webhook host is not allowed");
+    }
+    return;
+  }
+  if (type === "telegram") {
+    if (!String(config.botToken ?? "").trim() || !String(config.chatId ?? "").trim()) {
+      throw new Error("Telegram bot token and chat ID are required");
+    }
+    return;
+  }
+  const port = Number(config.port ?? 465);
+  if (
+    !String(config.host ?? "").trim() ||
+    !String(config.from ?? config.username ?? "").trim() ||
+    !String(config.to ?? "").trim() ||
+    !Number.isInteger(port) ||
+    port < 1 ||
+    port > 65535
+  ) {
+    throw new Error("SMTP host, sender, receiver and a valid port are required");
+  }
+}
+
 export function createNotificationService(db: SqliteDatabase, env: ApiEnv) {
   const listChannels = (): NotificationChannel[] => (db.prepare("SELECT * FROM notification_channels ORDER BY name COLLATE NOCASE").all() as ChannelRow[]).map((row) => ({ id: row.id, name: row.name, type: row.type, enabled: row.enabled === 1, config: maskConfig(JSON.parse(decryptSecret(env, row.config_json) ?? "{}") as Record<string, unknown>), createdAt: new Date(row.created_at).toISOString(), updatedAt: new Date(row.updated_at).toISOString() }));
   const getConfig = (id: string): Record<string, unknown> | null => { const row = db.prepare("SELECT config_json FROM notification_channels WHERE id = ?").get(id) as { config_json?: string } | undefined; return row?.config_json ? JSON.parse(decryptSecret(env, row.config_json) ?? "{}") as Record<string, unknown> : null; };
   const saveChannel = (input: { id?: string; name: string; type: NotificationChannelType; config: Record<string, unknown>; enabled?: boolean }): NotificationChannel => {
     if (!input.name.trim() || !["telegram", "smtp", "webhook"].includes(input.type)) throw new Error("Invalid notification channel");
-    if (input.type === "webhook") { const url = String(input.config.url ?? ""); const parsed = new URL(url); if (parsed.protocol !== "https:") throw new Error("Webhook must use HTTPS"); if (env.notificationAllowedHosts.length > 0 && !env.notificationAllowedHosts.includes(parsed.hostname.toLowerCase())) throw new Error("Webhook host is not allowed"); }
     const id = input.id ?? `channel-${randomUUID()}`; const now = Date.now(); const existing = db.prepare("SELECT config_json FROM notification_channels WHERE id = ?").get(id) as { config_json?: string } | undefined; const config = { ...(existing?.config_json ? getConfig(id) : {}), ...input.config };
+    validateChannelConfig(input.type, config, env);
     db.prepare(`INSERT INTO notification_channels(id,name,type,config_json,enabled,created_at,updated_at) VALUES (?,?,?,?,?,?,?) ON CONFLICT(id) DO UPDATE SET name=excluded.name,type=excluded.type,config_json=excluded.config_json,enabled=excluded.enabled,updated_at=excluded.updated_at`).run(id, input.name.trim().slice(0, 80), input.type, encryptSecret(env, JSON.stringify(config)), input.enabled === false ? 0 : 1, now, now);
     return listChannels().find((channel) => channel.id === id) as NotificationChannel;
   };

@@ -1,8 +1,10 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 import {
+  buildGithubLoginUrl,
   getAdminBase,
   getLoginPath,
+  getOfficialAdminPath,
   sanitizeNextPath,
   withAdminBase,
 } from "./adminPaths.ts";
@@ -25,5 +27,22 @@ describe("admin path helpers", () => {
       sanitizeNextPath("/admin-v2/servers?tab=all", fallback, "/admin-v2"),
       "/admin-v2/servers?tab=all",
     );
+  });
+
+  it("preserves the sanitized shadow return path for GitHub login", () => {
+    assert.equal(
+      buildGithubLoginUrl("/admin-v2/servers?tab=all", "/login-v2"),
+      "/api/auth/github?next=%2Fadmin-v2%2Fservers%3Ftab%3Dall",
+    );
+    assert.equal(
+      buildGithubLoginUrl("https://evil.example", "/login-v2"),
+      "/api/auth/github?next=%2Fadmin-v2%2Fdashboard",
+    );
+  });
+
+  it("maps retired shadow routes to official paths without losing query strings", () => {
+    assert.equal(getOfficialAdminPath("/login-v2", "?next=%2Fadmin-v2%2Fdashboard"), "/login?next=%2Fadmin-v2%2Fdashboard");
+    assert.equal(getOfficialAdminPath("/admin-v2/servers", "?tab=online"), "/admin/servers?tab=online");
+    assert.equal(getOfficialAdminPath("/admin-v20", ""), "/admin-v20");
   });
 });

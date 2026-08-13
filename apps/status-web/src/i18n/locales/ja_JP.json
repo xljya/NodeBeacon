@@ -524,7 +524,7 @@
     "title": "ログ"
   },
   "login": {
-    "desc": "Komari コントロールパネルにログインします。",
+    "desc": "NodeBeacon コントロールパネルにログインします。",
     "login_with": "{{provider}} でログイン",
     "login_with_github": "GitHubでログイン",
     "password": "パスワード",

@@ -25,6 +25,7 @@ import { CSS } from "@dnd-kit/utilities";
 import { MenuIcon, Pencil, Plus, Trash2Icon } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import Flag from "@/components/Flag";
+import ConfirmDeleteButton from "@/components/admin/ConfirmDeleteButton";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { adminDelete, adminPatch, adminPost } from "@/lib/adminGateway";
 import { useAdminResource } from "@/lib/useAdminResource";
@@ -185,9 +186,11 @@ function SortableServerRow({
           <IconButton variant="ghost" onClick={onEdit} title={t("admin.nodeEdit.editInfo")}>
             <Pencil size={16} />
           </IconButton>
-          <IconButton variant="ghost" color="red" onClick={() => void onDelete()} title={t("common.delete")}>
-            <Trash2Icon size={16} />
-          </IconButton>
+          <ConfirmDeleteButton itemName={node.name} onConfirm={onDelete}>
+            <IconButton variant="ghost" color="red" title={t("common.delete")} aria-label={t("common.delete")}>
+              <Trash2Icon size={16} />
+            </IconButton>
+          </ConfirmDeleteButton>
         </Flex>
       </TableCell>
     </TableRow>

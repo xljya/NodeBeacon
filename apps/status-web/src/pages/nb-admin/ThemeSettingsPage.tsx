@@ -13,6 +13,7 @@ import {
   type PublicThemePreset,
 } from "@/lib/contracts";
 import { adminDelete, adminPatch, adminPost } from "@/lib/adminGateway";
+import ConfirmDeleteButton from "@/components/admin/ConfirmDeleteButton";
 import { useAdminResource } from "@/lib/useAdminResource";
 import { AdminError, AdminLoading, AdminPage } from "./AdminPage";
 
@@ -88,9 +89,9 @@ export default function ThemeSettingsPage() {
                   </Button>
                 ) : null}
                 {!theme.isDefault ? (
-                  <Button color="red" variant="soft" onClick={() => void adminDelete(`/api/admin/themes/${theme.id}`).then(() => reload())}>
-                    {t("common.delete")}
-                  </Button>
+                  <ConfirmDeleteButton itemName={theme.name} onConfirm={() => adminDelete(`/api/admin/themes/${theme.id}`).then(() => reload())}>
+                    <Button color="red" variant="soft">{t("common.delete")}</Button>
+                  </ConfirmDeleteButton>
                 ) : null}
               </Flex>
             </Flex>

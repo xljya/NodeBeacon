@@ -2,7 +2,7 @@
 
 ## Status
 
-Accepted for v1.1.0.
+Accepted for v1.1.0; owner-route cutover amended for v1.1.3.
 
 ## Context
 
@@ -34,13 +34,16 @@ Migration is staged inside the existing single container:
 
 - `/` and `/instance/*` use the Komari-derived public shell;
 - `/instance/:id` redirects to `/nodes/:id`;
-- `/nodes/*`, `/login` and `/admin/*` use the existing NodeBeacon React shell;
+- `/login` and `/admin/*` use the reviewed Komari-derived NodeBeacon Owner shell;
+- `/login-v2` and `/admin-v2/*` permanently redirect to the official paths;
+- `/nodes/*` continues to use the existing NodeBeacon React shell;
 - both shells use the same Fastify BFF, authentication, Prometheus and SQLite;
 - the legacy shell's assets are assembled under `/legacy/assets` to prevent
   filename and React-runtime collisions.
 
 The two applications intentionally keep their native stacks: React 19 for the
-public shell and React 18 for the owner shell. `apps/status-web` is excluded
+public and owner shell, and React 18 for node detail until its retained Admin
+and Login code is removed in a later cleanup. `apps/status-web` is excluded
 from the pnpm workspace and built from its upstream npm lock, isolating both
 the runtime and TypeScript dependency graphs.
 

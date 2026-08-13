@@ -184,8 +184,8 @@ SQLite 与运行时节点配置存放在 k3s PVC 中。
 ## 仓库结构
 
 ```text
-apps/status-web   从 NodeBeacon-Web 固定提交引入的 Komari Web 公共状态页与影子 Admin
-apps/web          NodeBeacon 节点详情、正式 /login 与 /admin（/legacy/assets）
+apps/status-web   从 NodeBeacon-Web 固定提交引入的公共状态页与正式 Owner Admin
+apps/web          NodeBeacon 节点详情与待清理的 React 18 旧壳（/legacy/assets）
 apps/api          Fastify API、认证、Prometheus 查询和 SQLite
 packages/shared   Web 与 API 共用类型和契约
 e2e               Playwright 端到端测试
@@ -198,8 +198,9 @@ docs              ADR、API、实现计划、故障处理和发布记录
 
 NodeBeacon 的公开状态页基于
 [NodeBeacon-Web](https://github.com/xljya/NodeBeacon-Web) 中固定提交的 Komari Web fork
-进行数据适配。v1.1.2 在 `/login-v2` 与 `/admin-v2` 提供同一外壳的影子 Owner Admin，
-正式 `/login`、`/admin` 和 `/nodes/:id` 仍由现有 React 18 壳处理。所有页面继续使用
+进行数据适配。v1.1.3 将正式 `/login` 与 `/admin/*` 切到同一 React 19 Owner 外壳，
+`/login-v2` 与 `/admin-v2/*` 重定向到正式路径；`/nodes/:id` 仍由 React 18 壳处理。
+所有页面继续使用
 Prometheus 标准采集链路和 Fastify BFF，不复用 Komari 的 Agent、RPC2、Metric Store、
 插件、WebSSH、主题包执行或远程控制模型。详细边界见 ADR 0014。
 

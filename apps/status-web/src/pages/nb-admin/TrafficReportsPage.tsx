@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Button, Card, Flex, Switch, Text, TextField } from "@radix-ui/themes";
 import { useTranslation } from "react-i18next";
 import { adminDelete, adminPatch, adminPost } from "@/lib/adminGateway";
+import ConfirmDeleteButton from "@/components/admin/ConfirmDeleteButton";
 import { useAdminResource } from "@/lib/useAdminResource";
 import type { TrafficReport } from "@/lib/contracts";
 import { AdminError, AdminLoading, AdminPage } from "./AdminPage";
@@ -33,7 +34,9 @@ export default function TrafficReportsPage() {
               </Flex>
               <Flex gap="2" align="center">
                 <Switch checked={report.enabled} onCheckedChange={(checked) => void adminPatch(`/api/admin/traffic-reports/${report.id}`, { enabled: Boolean(checked) }).then(() => reload())} />
-                <Button color="red" variant="soft" onClick={() => void adminDelete(`/api/admin/traffic-reports/${report.id}`).then(() => reload())}>{t("common.delete")}</Button>
+                <ConfirmDeleteButton itemName={report.name} onConfirm={() => adminDelete(`/api/admin/traffic-reports/${report.id}`).then(() => reload())}>
+                  <Button color="red" variant="soft">{t("common.delete")}</Button>
+                </ConfirmDeleteButton>
               </Flex>
             </Flex>
           </Card>

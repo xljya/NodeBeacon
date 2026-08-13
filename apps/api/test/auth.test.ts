@@ -122,6 +122,55 @@ describe("auth routes (env-provisioned owner, persisted cookie session)", () => 
   });
 });
 
+describe("GitHub OAuth return paths", () => {
+  let app: FastifyInstance;
+
+  beforeAll(async () => {
+    app = await buildTestApp({
+      GITHUB_CLIENT_ID: "test-client",
+      GITHUB_CLIENT_SECRET: "test-secret",
+      GITHUB_OWNER_LOGIN: "owner"
+    });
+  });
+
+  afterAll(() => app.close());
+
+  it("returns shadow OAuth failures to login-v2 with the sanitized deep link", async () => {
+    const started = await app.inject({
+      method: "GET",
+      url: "/api/auth/github?next=%2Fadmin-v2%2Fservers%3Ftab%3Dall"
+    });
+    expect(started.statusCode).toBe(302);
+    const oauthState = started.cookies.find((cookie) => cookie.name === "nb_oauth_state");
+    const oauthReturn = started.cookies.find((cookie) => cookie.name === "nb_oauth_return");
+    expect(oauthState).toBeDefined();
+    expect(oauthReturn).toBeDefined();
+
+    const authorize = new URL(started.headers.location!);
+    const callback = await app.inject({
+      method: "GET",
+      url: `/api/auth/github/callback?state=${encodeURIComponent(authorize.searchParams.get("state")!)}&error=access_denied`,
+      cookies: {
+        nb_oauth_state: oauthState!.value,
+        nb_oauth_return: oauthReturn!.value
+      }
+    });
+    expect(callback.statusCode).toBe(302);
+    expect(callback.headers.location).toBe(
+      "/login-v2?error=github_failed&next=%2Fadmin-v2%2Fservers%3Ftab%3Dall"
+    );
+  });
+
+  it("does not persist an external OAuth return path", async () => {
+    const started = await app.inject({
+      method: "GET",
+      url: "/api/auth/github?next=https%3A%2F%2Fevil.example%2Fadmin"
+    });
+    expect(started.statusCode).toBe(302);
+    expect(started.cookies.find((cookie) => cookie.name === "nb_oauth_return")).toBeUndefined();
+  });
+});
+
 describe("TOTP login challenge", () => {
   let app: FastifyInstance;
 
