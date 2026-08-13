@@ -14,19 +14,27 @@ NodeBeacon 是一个面向个人服务器、Homelab 和小型基础设施的自�
 [API 文档](docs/api/) ·
 [故障处理](docs/troubleshooting.md)
 
-> 这是 NodeBeacon 当前产品、发布和生产部署的唯一来源。要修改
-> `monitor.liucf.com`、Fastify API、共享契约、基础设施或发布流程，应从本仓库开始。
+> **NodeBeacon 是三个仓库中的主要项目，也是唯一的产品与部署单元。**
+> `NodeBeacon-Web` 和 `NodeBeacon1` 都是为本项目服务的辅助仓库，不是与它并列运行的
+> 应用。你的机器、服务器和域名上只部署本仓库构建出的 NodeBeacon；另外两个仓库没有
+> 作为独立项目部署到你的任何机器，也没有绑定或单独服务你的任何域名。
+
+需要精确区分：`NodeBeacon-Web` 的部分源码会被固定提交引入本仓库，并成为 NodeBeacon
+镜像中的 React 19 前端；这是 **NodeBeacon 使用辅助仓源码**，不是部署
+`NodeBeacon-Web` 仓库。`NodeBeacon1` 仅提供历史参考，其代码和基础设施均不参与当前部署。
 
 ## 30 秒理解这个仓库
 
 | 问题 | 答案 |
 | --- | --- |
 | 这是什么？ | NodeBeacon 当前可运行的完整产品仓库 |
+| 在三仓中是什么地位？ | **主要项目**；另外两个仓库只为它提供前端源码或历史参考 |
 | 负责什么？ | API、认证、数据契约、双前端装配、测试、k3s 基础设施和生产发布 |
 | 默认分支 | `main` |
 | 是否直接发布生产？ | 是，只有本仓库可以发布 `monitor.liucf.com` |
-| React 19 前端在哪里开发？ | 先在 `xljya/NodeBeacon-Web:nodebeacon` 开发，再固定提交引入这里 |
-| `NodeBeacon1` 是什么？ | 迁移前完整实现的历史保留仓库，不是当前生产来源 |
+| React 19 前端在哪里开发？ | 辅助仓 `xljya/NodeBeacon-Web:nodebeacon`，完成后固定提交引入主项目 |
+| `NodeBeacon1` 是什么？ | 为主项目保留迁移前实现的历史辅助仓，不参与当前部署 |
+| 实际部署了哪些仓库？ | 只部署 NodeBeacon；另外两个仓库没有独立部署到任何机器或域名 |
 
 如果你是 AI 或第一次参与项目，请按这个顺序开始：
 
@@ -52,13 +60,16 @@ NodeBeacon 最初是一套独立实现的 Prometheus-first 监控产品：React 
 流程装配成一个产品。架构决策与来源说明见
 [`ADR 0014`](docs/adr/0014-komari-web-public-shell.md)。
 
-## 三个仓库怎样配合
+## 一主两辅：三个仓库怎样配合
+
+这不是三个独立产品组成的分布式部署。`NodeBeacon` 是中心和最终交付物，其他两个仓库只在
+开发与历史追溯阶段为它服务：
 
 | 仓库 | 定位 | 日常修改入口 | 能否发布生产 |
 | --- | --- | --- | --- |
-| [`xljya/NodeBeacon`](https://github.com/xljya/NodeBeacon) | 当前产品、后端、契约、基础设施和发布仓库 | `main` | **可以，且仅此仓库可以** |
-| [`xljya/NodeBeacon-Web`](https://github.com/xljya/NodeBeacon-Web) | Komari-derived React 19 前端的可维护源 | `nodebeacon` | 不可以；必须由产品仓库固定提交引入 |
-| [`xljya/NodeBeacon1`](https://github.com/xljya/NodeBeacon1) | 迁移前 NodeBeacon/infra 历史快照 | `main`，仅历史审计或明确授权修复 | 不可以 |
+| [`xljya/NodeBeacon`](https://github.com/xljya/NodeBeacon) | **主要项目**：当前产品、后端、契约、基础设施和发布仓库 | `main` | **可以，且仅此仓库可以** |
+| [`xljya/NodeBeacon-Web`](https://github.com/xljya/NodeBeacon-Web) | **辅助项目**：为主项目维护 Komari-derived React 19 源码 | `nodebeacon` | 不可以；仓库本身未部署，源码须由主项目固定提交引入 |
+| [`xljya/NodeBeacon1`](https://github.com/xljya/NodeBeacon1) | **辅助项目**：为主项目保留迁移前 NodeBeacon/infra 历史 | `main`，仅历史审计或明确授权修复 | 不可以；未部署到任何机器或域名 |
 
 React 19 前端改动的唯一正确交付链路是：
 
@@ -76,6 +87,7 @@ flowchart LR
     history -. "审计/对照，不自动回写" .-> product
 ```
 
+最终只有 `NodeBeacon` 产出的单一镜像和 Kubernetes 资源会进入你的运行环境并响应域名。
 不要只修改 `apps/status-web` 的 vendored 副本；也不要从 `NodeBeacon1` 直接部署或把历史
 代码自动回写当前产品。
 

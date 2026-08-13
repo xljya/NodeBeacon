@@ -5,6 +5,10 @@
 `docs/NODEBEACON_GATEWAY.md`。本仓库是 Komari Web fork 的 NodeBeacon 前端产品源，不是
 独立部署仓库，不能仅凭本仓源码或构建结果声称生产已经更新。
 
+`xljya/NodeBeacon` 是唯一主要项目和部署单元；本仓只是为它提供 React 19 源码的辅助仓库。
+本仓没有作为独立应用部署到用户的任何机器、服务器、Kubernetes 或域名。源码被 vendored
+进 NodeBeacon 镜像不等于本仓被部署；不得把本仓描述成与 NodeBeacon 并列的线上服务。
+
 ## 仓库职责与分支
 
 - `nodebeacon` 是 NodeBeacon 使用和提交的唯一产品分支；开始修改前先切换该分支并执行

@@ -4,18 +4,23 @@ NodeBeacon Web 是 NodeBeacon 的 React 19 公共状态页与 Owner 管理前端
 自 Komari Web，保留其成熟的组件、布局、主题和响应式体验，但已经改造成只调用 NodeBeacon
 Fastify REST 契约的前端。
 
-> 本仓库不是完整产品，也不直接部署 `monitor.liucf.com`。前端改动只有在
-> `xljya/NodeBeacon` 固定精确提交、通过产品根门禁并完成生产发布后才算上线。
+> **`xljya/NodeBeacon` 是主要项目，本仓库只是为它服务的前端源码辅助仓库。**
+> 本仓库没有作为独立应用部署到你的电脑、服务器、Kubernetes 或任何域名，尤其没有
+> 单独部署在 `monitor.liucf.com`。该域名运行的是主要项目 NodeBeacon 构建出的集成镜像。
+
+本仓的 React 19 源码经过固定提交引入 `NodeBeacon/apps/status-web` 后，可能成为主项目镜像
+的一部分；这表示 **NodeBeacon 使用本仓源码**，不表示 `NodeBeacon-Web` 仓库本身被部署。
 
 ## 30 秒理解这个仓库
 
 | 问题 | 答案 |
 | --- | --- |
 | 这是什么？ | Komari-derived 的 NodeBeacon React 19 前端可维护源 |
+| 在三仓中是什么地位？ | 为主要项目 NodeBeacon 服务的辅助项目 |
 | 负责什么？ | 公共状态页、正式 `/login`、`/admin/*`、主题、多语言和响应式 UI |
 | 默认产品分支 | `nodebeacon` |
 | 后端在哪里？ | `xljya/NodeBeacon` 的 `apps/api` |
-| 是否独立部署？ | 否 |
+| 是否独立部署？ | 否；未部署到用户的任何机器或域名 |
 | 如何进入产品？ | 提交 Web SHA，再由 `NodeBeacon` 完整引入到 `apps/status-web` 并记录固定 SHA |
 
 如果你是 AI 或第一次参与项目，请先完整阅读本 README，再阅读
@@ -36,13 +41,13 @@ Owner API，并移除或封锁没有 NodeBeacon 后端契约的路由与请求�
 上游仓库在采用时未展示许可证文件。本仓库保留 fork、提交和来源说明，但这些技术来源
 记录不替代许可证或再分发权利判断。
 
-## 三个仓库怎样配合
+## 一主两辅：三个仓库怎样配合
 
 | 仓库 | 角色 | 本仓与它的关系 |
 | --- | --- | --- |
-| [`xljya/NodeBeacon`](https://github.com/xljya/NodeBeacon) | 当前完整产品、API、契约、infra 和生产发布 | 本仓前端的唯一消费者与唯一发布方 |
-| [`xljya/NodeBeacon-Web`](https://github.com/xljya/NodeBeacon-Web) | React 19 前端源 | **本仓库**；在 `nodebeacon` 开发和验证 |
-| [`xljya/NodeBeacon1`](https://github.com/xljya/NodeBeacon1) | 迁移前 NodeBeacon/infra 历史 | 只用于审计和对照，不是 API 或发布来源 |
+| [`xljya/NodeBeacon`](https://github.com/xljya/NodeBeacon) | **主要项目**：完整产品、API、契约、infra 和唯一生产部署 | 本仓源码的唯一消费者与发布方 |
+| [`xljya/NodeBeacon-Web`](https://github.com/xljya/NodeBeacon-Web) | **辅助项目**：为 NodeBeacon 维护 React 19 前端源 | **本仓库**；只开发和交付源码，不独立运行 |
+| [`xljya/NodeBeacon1`](https://github.com/xljya/NodeBeacon1) | **辅助项目**：为 NodeBeacon 保留迁移前历史 | 只用于审计和对照，不运行、不部署 |
 
 交付方向始终是单向且可追溯的：
 
@@ -57,7 +62,8 @@ flowchart LR
     code --> sha --> vendor --> gates --> prod
 ```
 
-本仓提交不会自动影响生产；产品仓库也不应只改 vendored 副本而让两仓永久分叉。
+本仓提交不会自动影响生产；产品仓库也不应只改 vendored 副本而让两仓永久分叉。用户机器
+和域名上不存在独立的 NodeBeacon-Web 服务、容器或站点。
 
 ## 当前职责与路由
 
