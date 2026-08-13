@@ -27,6 +27,12 @@ data:
         tcp:
           preferred_ip_protocol: ip4
           ip_protocol_fallback: false
+      tcp_connect_ipv6:
+        prober: tcp
+        timeout: 5s
+        tcp:
+          preferred_ip_protocol: ip6
+          ip_protocol_fallback: false
       icmp_ipv4:
         prober: icmp
         timeout: 5s

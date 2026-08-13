@@ -665,11 +665,28 @@
     "default_on_description": "When enabled, newly added servers will automatically start running this monitor. Existing servers are unaffected.",
     "default_on_short": "Default on",
     "interval": "Interval",
+    "live": "Live results",
+    "desc": "Central Blackbox probes from the monitor node. PromQL is not accepted from the browser.",
     "server_view": "Server View",
     "target": "Target",
     "task": "Task",
     "task_view": "Task View",
-    "title": "Latency"
+    "title": "Latency",
+    "china_isp": {
+      "add_batch": "Add selected TCP probes",
+      "all_provinces": "All provinces",
+      "carriers": "Carriers",
+      "core20": "Core 20 provinces",
+      "delete_batch": "Delete matching probes",
+      "delete_confirm": "Delete the stored TCP probes that match this {{count}}-target selection? Custom probes are not removed.",
+      "deleted": "Deleted {{deleted}} matching probes",
+      "desc": "Batch TCP probes from RS1000 Blackbox to nationwide China Telecom, Unicom, and Mobile nodes. This is not per-server Agent ping.",
+      "ip_families": "IP families",
+      "added": "Added {{created}} probes, skipped {{skipped}} existing targets",
+      "preview": "{{count}} TCP probes will be created from the monitor node",
+      "provinces": "Provinces",
+      "title": "Nationwide ISP TCP-Ping"
+    }
   },
   "plugin": {
     "config": "Configuration",

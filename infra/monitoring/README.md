@@ -29,6 +29,22 @@ probe_success{job=~"blackbox-(tcp-egress|dns-egress|tcp-wireguard)"}
 All eight series should be `1` during normal operation: two public TCP, two
 DNS, and four WireGuard peer probes.
 
+## Managed China ISP TCP modules
+
+Owner-created nationwide China ISP TCP tasks use the existing Blackbox Exporter
+plus two managed Probe resources in the `nodebeacon` namespace:
+
+- `nodebeacon-managed-tcp` → module `tcp_connect_ipv4`
+- `nodebeacon-managed-tcp6` → module `tcp_connect_ipv6`
+
+IPv6 probes stay empty until the owner selects IPv6 in `/admin/ping`. Apply the
+monitoring kustomization and restart Blackbox before enabling IPv6 targets:
+
+```sh
+kubectl apply -k infra/monitoring
+kubectl -n monitoring rollout restart deployment/blackbox-exporter
+```
+
 ## Node detail fast scrape
 
 The public node detail page can use a separate 5-second scrape job without

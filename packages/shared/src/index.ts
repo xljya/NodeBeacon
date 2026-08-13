@@ -680,6 +680,52 @@ export interface AdminProbe {
   updatedAt: number;
 }
 
+export type ChinaIspIpFamily = "v4" | "v6";
+
+export interface ChinaIspPingCatalog {
+  domain: string;
+  port: number;
+  vantage: "rs1000-blackbox";
+  maxTargetsPerFamily: number;
+  defaultProvinceCodes: string[];
+  provinces: Array<{ code: string; name: string }>;
+  carriers: Array<{ code: string; name: string }>;
+  ipFamilies: ChinaIspIpFamily[];
+}
+
+export interface ChinaIspPingBatchRequest {
+  provinces: string[];
+  carriers: string[];
+  ipFamilies: ChinaIspIpFamily[];
+  intervalSeconds?: number;
+  enabled?: boolean;
+}
+
+export interface ChinaIspPingBatchResponse {
+  created: number;
+  skipped: number;
+  total: number;
+  reconciled: boolean;
+}
+
+export interface ChinaIspPingBatchDeleteResponse {
+  deleted: number;
+  reconciled: boolean;
+}
+
+export interface AdminProbeResult extends ProbeResult {
+  job: string;
+}
+
+export interface AdminProbeResultsResponse {
+  generatedAt: string;
+  cache: {
+    ttlSeconds: number;
+    stale: boolean;
+  };
+  probes: AdminProbeResult[];
+}
+
 export interface AdminLogEntry {
   timestamp: string;
   labels: Record<string, string>;

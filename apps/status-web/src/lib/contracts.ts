@@ -183,6 +183,35 @@ export interface AdminProbe {
   updatedAt: number;
 }
 
+export type ChinaIspIpFamily = "v4" | "v6";
+
+export interface ChinaIspPingCatalog {
+  domain: string;
+  port: number;
+  vantage: "rs1000-blackbox";
+  maxTargetsPerFamily: number;
+  defaultProvinceCodes: string[];
+  provinces: Array<{ code: string; name: string }>;
+  carriers: Array<{ code: string; name: string }>;
+  ipFamilies: ChinaIspIpFamily[];
+}
+
+export interface ChinaIspPingBatchResponse {
+  created: number;
+  skipped: number;
+  total: number;
+  reconciled: boolean;
+}
+
+export interface ChinaIspPingBatchDeleteResponse {
+  deleted: number;
+  reconciled: boolean;
+}
+
+export interface AdminProbeResult extends ProbeResult {
+  job: string;
+}
+
 export interface AdminSession {
   id: string;
   userId: string;

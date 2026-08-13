@@ -665,11 +665,28 @@
     "default_on_description": "開啟後，新加入的伺服器會自動啟用此監測；已存在的伺服器不受影響。",
     "default_on_short": "預設啟用",
     "interval": "間隔",
+    "live": "即時結果",
+    "desc": "由監控節點上的 Blackbox 發起的中心探測。瀏覽器不能提交 PromQL。",
     "server_view": "伺服器檢視",
     "target": "目標",
     "task": "任務",
     "task_view": "任務檢視",
-    "title": "延遲監測"
+    "title": "延遲監測",
+    "china_isp": {
+      "add_batch": "批次新增 TCP 探測",
+      "all_provinces": "全國",
+      "carriers": "電信業者",
+      "core20": "常用 20 省",
+      "delete_batch": "刪除相符項目",
+      "delete_confirm": "刪除目前選擇對應的 {{count}} 條已儲存 TCP 探測？不會刪除手動新增的其他探測。",
+      "deleted": "已刪除 {{deleted}} 條相符探測",
+      "desc": "從 RS1000 Blackbox 批次探測各省電信、聯通、移動 TCP 延遲。這不是各台被監控機器上的 Agent 探測。",
+      "ip_families": "IP 協定",
+      "added": "已新增 {{created}} 條，跳過 {{skipped}} 條既有目標",
+      "preview": "將從監控節點建立 {{count}} 條 TCP 探測",
+      "provinces": "省份",
+      "title": "全國三網 TCP-Ping"
+    }
   },
   "plugin": {
     "config": "設定",

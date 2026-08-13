@@ -28,7 +28,7 @@ rules:
     verbs: ["get", "update", "patch"]
   - apiGroups: ["monitoring.coreos.com"]
     resources: ["probes"]
-    resourceNames: ["nodebeacon-managed-http", "nodebeacon-managed-tcp", "nodebeacon-managed-icmp"]
+    resourceNames: ["nodebeacon-managed-http", "nodebeacon-managed-tcp", "nodebeacon-managed-tcp6", "nodebeacon-managed-icmp"]
     verbs: ["get", "update", "patch"]
 ---
 apiVersion: rbac.authorization.k8s.io/v1

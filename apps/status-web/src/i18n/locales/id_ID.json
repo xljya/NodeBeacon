@@ -665,11 +665,28 @@
     "default_on_description": "Jika diaktifkan, server yang baru ditambahkan akan otomatis menjalankan pemantauan ini. Server yang sudah ada tidak terpengaruh.",
     "default_on_short": "Aktif default",
     "interval": "Interval",
+    "live": "Hasil langsung",
+    "desc": "Probe Blackbox terpusat dari node pemantau. PromQL tidak diterima dari browser.",
     "server_view": "Tampilan Server",
     "target": "Target",
     "task": "Tugas",
     "task_view": "Tampilan Tugas",
-    "title": "Latensi"
+    "title": "Latensi",
+    "china_isp": {
+      "add_batch": "Tambah probe TCP terpilih",
+      "all_provinces": "Semua provinsi",
+      "carriers": "Operator",
+      "core20": "20 provinsi utama",
+      "delete_batch": "Hapus probe yang cocok",
+      "delete_confirm": "Hapus probe TCP tersimpan yang cocok dengan pilihan {{count}} target ini? Probe kustom tidak dihapus.",
+      "deleted": "{{deleted}} probe yang cocok dihapus",
+      "desc": "Probe TCP batch dari RS1000 Blackbox ke node China Telecom, Unicom, dan Mobile. Ini bukan ping Agent per server.",
+      "ip_families": "Keluarga IP",
+      "added": "Menambah {{created}} probe, melewati {{skipped}} target yang sudah ada",
+      "preview": "{{count}} probe TCP akan dibuat dari node pemantau",
+      "provinces": "Provinsi",
+      "title": "TCP-Ping ISP nasional"
+    }
   },
   "plugin": {
     "config": "Konfigurasi",

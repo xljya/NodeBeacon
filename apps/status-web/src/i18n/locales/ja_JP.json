@@ -665,11 +665,28 @@
     "default_on_description": "有効にすると、新しく追加されるサーバーで自動的にこの監視が開始されます。既存のサーバーには影響しません。",
     "default_on_short": "既定有効",
     "interval": "間隔",
+    "live": "ライブ結果",
+    "desc": "監視ノード上の Blackbox による中央プローブです。ブラウザから PromQL は送信できません。",
     "server_view": "サーバービュー",
     "target": "ターゲット",
     "task": "タスク",
     "task_view": "タスクビュー",
-    "title": "遅延監視"
+    "title": "遅延監視",
+    "china_isp": {
+      "add_batch": "選択した TCP プローブを追加",
+      "all_provinces": "全市省",
+      "carriers": "キャリア",
+      "core20": "主要 20 省",
+      "delete_batch": "一致するプローブを削除",
+      "delete_confirm": "この {{count}} 件の選択に一致する保存済み TCP プローブを削除しますか？手動追加のプローブは削除されません。",
+      "deleted": "{{deleted}} 件の一致するプローブを削除しました",
+      "desc": "RS1000 の Blackbox から中国の電信・聯通・移動へ TCP 遅延を一括測定します。各監視対象サーバー上の Agent ping ではありません。",
+      "ip_families": "IP ファミリー",
+      "added": "{{created}} 件を追加し、既存の {{skipped}} 件をスキップしました",
+      "preview": "監視ノードから {{count}} 件の TCP プローブを作成します",
+      "provinces": "省",
+      "title": "全国 ISP TCP-Ping"
+    }
   },
   "plugin": {
     "config": "設定",
