@@ -3,7 +3,7 @@
 ## Status
 
 Accepted for v1.1.0; owner-route cutover amended for v1.1.3; node-detail
-cutover amended for v1.1.9.
+cutover amended for v1.1.9; React 18 leftover shell retired in v1.1.10.
 
 ## Context
 
@@ -39,15 +39,12 @@ Migration is staged inside the existing single container:
 - `/login` and `/admin/*` use the reviewed Komari-derived NodeBeacon Owner shell;
 - `/login-v2` and `/admin-v2/*` permanently redirect to the official paths;
 - `/nodes/*` uses the same Komari-derived React 19 shell as `/` from v1.1.9;
-- both shells use the same Fastify BFF, authentication, Prometheus and SQLite;
-- leftover React 18 assets remain assembled under `/legacy/assets` to prevent
-  filename and React-runtime collisions.
+- leftover React 18 assets and `apps/web` were removed in v1.1.10; Fastify now
+  serves only the React 19 `apps/status-web` bundle, using the same Fastify BFF,
+  authentication, Prometheus and SQLite.
 
-The two applications intentionally keep their native stacks: React 19 for the
-public, owner and node-detail shell, and React 18 only for leftover `/legacy/`
-assets until retained Admin/Login/detail source is removed in a later cleanup.
-`apps/status-web` is excluded from the pnpm workspace and built from its
-upstream npm lock, isolating both the runtime and TypeScript dependency graphs.
+`apps/status-web` remains excluded from the pnpm workspace and is built from
+its upstream npm lock, isolating the React 19 runtime from the API workspace.
 
 ## Consequences
 

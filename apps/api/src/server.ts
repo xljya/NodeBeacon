@@ -39,11 +39,6 @@ import { reconcileManagedProbes } from "./services/k8sReconcileService.js";
 
 const webDistPath = fileURLToPath(new URL("../../status-web/dist/", import.meta.url));
 
-export function usesLegacyWebShell(rawUrl: string): boolean {
-  const pathname = rawUrl.split("?", 1)[0] ?? "/";
-  return pathname.startsWith("/legacy/");
-}
-
 export function getLegacyAdminRedirect(rawUrl: string): string | null {
   const queryIndex = rawUrl.indexOf("?");
   const pathname = queryIndex === -1 ? rawUrl : rawUrl.slice(0, queryIndex);
@@ -181,7 +176,7 @@ export async function createApp() {
       if (redirect) {
         return reply.code(308).redirect(redirect);
       }
-      return reply.sendFile(usesLegacyWebShell(url) ? "legacy/index.html" : "index.html");
+      return reply.sendFile("index.html");
     });
   }
 

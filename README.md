@@ -29,7 +29,7 @@ NodeBeacon 是一个面向个人服务器、Homelab 和小型基础设施的自�
 | --- | --- |
 | 这是什么？ | NodeBeacon 当前可运行的完整产品仓库 |
 | 在三仓中是什么地位？ | **主要项目**；另外两个仓库只为它提供前端源码或历史参考 |
-| 负责什么？ | API、认证、数据契约、双前端装配、测试、k3s 基础设施和生产发布 |
+| 负责什么？ | API、认证、数据契约、React 19 前端装配、测试、k3s 基础设施和生产发布 |
 | 默认分支 | `main` |
 | 是否直接发布生产？ | 是，只有本仓库可以发布 `monitor.liucf.com` |
 | React 19 前端在哪里开发？ | 辅助仓 `xljya/NodeBeacon-Web:nodebeacon`，完成后固定提交引入主项目 |
@@ -56,8 +56,8 @@ NodeBeacon 最初是一套独立实现的 Prometheus-first 监控产品：React 
 不是 Komari Server、Agent 或 RPC2 数据面。
 
 本仓库是最终集成点：它将经过审核的 `NodeBeacon-Web` 精确提交固定到
-`apps/status-web`，与现有 Fastify、React 18 节点详情、Prometheus、SQLite 和 k3s 发布
-流程装配成一个产品。架构决策与来源说明见
+`apps/status-web`，与现有 Fastify、Prometheus、SQLite 和 k3s 发布流程装配成一个产品。
+架构决策与来源说明见
 [`ADR 0014`](docs/adr/0014-komari-web-public-shell.md)。
 
 ## 一主两辅：三个仓库怎样配合
@@ -101,12 +101,11 @@ flowchart LR
 | `/instance/*` | Fastify 308 到 `/nodes/:id` |
 | `/login`, `/admin/*` | `apps/status-web`，React 19 NodeBeacon Owner 壳 |
 | `/login-v2`, `/admin-v2/*` | 永久重定向到正式路径 |
-| `/nodes/*` | `apps/status-web`，React 19 节点详情；`/legacy/` 仍装配 React 18 资源 |
+| `/nodes/*` | `apps/status-web`，React 19 节点详情 |
 | `/api/*` | `apps/api`，Fastify BFF |
 
-两套前端共享同一套 Fastify API、Owner Cookie、Prometheus 查询和 SQLite 数据，但保持独立
-依赖图：根 pnpm workspace 使用 React 18；`apps/status-web` 使用自己的 npm lock 与
-React 19。构建时静态资源会隔离装配，避免 React runtime 和文件名冲突。
+公共页、登录、Owner 后台和节点详情共用一套 React 19 壳与 Fastify API。`apps/status-web`
+使用自己的 npm lock，不进入根 pnpm workspace，避免 React 19 依赖与 API workspace 混锁。
 
 ### 安全与数据边界
 
@@ -127,10 +126,8 @@ flowchart LR
     atlas["RIPE Atlas"] --> api
     am -->|"firing / resolved"| api
     api <--> state["SQLite / YAML / PVC"]
-    api --> public["React 19\n公共页 + Owner Admin"]
-    api --> detail["React 18\n节点详情"]
+    api --> public["React 19\n公共页 / 详情 / Owner Admin"]
     public --> browser["Browser"]
-    detail --> browser
 ```
 
 生产流量路径为：
@@ -157,13 +154,12 @@ Browser -> Cloudflare -> nginx -> k3s Service / NodePort
 
 ```text
 apps/status-web   从 NodeBeacon-Web 固定提交引入的 React 19 源码；独立 npm lock
-apps/web          React 18 节点详情与待清理的旧壳源码
 apps/api          Fastify API、认证、Prometheus、Alertmanager、SQLite、节点注册表
 packages/shared   Web/API 共用类型和显式 REST 契约
 e2e               Playwright 浏览器回归
 docs              ADR、API、实现计划、故障处理和发布验收记录
 infra             k3s、Prometheus、Cloudflare、nginx 与生产运维
-scripts           构建装配、部署、生产验收、备份与恢复
+scripts           部署、生产验收、备份与恢复
 config            本地/种子配置；不是生产运行时事实来源
 ```
 
@@ -176,15 +172,15 @@ config            本地/种子配置；不是生产运行时事实来源
 - npm（用于隔离构建 `apps/status-web`）
 - Chromium（运行完整 Playwright 门禁时需要）
 
-安装并启动 API 与 React 18 开发入口：
+安装并启动 Fastify API。已构建的 React 19 静态资源由 API 在同一端口托管：
 
 ```powershell
 pnpm install
 pnpm dev
 ```
 
-- Web 开发服务器：<http://localhost:5173>
-- Fastify API：<http://localhost:3001>
+- Fastify API 与已构建前端：<http://localhost:3001>
+- 单独开发 React 19 壳：`pnpm dev:web`（Vite 默认 <http://localhost:5173>）
 - 未配置 Prometheus/Alertmanager 时应用仍能启动；依赖实时时序的接口会返回明确的降级响应。
 - API 只读取 `process.env`，不会自动加载 `.env`。
 - 本地演示 Owner 功能需要显式设置 Owner 凭据，并让
@@ -204,7 +200,7 @@ pnpm exec playwright test --project=chromium
 git diff --check
 ```
 
-根构建会分别安装和构建两套前端，并扫描 React 19 产物中是否出现禁用接口。GitHub
+根构建会安装并构建 React 19 壳，并扫描产物中是否出现禁用接口。GitHub
 Actions 在 `main` push 和 Pull Request 上执行类型检查、单测、构建、部署计划测试和隔离
 Chromium E2E。
 
@@ -239,7 +235,7 @@ Chromium E2E。
 | 任务 | 先读 |
 | --- | --- |
 | 了解架构选择 | [`docs/adr/`](docs/adr/) |
-| 了解 Web fork、来源和双壳边界 | [`ADR 0014`](docs/adr/0014-komari-web-public-shell.md) |
+| 了解 Web fork、来源和单壳边界 | [`ADR 0014`](docs/adr/0014-komari-web-public-shell.md) |
 | 修改 API 或数据结构 | [`docs/api/`](docs/api/) 与 `packages/shared` |
 | 修改生产、备份、恢复或回滚 | [`infra/README.md`](infra/README.md) |
 | 排查线上故障 | [`docs/troubleshooting.md`](docs/troubleshooting.md) |

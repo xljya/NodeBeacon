@@ -1,7 +1,7 @@
 packages:
   - "apps/*"
   # The Komari-derived shell intentionally keeps its upstream npm lock and
-  # React 19 dependency graph isolated from NodeBeacon's React 18 workspace.
+  # React 19 dependency graph isolated from the API workspace.
   - "!apps/status-web"
   - "packages/*"
 allowBuilds:

@@ -1,5 +1,5 @@
 # NodeBeacon single-container image (ADR-0005).
-# The Fastify API serves /api/* and hosts the assembled public + owner web bundles.
+# The Fastify API serves /api/* and hosts the React 19 public + owner web bundle.
 # Multi-stage: build the full pnpm workspace, then ship the built tree.
 
 # ---- builder ----
@@ -24,9 +24,9 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 COPY . .
 RUN pnpm install --frozen-lockfile
 
-# Build shared -> api -> both web shells, then assemble the owner shell below
-# apps/status-web/dist/legacy. Remove incremental metadata first so stale
-# host tsbuildinfo files cannot make TypeScript skip emit in Docker.
+# Build shared -> api, then the isolated React 19 shell. Remove incremental
+# metadata first so stale host tsbuildinfo files cannot make TypeScript skip
+# emit in Docker.
 RUN find . -name '*.tsbuildinfo' -delete && pnpm build
 
 # ---- runtime ----

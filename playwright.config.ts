@@ -1,9 +1,8 @@
 import { defineConfig, devices } from "@playwright/test";
 import { resolve } from "node:path";
 
-const PORT = Number(process.env.E2E_PORT ?? 4173);
+export const BASE_URL = "http://localhost:3001";
 const E2E_STATE_DIR = resolve("e2e/.tmp");
-export const BASE_URL = `http://localhost:${PORT}`;
 
 // Owner credentials injected into the dev API for the lifetime of the test
 // run only — never used outside webServer.env, never persisted anywhere.
@@ -32,37 +31,28 @@ export default defineConfig({
     { name: "chrome", use: { ...devices["Desktop Chrome"], channel: "chrome" }, dependencies: ["setup"] }
   ],
 
-  webServer: [
-    {
-      command: "node scripts/prepare-e2e.mjs && pnpm --filter @nodebeacon/shared build && npm --prefix apps/status-web ci && npm --prefix apps/status-web run build && pnpm --filter @nodebeacon/web build && node scripts/assemble-web.mjs && pnpm --filter @nodebeacon/api dev",
-      url: "http://localhost:3001/healthz",
-      reuseExistingServer: !process.env.CI,
-      // The isolated Komari-derived shell performs a reproducible npm ci before
-      // building. A cold Windows cache can legitimately exceed one minute.
-      timeout: 120_000,
-      stdout: "pipe",
-      env: {
-        NODE_ENV: "development",
-        WEB_ORIGIN: BASE_URL,
-        COOKIE_SECRET: "e2e-test-cookie-secret-0123456789ab",
-        INITIAL_OWNER_EMAIL: E2E_OWNER_EMAIL,
-        INITIAL_OWNER_PASSWORD: E2E_OWNER_PASSWORD,
-        PROMETHEUS_URL: "",
-        GITHUB_CLIENT_ID: "",
-        GITHUB_CLIENT_SECRET: "",
-        ALLOW_REGISTER: "false",
-        NODEBEACON_DATABASE_PATH: resolve(E2E_STATE_DIR, "nodebeacon.db"),
-        NODEBEACON_NODE_CONFIG: resolve(E2E_STATE_DIR, "nodes.yaml"),
-        NODEBEACON_NODE_CONFIG_SEED: resolve(E2E_STATE_DIR, "nodes.seed.yaml"),
-        NODEBEACON_BACKUP_SUCCESS_PATH: resolve(E2E_STATE_DIR, "backup-last-success.timestamp")
-      }
-    },
-    {
-      command: `pnpm --filter @nodebeacon/web exec vite --base / --host 0.0.0.0 --port ${PORT} --strictPort`,
-      url: BASE_URL,
-      reuseExistingServer: !process.env.CI,
-      timeout: 60_000,
-      stdout: "pipe"
+  webServer: {
+    command: "node scripts/prepare-e2e.mjs && pnpm --filter @nodebeacon/shared build && npm --prefix apps/status-web ci && npm --prefix apps/status-web run build && npm --prefix apps/status-web run scan:forbidden && pnpm --filter @nodebeacon/api dev",
+    url: `${BASE_URL}/healthz`,
+    reuseExistingServer: !process.env.CI,
+    // The isolated Komari-derived shell performs a reproducible npm ci before
+    // building. A cold Windows cache can legitimately exceed one minute.
+    timeout: 120_000,
+    stdout: "pipe",
+    env: {
+      NODE_ENV: "development",
+      WEB_ORIGIN: BASE_URL,
+      COOKIE_SECRET: "e2e-test-cookie-secret-0123456789ab",
+      INITIAL_OWNER_EMAIL: E2E_OWNER_EMAIL,
+      INITIAL_OWNER_PASSWORD: E2E_OWNER_PASSWORD,
+      PROMETHEUS_URL: "",
+      GITHUB_CLIENT_ID: "",
+      GITHUB_CLIENT_SECRET: "",
+      ALLOW_REGISTER: "false",
+      NODEBEACON_DATABASE_PATH: resolve(E2E_STATE_DIR, "nodebeacon.db"),
+      NODEBEACON_NODE_CONFIG: resolve(E2E_STATE_DIR, "nodes.yaml"),
+      NODEBEACON_NODE_CONFIG_SEED: resolve(E2E_STATE_DIR, "nodes.seed.yaml"),
+      NODEBEACON_BACKUP_SUCCESS_PATH: resolve(E2E_STATE_DIR, "backup-last-success.timestamp")
     }
-  ]
+  }
 });

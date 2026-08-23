@@ -110,7 +110,7 @@ Security boundaries:
 
 | Layer | Stack |
 | --- | --- |
-| Frontend | React 18, TypeScript, Vite, React Router, i18next |
+| Frontend | React 19, TypeScript, Vite, React Router, i18next |
 | Backend | Node.js 20, Fastify 5, TypeScript |
 | Metrics and alerts | Prometheus, Alertmanager, node_exporter, blackbox_exporter |
 | Network measurement | RIPE Atlas |
@@ -154,8 +154,8 @@ pnpm dev
 
 Default addresses:
 
-- Web development server: <http://localhost:5173>
-- Fastify API: <http://localhost:3001>
+- Fastify API and the built React 19 shell: <http://localhost:3001>
+- Isolated React 19 Vite server: `pnpm dev:web` (defaults to <http://localhost:5173>)
 
 See [`.env.example`](.env.example) for configuration. The API reads
 `process.env` directly and does not load `.env` files automatically. To try the
@@ -207,7 +207,7 @@ or deploy a `latest` image.
 ## Repository layout
 
 ```text
-apps/web          React/Vite status page, node details, and admin UI
+apps/status-web   Vendored React 19 public, detail, and Owner shell
 apps/api          Fastify API, auth, Prometheus queries, and SQLite
 packages/shared   Shared web/API types and contracts
 e2e               Playwright end-to-end tests

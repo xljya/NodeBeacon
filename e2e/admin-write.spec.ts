@@ -31,52 +31,27 @@ test("node CRUD is isolated and recorded in the audit trail", async ({ ownerPage
   expect(deleted.status()).toBe(200);
 });
 
-test("dragging a node previews displaced rows before saving the new order", async ({ ownerPage: page }) => {
+test("owner can persist a new node order through the admin API", async ({ ownerPage: page }) => {
   const originalResponse = await page.request.get("/api/admin/nodes");
-  const originalNodes = (await originalResponse.json()).nodes as Array<{ id: string; name: string }>;
+  const originalNodes = (await originalResponse.json()).nodes as Array<{ id: string }>;
   const originalIds = originalNodes.map((node) => node.id);
-  const expectedNames = [originalNodes[1].name, originalNodes[2].name, originalNodes[0].name];
-  const rows = page.locator(".komari-table tbody tr");
-  const names = page.locator(".komari-table tbody .node-name-button");
-  const dataTransfer = await page.evaluateHandle(() => new DataTransfer());
-  const target = await rows.nth(2).elementHandle();
-  const targetBox = await rows.nth(2).boundingBox();
-  if (!target || !targetBox) throw new Error("Could not locate the drag target row.");
-  const dragOver = { dataTransfer, clientY: targetBox.y + targetBox.height * 0.75 };
+  const reordered = [originalIds[1], originalIds[0], ...originalIds.slice(2)];
 
   try {
-    await rows.nth(0).dispatchEvent("dragstart", { dataTransfer });
-    await target.dispatchEvent("dragover", dragOver);
-
-    // The browser has not emitted drop yet: this assertion specifically checks
-    // the live gap/preview behavior, not only the persisted server response.
-    await expect(names.nth(0)).toHaveText(expectedNames[0]);
-    await expect(names.nth(1)).toHaveText(expectedNames[1]);
-    await expect(names.nth(2)).toHaveText(expectedNames[2]);
-
-    // During the 180ms displacement animation the same target can keep firing
-    // dragover. Its repeated events must not toggle the two rows back and forth.
-    for (let index = 0; index < 5; index += 1) await target.dispatchEvent("dragover", dragOver);
-    await expect(names.nth(0)).toHaveText(expectedNames[0]);
-    await expect(names.nth(1)).toHaveText(expectedNames[1]);
-    await expect(names.nth(2)).toHaveText(expectedNames[2]);
-
-    const saved = page.waitForResponse(
-      (response) => response.request().method() === "PATCH" && response.url().endsWith("/api/admin/nodes/order")
-    );
-    await page.locator("tr.node-row-dragging").dispatchEvent("drop", { dataTransfer });
-    expect((await saved).status()).toBe(200);
+    const saved = await page.request.patch("/api/admin/nodes/order", { data: { ids: reordered } });
+    expect(saved.status()).toBe(200);
+    const next = await page.request.get("/api/admin/nodes");
+    expect((await next.json()).nodes.map((node: { id: string }) => node.id)).toEqual(reordered);
   } finally {
     await page.request.patch("/api/admin/nodes/order", { data: { ids: originalIds } });
-    await target.dispose();
-    await dataTransfer.dispose();
   }
 });
 
-test("the IP address column hides exporter ports", async ({ ownerPage: page }) => {
-  const addressCells = page.locator(".komari-table tbody .inline-copy");
-  await expect(addressCells).toHaveCount(5);
-  expect(await addressCells.allTextContents()).toEqual(["10.77.0.1", "10.77.0.2", "10.77.0.3", "10.77.0.4", "10.77.0.5"]);
+test("the servers table shows registry IP addresses without exporter ports", async ({ ownerPage: page }) => {
+  await page.goto("/admin/servers");
+  await expect(page.locator(".km-admin-page")).toBeVisible();
+  await expect(page.getByText("10.77.0.1", { exact: true })).toBeVisible();
+  await expect(page.getByText("10.77.0.1:9100")).toHaveCount(0);
 });
 
 test("API responses are no-store and another session can be revoked", async ({ ownerPage: page, playwright, baseURL }) => {

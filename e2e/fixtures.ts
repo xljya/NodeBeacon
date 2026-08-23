@@ -6,7 +6,8 @@ export { expect };
 /** Forces English so assertions don't depend on the machine's browser locale. */
 async function forceEnglish(page: Page) {
   await page.addInitScript(() => {
-    if (!window.localStorage.getItem("nb-lang")) window.localStorage.setItem("nb-lang", "en");
+    window.localStorage.setItem("language", "en-US");
+    window.localStorage.setItem("nb-lang", "en");
   });
 }
 
@@ -21,7 +22,8 @@ export const test = base.extend<{ ownerPage: Page }>({
     const context = await browser.newContext({ storageState: OWNER_STORAGE_STATE });
     const page = await context.newPage();
     await forceEnglish(page);
-    await page.goto("/admin");
+    await page.goto("/admin/dashboard");
+    await expect(page.locator(".km-admin-layout")).toBeVisible();
     await use(page);
     await context.close();
   }

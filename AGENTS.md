@@ -35,9 +35,7 @@ Web 辅助仓源码被 vendored 进 NodeBeacon 镜像，不等于部署该仓库
 ## 项目结构
 
 - `apps/status-web`: 从 `NodeBeacon-Web` 固定提交引入的 Komari Web/React 19 源码；负责
-  公共状态页以及正式 `/login`、`/admin` Owner 界面，使用独立 npm lock。
-- `apps/web`: NodeBeacon React 18 壳；节点详情已迁到 `apps/status-web`，旧 Admin/Login
-  与详情代码等待后续清理，构建后静态资源装配到 `/legacy/assets`。
+  公共状态页、`/nodes/:id` 详情以及正式 `/login`、`/admin` Owner 界面，使用独立 npm lock。
 - `apps/api`: Fastify API、认证、Prometheus 查询、SQLite 和节点注册表逻辑。
 - `packages/shared`: Web 与 API 共用的类型和契约。
 - `e2e`: Playwright 浏览器测试。
@@ -57,10 +55,10 @@ Web 辅助仓源码被 vendored 进 NodeBeacon 镜像，不等于部署该仓库
 - `xljya/NodeBeacon1` 仅保留迁移前的 NodeBeacon/infra 历史，不参与当前产品构建或生产
   数据面；除非用户明确要求，不要向该仓库回写当前功能。
 - `apps/status-web` 被排除在 pnpm workspace 外，必须使用其 `package-lock.json` 和 npm；
-  不要把 React 19/Radix 依赖并入 React 18 workspace，也不要用根 pnpm lock 替代其 lock。
-- 当前路由：`/`、`/login`、`/admin/*` 与 `/nodes/*` 使用 Komari-derived 壳，
-  `/instance/*` 308 到 `/nodes/:id`，`/login-v2` 与 `/admin-v2/*` 重定向到正式路径，
-  `/legacy/` 仍装配 React 18 资源。改变正式路由归属必须有单独发布、浏览器验收和明确回滚路径。
+  不要把 React 19/Radix 依赖并入 API workspace，也不要用根 pnpm lock 替代其 lock。
+- 当前路由：`/`、`/login`、`/admin/*` 与 `/nodes/*` 使用同一套 Komari-derived React 19
+  壳，`/instance/*` 308 到 `/nodes/:id`，`/login-v2` 与 `/admin-v2/*` 重定向到正式路径。
+  改变正式路由归属必须有单独发布、浏览器验收和明确回滚路径。
 - Komari-derived 前端只能调用 NodeBeacon 的显式 REST 契约。禁止新增或模拟 Komari
   RPC2、Agent 上报、Metric Store、浏览器直连 Prometheus、WebSSH、任意命令、插件市场、
   ZIP/可执行主题等接口；构建产物必须继续通过 forbidden-endpoint scan。
@@ -81,7 +79,7 @@ Web 辅助仓源码被 vendored 进 NodeBeacon 镜像，不等于部署该仓库
 - 跨平台、换行符和同步：`docs/cross-platform-sync.md` 与 `.gitattributes`。
 - 重大架构选择：`docs/adr/`。不得无意中破坏其中的约束，尤其是 RS1000 k3s、
   Fastify BFF、服务端 Prometheus 查询、SQLite-first 和单容器部署。
-- Komari Web 来源、双壳路由和安全边界：`docs/adr/0014-komari-web-public-shell.md`；
+- Komari Web 来源、单壳路由和安全边界：`docs/adr/0014-komari-web-public-shell.md`；
   当前正式 Admin 切换状态和验收证据：`docs/releases/v1.1.3.md`。
 - 发布前查看最近的 `docs/releases/`，沿用现有验收记录格式。
 
