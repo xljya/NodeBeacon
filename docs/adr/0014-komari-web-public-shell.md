@@ -2,7 +2,8 @@
 
 ## Status
 
-Accepted for v1.1.0; owner-route cutover amended for v1.1.3.
+Accepted for v1.1.0; owner-route cutover amended for v1.1.3; node-detail
+cutover amended for v1.1.9.
 
 ## Context
 
@@ -37,16 +38,16 @@ Migration is staged inside the existing single container:
   navigate directly to `/nodes/:id` so the public layout is not painted first;
 - `/login` and `/admin/*` use the reviewed Komari-derived NodeBeacon Owner shell;
 - `/login-v2` and `/admin-v2/*` permanently redirect to the official paths;
-- `/nodes/*` continues to use the existing NodeBeacon React shell;
+- `/nodes/*` uses the same Komari-derived React 19 shell as `/` from v1.1.9;
 - both shells use the same Fastify BFF, authentication, Prometheus and SQLite;
-- the legacy shell's assets are assembled under `/legacy/assets` to prevent
+- leftover React 18 assets remain assembled under `/legacy/assets` to prevent
   filename and React-runtime collisions.
 
 The two applications intentionally keep their native stacks: React 19 for the
-public and owner shell, and React 18 for node detail until its retained Admin
-and Login code is removed in a later cleanup. `apps/status-web` is excluded
-from the pnpm workspace and built from its upstream npm lock, isolating both
-the runtime and TypeScript dependency graphs.
+public, owner and node-detail shell, and React 18 only for leftover `/legacy/`
+assets until retained Admin/Login/detail source is removed in a later cleanup.
+`apps/status-web` is excluded from the pnpm workspace and built from its
+upstream npm lock, isolating both the runtime and TypeScript dependency graphs.
 
 ## Consequences
 
@@ -58,5 +59,5 @@ the runtime and TypeScript dependency graphs.
   otherwise intercept navigation intended for the owner shell.
 - Upstream synchronization is deliberate: update the Web fork first, run its
   build/lint gates, then vendor a reviewed fixed commit into this repository.
-- Moving node detail or owner pages onto the source-based shell requires a
-  separate contract review; RPC2 compatibility endpoints remain out of scope.
+- Owner pages moved in v1.1.3 and node detail moved in v1.1.9; RPC2
+  compatibility endpoints remain out of scope.

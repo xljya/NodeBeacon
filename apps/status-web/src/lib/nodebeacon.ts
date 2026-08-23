@@ -171,3 +171,114 @@ export function toKomariLiveData(status: NodeBeaconStatusResponse): LiveDataResp
 export function getNodeDetailPath(id: string): string {
   return `/nodes/${encodeURIComponent(id)}`;
 }
+
+export const NODE_DETAIL_METRICS = ["cpu", "memory", "disk", "network", "latency", "connections"] as const;
+export type NodeDetailMetric = (typeof NODE_DETAIL_METRICS)[number];
+
+export const NODE_DETAIL_RANGES = ["realtime", "1d", "7d", "30d"] as const;
+export type NodeDetailRange = (typeof NODE_DETAIL_RANGES)[number];
+
+export const NODE_DETAIL_LATENCY_VANTAGES = [
+  "ping",
+  "zhejiang_mobile",
+  "zhejiang_unicom",
+  "zhejiang_telecom",
+] as const;
+export type NodeDetailLatencyVantage = (typeof NODE_DETAIL_LATENCY_VANTAGES)[number];
+
+export interface NodeBeaconDetailProfile {
+  osName: string | null;
+  osVersion: string | null;
+  kernelVersion: string | null;
+  arch: string | null;
+  virtualization: string | null;
+  cpuModel: string | null;
+  logicalCpuCores: number | null;
+}
+
+export interface NodeBeaconDetailLive {
+  cpuPercent: number | null;
+  load1: number | null;
+  memoryUsedBytes: number | null;
+  memoryTotalBytes: number | null;
+  diskUsedBytes?: number | null;
+  diskTotalBytes?: number | null;
+  disks: Array<{ usedBytes: number | null; totalBytes: number | null; usedPercent: number | null }>;
+  networkRxBytesPerSecond: number | null;
+  networkTxBytesPerSecond: number | null;
+  uptimeSeconds: number | null;
+}
+
+export interface NodeBeaconDetailResponse {
+  generatedAt: string;
+  node: { id: string; name: string; group: string; region: string; countryCode?: string; online: boolean };
+  profile: NodeBeaconDetailProfile;
+  live: NodeBeaconDetailLive;
+}
+
+export interface NodeBeaconDetailSeries {
+  metric: NodeDetailMetric;
+  key: string;
+  unit: "percent" | "bytes" | "bytes_per_second" | "load" | "count" | "milliseconds";
+  labels?: Record<string, string>;
+  points: Array<[number, number | null]>;
+}
+
+export interface NodeBeaconDetailSeriesResponse {
+  nodeId: string;
+  series: NodeBeaconDetailSeries[];
+}
+
+export interface NodeBeaconLatencyStatsResponse {
+  nodeId: string;
+  vantage: string;
+  vantageName: string;
+  source: {
+    provider: string;
+    probeId: number;
+    asn: string;
+    city: string;
+    measurementId: number;
+  };
+  intervalSeconds: number;
+  type: "ICMP";
+  latestMs: number | null;
+  averageMs: number | null;
+  packetLossPercent: number | null;
+  sampleCount: number;
+  validSampleCount: number;
+  packetsSent: number;
+  packetsReceived: number;
+}
+
+export function isNodeDetailMetric(value: string): value is NodeDetailMetric {
+  return (NODE_DETAIL_METRICS as readonly string[]).includes(value);
+}
+
+export function isNodeDetailRange(value: string): value is NodeDetailRange {
+  return (NODE_DETAIL_RANGES as readonly string[]).includes(value);
+}
+
+export function isNodeDetailLatencyVantage(value: string): value is NodeDetailLatencyVantage {
+  return (NODE_DETAIL_LATENCY_VANTAGES as readonly string[]).includes(value);
+}
+
+export function buildPublicNodeSeriesPath(
+  id: string,
+  options: { metrics: readonly string[]; range: string; aggregation?: string },
+): string | null {
+  const metrics = [...new Set(options.metrics.filter(isNodeDetailMetric))];
+  if (!id || metrics.length === 0) return null;
+  const range = isNodeDetailRange(options.range) ? options.range : "1d";
+  const params = new URLSearchParams({
+    metrics: metrics.join(","),
+    range,
+    aggregation: options.aggregation ?? "avg",
+  });
+  return `/api/public/nodes/${encodeURIComponent(id)}/series?${params.toString()}`;
+}
+
+export function buildPublicNodeLatencyStatsPath(id: string, vantage: string): string | null {
+  if (!id || !isNodeDetailLatencyVantage(vantage)) return null;
+  return `/api/public/nodes/${encodeURIComponent(id)}/latency-stats?vantage=${encodeURIComponent(vantage)}`;
+}

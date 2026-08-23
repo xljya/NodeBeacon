@@ -6,6 +6,7 @@ import { getOfficialAdminPath, withAdminBase } from "./lib/adminPaths";
 import InstanceRedirect from "./pages/InstanceRedirect";
 
 const Index = lazy(() => import("./pages/Index"));
+const NodeDetailPage = lazy(() => import("./pages/NodeDetailPage"));
 const NotFound = lazy(() => import("./pages/404"));
 const LoginPage = lazy(() => import("./pages/LoginPage"));
 const AdminLayout = lazy(() => import("./pages/admin/_layout"));
@@ -81,6 +82,7 @@ export const routes: RouteObject[] = [
     element: React.createElement(lazy(() => import("./pages/_layout"))),
     children: [
       { index: true, element: React.createElement(Index) },
+      { path: "nodes/:id", element: React.createElement(NodeDetailPage) },
     ],
   },
   { path: "/instance/:uuid", element: React.createElement(InstanceRedirect) },

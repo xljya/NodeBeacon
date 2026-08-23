@@ -624,7 +624,22 @@
     "virtualization": "虛擬化"
   },
   "nodes": {
-    "empty": "暫無伺服器資料"
+    "empty": "暫無伺服器資料",
+    "notFound": "找不到節點 {{id}}",
+    "unavailable": "暫時無法載入節點詳情",
+    "servers": "伺服器列表",
+    "range_realtime": "即時",
+    "range_1d": "1 天",
+    "range_7d": "7 天",
+    "range_30d": "30 天",
+    "latencyStats": "延遲統計（最近 24 小時原始結果）",
+    "latest": "最新",
+    "average": "平均",
+    "packetLoss": "丟包",
+    "interval": "間隔",
+    "samples": "樣本",
+    "packets": "收/發",
+    "type": "類型"
   },
   "notification": {
     "load": {

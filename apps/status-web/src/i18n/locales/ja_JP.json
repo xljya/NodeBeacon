@@ -624,7 +624,22 @@
     "virtualization": "仮想化"
   },
   "nodes": {
-    "empty": "サーバーデータはありません"
+    "empty": "サーバーデータはありません",
+    "notFound": "ノード {{id}} が見つかりません",
+    "unavailable": "ノード詳細を読み込めません",
+    "servers": "サーバー一覧",
+    "range_realtime": "リアルタイム",
+    "range_1d": "1日",
+    "range_7d": "7日",
+    "range_30d": "30日",
+    "latencyStats": "遅延統計（直近24時間の生結果）",
+    "latest": "最新",
+    "average": "平均",
+    "packetLoss": "パケット損失",
+    "interval": "間隔",
+    "samples": "サンプル",
+    "packets": "受信 / 送信",
+    "type": "種類"
   },
   "notification": {
     "load": {

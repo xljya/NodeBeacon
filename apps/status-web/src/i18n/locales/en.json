@@ -624,7 +624,22 @@
     "virtualization": "Virtualization"
   },
   "nodes": {
-    "empty": "No server data available"
+    "empty": "No server data available",
+    "notFound": "Node {{id}} was not found",
+    "unavailable": "Unable to load node details",
+    "servers": "Servers",
+    "range_realtime": "Realtime",
+    "range_1d": "1 day",
+    "range_7d": "7 days",
+    "range_30d": "30 days",
+    "latencyStats": "Latency stats (raw results, last 24 hours)",
+    "latest": "Latest",
+    "average": "Average",
+    "packetLoss": "Packet loss",
+    "interval": "Interval",
+    "samples": "Samples",
+    "packets": "Received / sent",
+    "type": "Type"
   },
   "notification": {
     "load": {

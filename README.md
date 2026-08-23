@@ -101,7 +101,7 @@ flowchart LR
 | `/instance/*` | Fastify 308 到 `/nodes/:id` |
 | `/login`, `/admin/*` | `apps/status-web`，React 19 NodeBeacon Owner 壳 |
 | `/login-v2`, `/admin-v2/*` | 永久重定向到正式路径 |
-| `/nodes/*` | `apps/web`，保留的 React 18 节点详情 |
+| `/nodes/*` | `apps/status-web`，React 19 节点详情；`/legacy/` 仍装配 React 18 资源 |
 | `/api/*` | `apps/api`，Fastify BFF |
 
 两套前端共享同一套 Fastify API、Owner Cookie、Prometheus 查询和 SQLite 数据，但保持独立

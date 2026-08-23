@@ -624,7 +624,22 @@
     "virtualization": "Virtualisasi"
   },
   "nodes": {
-    "empty": "Tidak ada data server"
+    "empty": "Tidak ada data server",
+    "notFound": "Node {{id}} tidak ditemukan",
+    "unavailable": "Tidak dapat memuat detail node",
+    "servers": "Daftar server",
+    "range_realtime": "Waktu nyata",
+    "range_1d": "1 hari",
+    "range_7d": "7 hari",
+    "range_30d": "30 hari",
+    "latencyStats": "Statistik latensi (hasil mentah 24 jam terakhir)",
+    "latest": "Terbaru",
+    "average": "Rata-rata",
+    "packetLoss": "Kehilangan paket",
+    "interval": "Interval",
+    "samples": "Sampel",
+    "packets": "Diterima / dikirim",
+    "type": "Tipe"
   },
   "notification": {
     "load": {

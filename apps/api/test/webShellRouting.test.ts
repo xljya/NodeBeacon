@@ -12,7 +12,8 @@ describe("web shell routing", () => {
     ["/login-v2", false],
     ["/admin-v2", false],
     ["/admin-v2/servers", false],
-    ["/nodes/rs1000", true],
+    ["/nodes", false],
+    ["/nodes/rs1000", false],
     ["/legacy/assets/app.js", true]
   ])("routes %s to the expected shell", (url, legacy) => {
     expect(usesLegacyWebShell(url)).toBe(legacy);

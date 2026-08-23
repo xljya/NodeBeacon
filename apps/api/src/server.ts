@@ -41,9 +41,7 @@ const webDistPath = fileURLToPath(new URL("../../status-web/dist/", import.meta.
 
 export function usesLegacyWebShell(rawUrl: string): boolean {
   const pathname = rawUrl.split("?", 1)[0] ?? "/";
-  return pathname.startsWith("/nodes/") ||
-    pathname === "/nodes" ||
-    pathname.startsWith("/legacy/");
+  return pathname.startsWith("/legacy/");
 }
 
 export function getLegacyAdminRedirect(rawUrl: string): string | null {

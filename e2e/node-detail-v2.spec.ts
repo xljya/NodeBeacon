@@ -5,6 +5,8 @@ import type {
   ApiNodeLatencyStatsResponse
 } from "@nodebeacon/shared";
 
+const PUBLIC_SHELL_URL = "http://localhost:3001";
+
 const detail: ApiNodeDetailV2Response = {
   generatedAt: "2026-07-15T06:00:00.000Z",
   node: {
@@ -74,20 +76,15 @@ const series: ApiNodeDetailSeriesResponse = {
   aggregation: "avg",
   series: [
     { metric: "cpu", key: "cpu", unit: "percent", points: [[1_752_560_000, 10], [1_752_560_300, 12], [1_752_560_600, 11]] },
-    { metric: "cpu", key: "load1", unit: "load", points: [[1_752_560_000, 0.4], [1_752_560_300, 0.5], [1_752_560_600, 0.42]] },
     { metric: "memory", key: "ram", unit: "bytes", points: [[1_752_560_000, 4e9], [1_752_560_300, 4.1e9], [1_752_560_600, 4e9]] },
-    { metric: "swap", key: "swap", unit: "bytes", points: [[1_752_560_000, 1e8], [1_752_560_300, 1.2e8], [1_752_560_600, 1e8]] },
     { metric: "disk", key: "disk", unit: "bytes", labels: { mountpoint: "/" }, points: [[1_752_560_000, 3e10], [1_752_560_300, 3e10], [1_752_560_600, 3e10]] },
     { metric: "network", key: "rx", unit: "bytes_per_second", points: [[1_752_560_000, 12_000], [1_752_560_300, 13_000], [1_752_560_600, 12_000]] },
     { metric: "network", key: "tx", unit: "bytes_per_second", points: [[1_752_560_000, 8_000], [1_752_560_300, 9_000], [1_752_560_600, 8_000]] },
-    { metric: "network", key: "rxTotal", unit: "bytes", points: [[1_752_560_000, 2e9], [1_752_560_300, 2.1e9], [1_752_560_600, 2.2e9]] },
-    { metric: "network", key: "txTotal", unit: "bytes", points: [[1_752_560_000, 3e9], [1_752_560_300, 3.1e9], [1_752_560_600, 3.2e9]] },
-    { metric: "latency", key: "ping", unit: "milliseconds", labels: { vantage: "zhejiang_telecom", vantage_name: "浙江电信", provider: "China Telecom", probe_id: "55328", asn: "AS4134", city: "Hangzhou, Zhejiang" }, points: [[1_752_560_000, 16], [1_752_560_300, 17], [1_752_560_600, 16]] },
-    { metric: "latency", key: "ping", unit: "milliseconds", labels: { vantage: "zhejiang_unicom", vantage_name: "浙江联通", provider: "China Unicom", probe_id: "1009966", asn: "AS4837", city: "Zhejiang" }, points: [[1_752_560_000, 22], [1_752_560_300, 21], [1_752_560_600, 23]] },
-    { metric: "latency", key: "ping", unit: "milliseconds", labels: { vantage: "ping", vantage_name: "Ping", provider: "NodeBeacon Huawei Cloud", probe_id: "1016690", asn: "AS55990", city: "Shanghai" }, points: [[1_752_560_000, 25], [1_752_560_300, 27], [1_752_560_600, 26]] },
-    { metric: "latency", key: "ping", unit: "milliseconds", labels: { vantage: "zhejiang_mobile", vantage_name: "浙江移动", provider: "China Mobile", probe_id: "1009298", asn: "AS56041", city: "Zhejiang" }, points: [[1_752_560_000, 18], [1_752_560_300, 19], [1_752_560_600, 18]] },
-    { metric: "connections", key: "tcp", unit: "count", points: [[1_752_560_000, 12], [1_752_560_300, 13], [1_752_560_600, 12]] },
-    { metric: "connections", key: "udp", unit: "count", points: [[1_752_560_000, 4], [1_752_560_300, 5], [1_752_560_600, 4]] }
+    { metric: "latency", key: "ping", unit: "milliseconds", labels: { vantage: "zhejiang_telecom", vantage_name: "浙江电信" }, points: [[1_752_560_000, 16], [1_752_560_300, 17], [1_752_560_600, 16]] },
+    { metric: "latency", key: "ping", unit: "milliseconds", labels: { vantage: "zhejiang_unicom", vantage_name: "浙江联通" }, points: [[1_752_560_000, 22], [1_752_560_300, 21], [1_752_560_600, 23]] },
+    { metric: "latency", key: "ping", unit: "milliseconds", labels: { vantage: "ping", vantage_name: "Ping" }, points: [[1_752_560_000, 25], [1_752_560_300, 27], [1_752_560_600, 26]] },
+    { metric: "latency", key: "ping", unit: "milliseconds", labels: { vantage: "zhejiang_mobile", vantage_name: "浙江移动" }, points: [[1_752_560_000, 18], [1_752_560_300, 19], [1_752_560_600, 18]] },
+    { metric: "connections", key: "tcp", unit: "count", points: [[1_752_560_000, 12], [1_752_560_300, 13], [1_752_560_600, 12]] }
   ]
 };
 
@@ -103,7 +100,7 @@ const latencyStats: ApiNodeLatencyStatsResponse = {
     measurementId: 193845936
   },
   windowSeconds: 86_400,
-  intervalSeconds: 300,
+  intervalSeconds: 900,
   type: "ICMP",
   measuredFrom: "2026-07-14T06:00:00.000Z",
   measuredTo: "2026-07-15T06:00:00.000Z",
@@ -129,11 +126,16 @@ async function mockNodeDetail(page: import("@playwright/test").Page, seriesStatu
     if (seriesStatus === 200) await route.fulfill({ json: series });
     else await route.fulfill({ status: seriesStatus, json: { error: "trends_unavailable" } });
   });
+  await page.route("**/api/public/nodes/rs1000/latency-stats?**", (route) => route.fulfill({ json: latencyStats }));
 }
 
-test("anonymous node detail uses combined charts and polished layout controls", async ({ page }) => {
+test("anonymous node detail renders in the React 19 public shell", async ({ page }) => {
   const seriesRequests: string[] = [];
+  const rpcRequests: string[] = [];
   let latencyStatsRequests = 0;
+  page.on("request", (request) => {
+    if (request.url().includes("/api/rpc2")) rpcRequests.push(request.url());
+  });
   await page.route("**/api/public/nodes/rs1000/detail", (route) => route.fulfill({ json: detail }));
   await page.route("**/api/public/nodes/rs1000/series**", async (route) => {
     seriesRequests.push(route.request().url());
@@ -144,114 +146,40 @@ test("anonymous node detail uses combined charts and polished layout controls", 
     await route.fulfill({ json: latencyStats });
   });
 
-  await page.goto("/nodes/rs1000");
-  await expect(page.locator(".detail-profile-card")).toBeVisible();
-  await expect(page.locator(".detail-profile-cpu")).toContainText("AMD EPYC 9645 96-Core Processor (x4)");
-  await expect(page.locator(".detail-profile-arch")).toContainText("amd64");
-  await expect(page.locator(".detail-profile-gpu")).toContainText("None");
-  await expect(page.locator(".detail-profile-os")).toContainText("Kernel version: 6.12.90");
-  await expect(page.locator(".detail-profile-memory")).toContainText("4.00 GB");
-  await expect(page.locator(".detail-profile-memory")).not.toContainText("8.00 GB");
-  await expect(page.locator(".detail-profile-swap")).toContainText("128 MB");
-  await expect(page.locator(".detail-profile-swap")).not.toContainText("2.00 GB");
-  await expect(page.locator(".detail-profile-disk")).toContainText("30 GB");
-  await expect(page.locator(".detail-profile-disk")).not.toContainText("100 GB");
-  await expect(page.locator(".detail-chart-card")).toHaveCount(5);
-  await expect(page.locator('[data-chart-id="cpu"]')).toContainText("CPU");
-  await expect(page.locator('[data-chart-id="memory"]')).toContainText("Memory");
-  await expect(page.locator('[data-chart-id="cpu"] .trend-axis-right')).toBeVisible();
-  await expect(page.locator(".detail-series-chip").first()).toBeVisible();
-  await expect(page.locator('[data-chart-id="network"] .detail-series-chip')).toHaveCount(4);
-  const latencyChips = page.locator('[data-chart-id="latency"] .detail-series-chip');
-  await expect(latencyChips).toHaveCount(4);
-  await expect(latencyChips).toContainText(["Ping", "浙江移动", "浙江联通", "浙江电信"]);
-  await expect.poll(() => latencyChips.locator(".detail-series-dot").evaluateAll((dots) => (
-    dots.map((dot) => getComputedStyle(dot).backgroundColor)
-  ))).toEqual([
-    "rgb(37, 99, 235)",
-    "rgb(249, 115, 22)",
-    "rgb(139, 92, 246)",
-    "rgb(20, 184, 166)"
-  ]);
-  expect(latencyStatsRequests).toBe(0);
-  await expect(page.getByRole("button", { name: "View real latency statistics for Ping" })).toHaveCount(0);
-  await expect(page.locator('.detail-chart-card[data-chart-id="latency"] .detail-series-info')).toHaveCount(3);
-  const statsButton = page.getByRole("button", { name: "View real latency statistics for 浙江移动" });
-  await expect(statsButton).toHaveCSS("width", "28px");
-  await expect(statsButton.locator("svg")).toHaveAttribute("width", "16");
-  await expect(statsButton.locator("svg")).toHaveAttribute("stroke", "gray");
-  await expect(statsButton.locator("svg")).toHaveClass(/lucide-info/);
-  await statsButton.hover();
-  const statsDialog = page.getByRole("dialog", { name: "浙江移动 latency statistics" });
-  await expect(statsDialog).toBeVisible();
-  await expect(statsDialog).toContainText("Last 24 hours of raw RIPE Atlas results");
-  await expect(statsDialog).toContainText("Packet loss2.5%");
-  await expect(statsDialog).toContainText("Minimum13.0 ms");
-  await expect(statsDialog).toContainText("Measurements288");
-  await expect(statsDialog).toContainText("Received / sent842 / 864");
-  await expect(statsDialog).toContainText("Interval300s");
-  await expect(statsDialog).toContainText("TypeICMP");
-  expect(latencyStatsRequests).toBe(1);
-  await statsDialog.hover();
-  await expect(statsDialog).toBeVisible();
-  await page.mouse.move(4, 4);
-  await expect(statsDialog).toBeHidden();
-  await statsButton.focus();
-  await page.keyboard.press("Enter");
-  await expect(statsDialog).toBeVisible();
-  expect(latencyStatsRequests).toBe(1);
-  await page.keyboard.press("Escape");
-  await expect(statsDialog).toBeHidden();
-  await expect(page.locator(".detail-chart-toolbar select").first().locator("option")).toHaveCount(9);
+  await page.goto(`${PUBLIC_SHELL_URL}/nodes/rs1000`);
+  await expect(page.locator('[data-page="node-detail"]')).toBeVisible();
+  await expect(page.locator(".detail-main-content")).toHaveCount(0);
+  await expect(page.getByText("RS1000", { exact: true }).first()).toBeVisible();
+  await expect(page.getByText("Debian GNU/Linux 13")).toBeVisible();
+  await expect(page.locator('[data-chart="cpu"]')).toBeVisible();
+  await expect(page.locator('[data-chart="memory"]')).toBeVisible();
+  await expect(page.locator('[data-chart="disk"]')).toBeVisible();
+  await expect(page.locator('[data-chart="network"]')).toBeVisible();
+  await expect(page.locator('[data-chart="connections"]')).toBeVisible();
+  await expect(page.locator('[data-chart="latency"]')).toBeVisible();
+  await expect(page.locator("[data-latency-stats]")).toContainText("Latency stats");
+  await expect(page.locator("[data-latency-stats]")).toContainText("浙江移动");
+  await expect(page.locator("[data-latency-stats]")).toContainText("2.5%");
+  await expect(page.locator("[data-latency-stats]")).toContainText("900s");
+  await expect(page.locator("[data-latency-stats]")).toContainText("ICMP");
+  expect(latencyStatsRequests).toBeGreaterThan(0);
+  expect(seriesRequests.length).toBeGreaterThan(0);
+  expect(seriesRequests.every((url) => {
+    const parsed = new URL(url);
+    return parsed.searchParams.get("metrics") === "cpu,memory,disk,network,latency,connections"
+      && parsed.searchParams.get("range") === "1d"
+      && !url.toLowerCase().includes("promql");
+  })).toBe(true);
+  expect(rpcRequests).toEqual([]);
 
   const initialRequests = seriesRequests.length;
-  await page.getByRole("button", { name: "1 day", exact: true }).click();
-  await expect.poll(() => seriesRequests.length).toBeGreaterThan(initialRequests);
-
-  const perChartRequests = seriesRequests.length;
-  await page.locator('[data-chart-id="network"]').getByLabel("Chart time range").selectOption("realtime");
-  await expect.poll(() => seriesRequests.length).toBeGreaterThan(perChartRequests);
+  await page.getByRole("combobox").click();
+  await page.getByRole("option", { name: "Realtime" }).click();
   await expect.poll(() => seriesRequests.some((url) => url.includes("range=realtime"))).toBe(true);
-
-  const aggregationRequests = seriesRequests.length;
-  await page.locator(".detail-chart-toolbar select").first().selectOption("stddev");
-  await expect.poll(() => seriesRequests.length).toBeGreaterThan(aggregationRequests);
-  await expect.poll(() => seriesRequests.some((url) => url.includes("aggregation=stddev"))).toBe(true);
-
-  await page.getByRole("switch", { name: "EWMA" }).click();
-  await expect(page.getByRole("switch", { name: "EWMA" })).toBeChecked();
-  expect(seriesRequests.every((url) => !url.includes("ewma="))).toBe(true);
-
-  const networkCard = page.locator('[data-chart-id="network"]');
-  await networkCard.getByRole("button", { name: "Remove Total Upload" }).click();
-  await expect(networkCard.locator(".detail-series-chip")).toHaveCount(3);
-  await networkCard.getByLabel("Add series").selectOption("series:txTotal");
-  await expect(networkCard.locator(".detail-series-chip")).toHaveCount(4);
-  await networkCard.getByRole("button", { name: "Hide all series" }).click();
-  await expect(networkCard.locator(".detail-series-chip")).toHaveCount(0);
-  await expect.poll(async () => page.evaluate(() => JSON.parse(
-    localStorage.getItem("nb-node-detail-layout:v3") ?? "{}"
-  ).charts?.find((chart: { id: string }) => chart.id === "network")?.defaultSeries)).toEqual([]);
-  await page.reload();
-  await expect(networkCard.locator(".detail-series-chip")).toHaveCount(0);
-  await networkCard.getByRole("button", { name: "Show all series" }).click();
-  await expect(networkCard.locator(".detail-series-chip")).toHaveCount(4);
-
-  const cpuCard = page.locator('[data-chart-id="cpu"]');
-  await cpuCard.getByRole("button", { name: "Medium chart" }).click();
-  await expect(cpuCard).toHaveClass(/chart-size-m/);
-
-  await page.getByLabel("Add chart").selectOption("connections");
-  await expect(page.locator(".detail-chart-card")).toHaveCount(6);
-  await page.locator('[data-chart-id="connections"]').getByRole("button", { name: "Remove chart" }).click();
-  await expect(page.locator(".detail-chart-card")).toHaveCount(5);
-
-  await page.getByRole("button", { name: "Reset" }).click();
-  await expect(cpuCard).toHaveClass(/chart-size-s/);
-  await expect.poll(async () => page.evaluate(() => JSON.parse(localStorage.getItem("nb-node-detail-layout:v3") ?? "{}").charts?.length)).toBe(5);
+  expect(seriesRequests.length).toBeGreaterThan(initialRequests);
 });
 
-test("anonymous node detail shows a layout skeleton while initial data is pending", async ({ page }) => {
+test("anonymous node detail shows a loading state while initial data is pending", async ({ page }) => {
   let releaseStatus!: () => void;
   let releaseDetail!: () => void;
   const statusGate = new Promise<void>((resolve) => { releaseStatus = resolve; });
@@ -263,272 +191,33 @@ test("anonymous node detail shows a layout skeleton while initial data is pendin
   });
   await page.route("**/api/public/nodes/rs1000/detail", async (route) => {
     await detailGate;
-    await route.continue();
+    await route.fulfill({ json: detail });
   });
+  await page.route("**/api/public/nodes/rs1000/series**", (route) => route.fulfill({ json: series }));
+  await page.route("**/api/public/nodes/rs1000/latency-stats?**", (route) => route.fulfill({ json: latencyStats }));
 
-  await page.goto("/nodes/rs1000");
-  await expect(page.getByTestId("node-detail-loading-skeleton")).toBeVisible();
-  await expect(page.locator(".status-empty")).toHaveCount(0);
+  await page.goto(`${PUBLIC_SHELL_URL}/nodes/rs1000`);
+  await expect(page.getByTestId("node-detail-loading")).toBeVisible();
 
   releaseStatus();
   releaseDetail();
-  await expect(page.locator(".detail-main-grid")).toBeVisible();
-  await expect(page.getByTestId("node-detail-loading-skeleton")).toHaveCount(0);
+  await expect(page.locator('[data-page="node-detail"]')).toBeVisible();
+  await expect(page.getByTestId("node-detail-loading")).toHaveCount(0);
 });
 
-test("non-realtime chart ranges keep their accessible labels visually hidden", async ({ page }) => {
-  await page.addInitScript(() => {
-    localStorage.setItem("nb-lang", "zh-CN");
-    if (!localStorage.getItem("nb-appearance-v1")) localStorage.setItem("nb-appearance-v1", JSON.stringify({ version: 1, mode: "light" }));
-  });
-  await mockNodeDetail(page);
-
-  for (const width of [1920, 1280, 390]) {
-    await page.setViewportSize({ width, height: width === 390 ? 844 : 900 });
-
-    for (const theme of ["light", "dark"] as const) {
-      await page.goto("/nodes/rs1000");
-      await page.evaluate((nextTheme) => localStorage.setItem("nb-appearance-v1", JSON.stringify({ version: 1, mode: nextTheme })), theme);
-      await page.reload();
-      await expect(page.locator(".status-page")).toHaveAttribute("data-theme", theme);
-
-      for (const rangeLabel of ["1天", "7天", "30天", "60天", "自定义"]) {
-        await page.getByRole("button", { name: rangeLabel, exact: true }).click();
-        const chartRanges = page.locator(".detail-chart-range");
-        await expect(chartRanges).toHaveCount(5);
-
-        const hiddenLabels = chartRanges.locator(".sr-only");
-        await expect(hiddenLabels).toHaveCount(5);
-        const hiddenLabelStyles = await hiddenLabels.evaluateAll((labels) => labels.map((label) => {
-          const style = getComputedStyle(label);
-          const rect = label.getBoundingClientRect();
-          return {
-            text: label.textContent,
-            position: style.position,
-            width: rect.width,
-            height: rect.height,
-            overflow: style.overflow,
-            whiteSpace: style.whiteSpace
-          };
-        }));
-        expect(hiddenLabelStyles).toEqual(Array.from({ length: 5 }, () => ({
-          text: "图表时间范围",
-          position: "absolute",
-          width: 1,
-          height: 1,
-          overflow: "hidden",
-          whiteSpace: "nowrap"
-        })));
-
-        await expect(chartRanges.first().locator("select")).toHaveCSS("height", "28px");
-        const firstHeaderHeight = await page.locator(".detail-chart-card-head").first().evaluate(
-          (header) => header.getBoundingClientRect().height
-        );
-        expect(firstHeaderHeight).toBeLessThanOrEqual(64);
-        await expect.poll(async () => page.evaluate(
-          () => document.documentElement.scrollWidth <= document.documentElement.clientWidth
-        )).toBe(true);
-
-        if (rangeLabel === "自定义") {
-          await expect(page.locator('.detail-custom-range input[type="date"]')).toHaveCount(2);
-        }
-      }
-    }
-  }
+test("trend request failures keep the node detail visible", async ({ page }) => {
+  await mockNodeDetail(page, 503);
+  await page.goto(`${PUBLIC_SHELL_URL}/nodes/rs1000`);
+  await expect(page.locator('[data-page="node-detail"]')).toBeVisible();
+  await expect(page.getByText("RS1000", { exact: true }).first()).toBeVisible();
+  await expect(page.locator('[data-chart="cpu"]')).toContainText("None");
 });
 
-test("a chart can add and persist a compatible metric group", async ({ page }) => {
-  await page.route("**/api/public/nodes/rs1000/detail", (route) => route.fulfill({ json: detail }));
-  await page.route("**/api/public/nodes/rs1000/series**", async (route) => {
-    await route.fulfill({ json: series });
-  });
-
-  await page.goto("/nodes/rs1000");
-  const networkCard = page.locator('[data-chart-id="network"]');
-  await networkCard.getByLabel("Add series").selectOption("metric:disk");
-  await expect(networkCard.getByRole("button", { name: "Remove /" })).toBeVisible();
-  await expect.poll(async () => page.evaluate(() => JSON.parse(
-    localStorage.getItem("nb-node-detail-layout:v3") ?? "{}"
-  ).charts?.find((chart: { id: string }) => chart.id === "network")?.metrics)).toEqual(["network", "disk"]);
-
-  await page.reload();
-  await expect(networkCard.getByRole("button", { name: "Remove /" })).toBeVisible();
-});
-
-test("desktop geometry follows the Komari source layout", async ({ page }) => {
-  await page.setViewportSize({ width: 1920, height: 1080 });
-  await mockNodeDetail(page);
-  await page.goto("/nodes/rs1000");
-  await expect(page.locator(".detail-node-nav")).toBeVisible();
-  await expect(page.locator(".detail-chart-card")).toHaveCount(5);
-
-  const geometry = await page.evaluate(() => {
-    const box = (selector: string) => {
-      const rect = document.querySelector(selector)?.getBoundingClientRect();
-      return rect ? { x: rect.x, y: rect.y, width: rect.width, height: rect.height } : null;
-    };
-    return {
-      sidebar: box(".detail-node-nav"),
-      main: box(".detail-main-content"),
-      overview: box(".detail-overview-card"),
-      toolbar: box(".detail-chart-toolbar"),
-      grid: box(".detail-chart-grid"),
-      cpu: box('[data-chart-id="cpu"]'),
-      network: box('[data-chart-id="network"]')
-    };
-  });
-
-  expect(geometry.sidebar?.width).toBeCloseTo(300, 0);
-  expect(geometry.main?.width).toBeCloseTo(1100, 0);
-  expect((geometry.main?.x ?? 0) - ((geometry.sidebar?.x ?? 0) + (geometry.sidebar?.width ?? 0))).toBeCloseTo(16, 0);
-  expect(geometry.overview?.width).toBeCloseTo(900, 0);
-  expect(geometry.toolbar?.width).toBeCloseTo(1100, 0);
-  expect(geometry.grid?.width).toBeCloseTo(1100, 0);
-  expect(geometry.network?.width).toBeCloseTo(1100, 0);
-  expect(geometry.network?.height ?? 0).toBeGreaterThan((geometry.cpu?.height ?? 0) * 1.8);
-});
-
-test("chart ordering supports the keyboard and persists", async ({ page }) => {
-  await mockNodeDetail(page);
-  await page.goto("/nodes/rs1000");
-  await expect(page.locator(".detail-chart-card")).toHaveCount(5);
-
-  const handle = page.locator('[data-chart-id="cpu"]').getByRole("button", { name: "Reorder chart" });
-  await handle.focus();
-  await page.keyboard.press("Alt+ArrowRight");
-
-  await expect.poll(async () => page.locator(".detail-chart-card").first().getAttribute("data-chart-id")).toBe("memory");
-  await expect.poll(async () => page.evaluate(() => JSON.parse(localStorage.getItem("nb-node-detail-layout:v3") ?? "{}").charts?.[0]?.id)).toBe("memory");
-});
-
-test.describe("touch chart sorting", () => {
-  test.use({ hasTouch: true, viewport: { width: 1280, height: 900 } });
-
-  test("the drag handle reorders cards without hijacking page scrolling", async ({ page }) => {
-    await mockNodeDetail(page);
-    await page.goto("/nodes/rs1000");
-    const handle = page.locator('[data-chart-id="cpu"]').getByRole("button", { name: "Reorder chart" });
-    const target = page.locator('[data-chart-id="memory"]');
-    await target.scrollIntoViewIfNeeded();
-    const targetHandle = target.getByRole("button", { name: "Reorder chart" });
-    const handleBox = await handle.boundingBox();
-    const targetBox = await targetHandle.boundingBox();
-    expect(handleBox).not.toBeNull();
-    expect(targetBox).not.toBeNull();
-    if (!handleBox || !targetBox) return;
-
-    const client = await page.context().newCDPSession(page);
-    const start = { x: handleBox.x + handleBox.width / 2, y: handleBox.y + handleBox.height / 2 };
-    const end = { x: targetBox.x + targetBox.width / 2, y: targetBox.y + targetBox.height / 2 };
-    await client.send("Input.dispatchTouchEvent", { type: "touchStart", touchPoints: [start] });
-    await page.waitForTimeout(220);
-    await client.send("Input.dispatchTouchEvent", { type: "touchMove", touchPoints: [{ x: end.x, y: (start.y + end.y) / 2 }] });
-    await client.send("Input.dispatchTouchEvent", { type: "touchMove", touchPoints: [end] });
-    await client.send("Input.dispatchTouchEvent", { type: "touchEnd", touchPoints: [] });
-
-    await expect.poll(async () => page.locator(".detail-chart-card").first().getAttribute("data-chart-id")).toBe("memory");
-  });
-});
-
-test("custom V1 layouts migrate merged metrics without losing chart choices", async ({ page }) => {
-  await page.addInitScript(() => {
-    localStorage.removeItem("nb-node-detail-layout:v3");
-    localStorage.removeItem("nb-node-detail-layout:v2");
-    localStorage.setItem("nb-node-detail-layout:v1", JSON.stringify({
-      aggregation: "p95",
-      ewma: true,
-      charts: [
-        { id: "network", metric: "network", size: "l", defaultSeries: ["rx", "tx"] },
-        { id: "load", metric: "cpu", size: "s", defaultSeries: ["load1"] },
-        { id: "cpu", metric: "cpu", size: "m", defaultSeries: ["cpu"] },
-        { id: "swap", metric: "swap", size: "s", defaultSeries: ["swap"] },
-        { id: "memory", metric: "memory", size: "m", defaultSeries: ["ram"] },
-        { id: "connections", metric: "connections", size: "s", defaultSeries: ["tcp"] }
-      ]
-    }));
-  });
-  await mockNodeDetail(page);
-  await page.goto("/nodes/rs1000");
-
-  await expect(page.locator(".detail-chart-card")).toHaveCount(4);
-  await expect.poll(async () => page.locator(".detail-chart-card").evaluateAll((cards) => cards.map((card) => card.getAttribute("data-chart-id"))))
-    .toEqual(["network", "cpu", "memory", "connections"]);
-  await expect(page.locator('[data-chart-id="cpu"]')).toHaveClass(/chart-size-m/);
-  await expect(page.locator('[data-chart-id="cpu"] .detail-series-chip')).toHaveCount(2);
-  await expect(page.locator(".detail-chart-toolbar select").first()).toHaveValue("p95");
-  await expect(page.getByRole("switch", { name: "EWMA" })).toHaveAttribute("aria-checked", "true");
-});
-
-test("standard V2 layouts migrate to the source-complete default tags", async ({ page }) => {
-  await page.addInitScript(() => {
-    localStorage.removeItem("nb-node-detail-layout:v3");
-    localStorage.setItem("nb-node-detail-layout:v2", JSON.stringify({
-      aggregation: "avg",
-      ewma: false,
-      charts: [
-        { id: "cpu", metrics: ["cpu"], size: "s", defaultSeries: ["cpu", "load1"] },
-        { id: "memory", metrics: ["memory", "swap"], size: "s", defaultSeries: ["ram", "swap"] },
-        { id: "disk", metrics: ["disk"], size: "s", defaultSeries: ["disk"] },
-        { id: "network", metrics: ["network"], size: "l", defaultSeries: ["rx", "tx"] },
-        { id: "latency", metrics: ["latency"], size: "l", defaultSeries: ["tcp"] }
-      ]
-    }));
-  });
-  await mockNodeDetail(page);
-  await page.goto("/nodes/rs1000");
-
-  await expect(page.locator('[data-chart-id="network"] .detail-series-chip')).toHaveCount(4);
-  await expect(page.locator('[data-chart-id="latency"] .detail-series-chip')).toHaveCount(4);
-  await expect.poll(async () => page.evaluate(() => JSON.parse(
-    localStorage.getItem("nb-node-detail-layout:v3") ?? "{}"
-  ).charts?.find((chart: { id: string }) => chart.id === "network")?.defaultSeries)).toEqual([
-    "rx",
-    "tx",
-    "rxTotal",
-    "txTotal"
-  ]);
-});
-
-test("mobile detail uses a node selector and keeps chart text readable", async ({ page }) => {
+test("mobile detail keeps chart text readable without page overflow", async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await mockNodeDetail(page);
-  await page.goto("/nodes/rs1000");
+  await page.goto(`${PUBLIC_SHELL_URL}/nodes/rs1000`);
 
-  await expect(page.locator(".detail-node-nav")).toBeHidden();
-  await expect(page.locator(".detail-mobile-node-select")).toBeVisible();
-  await expect(page.locator(".detail-chart-card")).toHaveCount(5);
-  await expect.poll(async () => page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth)).toBe(true);
-  await expect.poll(async () => page.locator(".trend-tick").first().evaluate((element) => getComputedStyle(element).fontSize)).toBe("12px");
-});
-
-test("touch latency statistics stay above the chart stack and can be closed", async ({ browser }) => {
-  const context = await browser.newContext({
-    viewport: { width: 390, height: 844 },
-    screen: { width: 390, height: 844 },
-    hasTouch: true,
-    isMobile: true
-  });
-  const page = await context.newPage();
-  await mockNodeDetail(page);
-  await page.route("**/api/public/nodes/rs1000/latency-stats?**", (route) => route.fulfill({ status: 503, json: {} }));
-  await page.goto("/nodes/rs1000");
-
-  const latencyCard = page.locator('[data-chart-id="latency"]');
-  const statsButton = latencyCard.locator(".detail-series-chip").filter({ hasText: "浙江移动" }).locator(".detail-series-info");
-  await statsButton.tap();
-  const statsDialog = page.getByRole("dialog", { name: "浙江移动 latency statistics" });
-  await expect(statsDialog).toBeVisible();
-  await expect(statsDialog).toHaveCSS("position", "fixed");
-  await expect(statsDialog).not.toHaveCSS("background-color", "rgba(0, 0, 0, 0)");
-  await expect.poll(async () => (await statsDialog.boundingBox())?.width ?? 0).toBeGreaterThan(300);
-  await statsDialog.getByRole("button", { name: "Close latency statistics" }).tap();
-  await expect(statsButton).toHaveAttribute("aria-expanded", "false");
-  await expect(statsDialog).toBeHidden();
-  await context.close();
-});
-
-test("trend request failures render a clear chart state", async ({ page }) => {
-  await mockNodeDetail(page, 503);
-  await page.goto("/nodes/rs1000");
-  await expect(page.getByText("Trend data unavailable").first()).toBeVisible();
+  await expect(page.locator('[data-page="node-detail"]')).toBeVisible();
+  await expect.poll(async () => page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)).toBeLessThanOrEqual(1);
 });

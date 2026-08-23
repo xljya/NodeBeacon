@@ -42,7 +42,7 @@ test.describe("Komari-derived public shell", () => {
     expect(rpcRequests).toEqual([]);
   });
 
-  test("routes node details to the legacy shell and owner pages to the official Admin", async ({ page }) => {
+  test("routes node details in the public shell and owner pages to the official Admin", async ({ page }) => {
     const unauthorizedProbes: string[] = [];
     page.on("response", (response) => {
       if (response.status() === 401) unauthorizedProbes.push(response.url());
@@ -52,13 +52,13 @@ test.describe("Komari-derived public shell", () => {
     await expect(page.locator('a[href^="/instance/"]')).toHaveCount(0);
     await page.locator('.km-node-card a[href^="/nodes/"]').first().click();
     await expect(page).toHaveURL(/\/nodes\/[^/]+$/);
-    await expect(page.locator(".detail-main-content")).toBeVisible();
-    await expect(page.locator(".km-footer")).toHaveCount(0);
+    await expect(page.locator('[data-page="node-detail"]')).toBeVisible();
+    await expect(page.locator(".detail-main-content")).toHaveCount(0);
 
     await page.goto(`${PUBLIC_SHELL_URL}/instance/rs1000`);
     await expect(page).toHaveURL(/\/nodes\/rs1000$/);
-    await expect(page.locator(".detail-main-content")).toBeVisible();
-    await expect(page.locator(".km-footer")).toHaveCount(0);
+    await expect(page.locator('[data-page="node-detail"]')).toBeVisible();
+    await expect(page.locator(".detail-main-content")).toHaveCount(0);
 
     await page.goto(`${PUBLIC_SHELL_URL}/admin`);
     await expect(page).toHaveURL(/\/login\?next=/);
