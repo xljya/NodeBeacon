@@ -1,5 +1,6 @@
 [CmdletBinding()]
 param(
+  [int]$IntervalSeconds = 900,
   [string]$OutputPath = (Join-Path $PSScriptRoot '..\artifacts\ripe-atlas\measurements.json')
 )
 
@@ -10,7 +11,12 @@ if ($PSVersionTable.PSVersion.Major -lt 7) {
   throw 'PowerShell 7 or newer is required.'
 }
 
-$measurementIntervalSeconds = 300
+if ($IntervalSeconds -lt 60) {
+  throw 'IntervalSeconds must be at least 60.'
+}
+
+$measurementIntervalSeconds = $IntervalSeconds
+$existingMeasurementIds = @(203481343, 203481344, 203481345, 203481346, 203481347)
 $nodes = @(
   [pscustomobject]@{ Id = 'rs1000'; SshAlias = 'RS1000' }
   [pscustomobject]@{ Id = 'dmit-uswest'; SshAlias = 'dmit-uswest' }
@@ -133,6 +139,17 @@ function Write-MeasurementArtifact {
 $resolvedOutputPath = [System.IO.Path]::GetFullPath($OutputPath)
 if (Test-Path -LiteralPath $resolvedOutputPath) {
   throw "Output already exists: $resolvedOutputPath`nRefusing to create duplicate RIPE Atlas measurements."
+}
+
+Write-Host 'Checking that the previous NodeBeacon measurements are not still running...'
+foreach ($existingId in $existingMeasurementIds) {
+  $existing = Invoke-RestMethod -Method Get -Uri "https://atlas.ripe.net/api/v2/measurements/$existingId/"
+  if ($existing.status.name -eq 'Ongoing') {
+    throw @"
+Measurement $existingId is still Ongoing.
+Do not create a second set. Use scripts/replace-ripe-atlas-measurements.ps1 to stop extras and recreate at ${measurementIntervalSeconds}s.
+"@
+  }
 }
 
 Write-Host 'Validating RIPE Atlas probes...'

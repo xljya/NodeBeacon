@@ -12,8 +12,8 @@ data:
     {
       "version": 1,
       "provider": "ripe-atlas",
-      "createdAt": "2026-07-26T14:02:22.1925487+08:00",
-      "intervalSeconds": 300,
+      "createdAt": "2026-08-23T23:50:00+08:00",
+      "intervalSeconds": 900,
       "probes": [
         {
           "id": 1016690,
@@ -49,10 +49,10 @@ data:
         }
       ],
       "measurements": [
-        { "nodeId": "rs1000", "measurementId": 193845936 },
-        { "nodeId": "dmit-uswest", "measurementId": 193845937 },
-        { "nodeId": "hostbrr-4t", "measurementId": 193845938 },
-        { "nodeId": "netcup-1o", "measurementId": 193845939 },
-        { "nodeId": "huawei-2c1g", "measurementId": 193845940 }
+        { "nodeId": "rs1000", "measurementId": 203481343 },
+        { "nodeId": "dmit-uswest", "measurementId": 203481344 },
+        { "nodeId": "hostbrr-4t", "measurementId": 203481345 },
+        { "nodeId": "netcup-1o", "measurementId": 203481346 },
+        { "nodeId": "huawei-2c1g", "measurementId": 203481347 }
       ]
     }

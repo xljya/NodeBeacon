@@ -36,6 +36,7 @@ monitor.liucf.com
 | `k8s/kustomization.yaml` | `kubectl apply -k k8s` (Secret excluded on purpose) |
 | `nginx/monitor.liucf.com.conf` | Committed copy of the live RS1000 nginx entry |
 | `../scripts/setup-ripe-atlas-measurements.ps1` | One-time, credit-gated RIPE Atlas measurement creation helper |
+| `../scripts/replace-ripe-atlas-measurements.ps1` | Stop extra UDMs and recreate NodeBeacon measurements at a new interval |
 
 ## Prometheus label mapping (verified against live RS1000)
 

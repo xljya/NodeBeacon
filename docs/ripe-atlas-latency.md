@@ -16,19 +16,18 @@
 工作节点；当前生产 k3s 仍只有 `rs1000`。RIPE Atlas 探针直接作为
 `ripe-atlas.service` 运行在华为云主机上，不需要额外 Kubernetes Pod。
 
-## 当前状态（2026-07-26）
+## 当前状态（2026-08-23）
 
 - 软件探针 1016690 已激活并连接 RIPE Atlas。
-- 五台 NodeBeacon 目标均已验证可响应来自外部节点的 ICMP。
-- 一次性创建脚本、服务端结果采集器、Prometheus 指标、节点详情标签、
-  Kubernetes 可选挂载及自动化测试已经完成。
-- 账户积分到账后，五个 300 秒周期的公开 ICMP 测量已创建成功：
-  `193845936` 至 `193845940`，分别对应五个 NodeBeacon 节点。
-- 非敏感 measurement artifact 已生成；API UUID 和目标公网地址未写入文件。
-- `nodebeacon-ripe-atlas` ConfigMap 已纳入 v1.0.16 发布，采集器同时兼容 RIPE
-  `latest` 接口在生产中出现的数组响应和文档所述的 probe-ID 键控对象响应。
-- PromQL 按 RIPE 业务标签聚合，避免滚动发布时新旧 Pod 的抓取序列短暂重复。
-- 生产验收结果记录在 `docs/releases/v1.0.16.md`。
+- 账户里目前只有五条 NodeBeacon 用户定义测量；没有其它进行中的 UDM。
+- 2026-08-23 已将周期从 300 秒重建为 900 秒。新公开测量 ID 为
+  `203481343` 至 `203481347`，分别对应五个 NodeBeacon 节点。旧 ID
+  `193845936`–`193845940` 已停止。
+- RIPE 账户当前预估支出 `5,760 credits/day`，预估入账约 `33,619 credits/day`，
+  不会按此速率耗尽。邮件里 48 小时约 20 万 credits 是过去窗口的峰值，不是当前
+  进行中的 UDM 集合。
+- 运行时采集仍只读公开 `latest`，不保存 API UUID。
+- 生产 ConfigMap 与测量 ID 必须一起发布，否则节点详情会继续读已停止的旧 ID。
 
 ## 积分预算
 
@@ -36,18 +35,35 @@
 
 - 目标：5 个 NodeBeacon 节点
 - 来源：4 个 RIPE Atlas 探针
-- 周期：300 秒
+- 周期：900 秒（15 分钟）
 - 每次 ping：3 个包，即 3 credits/result
 
 每日预算：
 
 ```text
-5 × 4 × (86400 ÷ 300) × 3 = 17,280 credits/day
+5 × 4 × (86400 ÷ 900) × 3 = 5,760 credits/day
 ```
 
+旧的 300 秒周期是 `17,280 credits/day`，约占单软件探针入账 `21,600/day` 的 80%，余量过窄。
+公开 API 只能看到打了 `nodebeacon` 标签的五条测量；账户里若还有未打标签或私有 UDM，
+实际消耗会远高于这份预算。RIPE 在预计 5 天内耗尽时会发邮件，耗尽后会停掉最贵的测量。
+
 探针主机在线时每分钟获得 15 credits，完整 24 小时约 21,600 credits。
-创建前必须在 RIPE Atlas 的 `My Credits / Manage Credits` 中确认余额至少为
-`17,280`。RIPE 每天批量入账一次，不应依赖某个固定北京时间，以网页余额为准。
+900 秒方案约占入账的 27%。创建或替换前在 `My Credits / Manage Credits` 核对余额。
+RIPE 每天批量入账一次，不应依赖某个固定北京时间，以网页余额为准。
+
+调整进行中的测量时必须先停后建：RIPE 不允许 PATCH 改 `interval`。使用：
+
+```powershell
+pwsh -NoProfile -File .\scripts\replace-ripe-atlas-measurements.ps1 -Force
+```
+
+API UUID 从环境变量 `RIPE_ATLAS_API_KEY` 读取，或交互隐藏输入；需要 Stop 与
+Schedule 权限。脚本通过 `/api/v2/measurements/my/` 列出账户自己的测量（不要用
+会混入全球内置测量的 `mine=true`），先停掉非当前 NodeBeacon 集合的进行中 UDM，
+再创建 900 秒新五条，最后停掉旧 ID。成功后把 gitignored artifact 写进
+`infra/k8s/configmap-ripe-atlas.yaml` 并发布，否则页面仍读旧 ID。
+不要把 UUID 粘贴到 issue、提交记录或聊天中。
 
 ## 创建测量
 
@@ -115,7 +131,7 @@ Prometheus。旧 RS1000 WireGuard TCP 延迟仅在某个节点尚无 RIPE Atlas 
 | 全局状态摘要 | 20 秒 | 更新节点在线状态和列表摘要。 |
 | 事故记录 | 60 秒 | 更新最近 firing/resolved 事件。 |
 | `node-detail-fast` | 5 秒 | RS1000 上的 Prometheus 通过 WireGuard 或本机 Service 抓取五台服务器的 `node_exporter`。 |
-| RIPE Atlas 测量 | 300 秒 | 四个探针分别向五个公开目标执行 3 包 ICMP；这是延迟真实样本的产生频率。 |
+| RIPE Atlas 测量 | 900 秒 | 四个探针分别向五个公开目标执行 3 包 ICMP；这是延迟真实样本的产生频率。 |
 | RIPE Atlas collector | 60 秒 | NodeBeacon 服务端读取公开 `latest` 结果并导出 Prometheus gauge。 |
 | RIPE Atlas 官方 `latest` 缓存 | 最多 5 分钟 | RIPE API 的结果可能晚于测量发生时间返回；NodeBeacon 以结果时间戳判断新鲜度。 |
 
@@ -146,7 +162,7 @@ NodeBeacon 服务端从对应公开 measurement 与 probe 读取最近 24 小时
 - 样本数量：最近 24 小时实际测量执行次数，不是页面请求次数或 Prometheus 抓取次数。
 - 有效样本：至少有一个有效 RTT、可计算平均值的测量次数。
 - 包数：真实收到/发送的 ICMP 包数；类型固定显示 `ICMP`，检测间隔来自配置的
-  `300s`，不会照抄参考页面的 `TCP / 60s`。
+  `900s`，不会照抄参考页面的 `TCP / 60s`。
 
 统计接口只在用户展开面板时请求。页面关闭或信息图标未展开时，不会为四个标签持续
 下载 24 小时原始数据。
