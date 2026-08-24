@@ -413,6 +413,8 @@ cron runs `scripts/backup.sh --if-requested` and writes
 `/data/backup-last-result.json` after the off-site copy. Restore and downloads
 remain host operations.
 
-The `nodebeacon-executor` Deployment is intentionally `replicas: 0` in the
-foundation release. Its fixed task API cannot execute arbitrary shell. Enable
-only after the `netcup-1o` canary and TOTP/output/audit checks pass.
+The `nodebeacon-executor` Deployment remains `replicas: 0`. The Owner menu
+and `/admin/exec` page were withdrawn in v1.1.12 so the disabled queue UI is
+not a product surface. Owner-only remote APIs still exist; they cannot run
+arbitrary shell. Enable a canary only after `netcup-1o` task, TOTP, output
+and audit checks pass.

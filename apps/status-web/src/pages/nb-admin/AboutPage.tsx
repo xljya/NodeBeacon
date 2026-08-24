@@ -15,7 +15,7 @@ export default function AboutPage() {
       <Flex direction="column" gap="3">
         <Fact title={t("nb.about.product", "Product")} value={`NodeBeacon v${data.version}`} hint={t("nb.about.productHint", "Single-container Fastify BFF on RS1000 k3s.")} />
         <Fact title={t("nb.about.data", "Data plane")} value="Prometheus + SQLite" hint={t("nb.about.dataHint", "Queries stay on the server. The browser never talks to Prometheus, RPC2 or a Komari Agent.")} />
-        <Fact title={t("nb.about.security", "Security boundary")} value={t("nb.about.ownerOnly", "Owner cookie + Origin/CSRF")} hint={t("nb.about.securityHint", "Themes are AppearanceTokensV1 only. Remote exec is an allow-listed task ID. No WebSSH, plugin market or theme ZIP.")} />
+        <Fact title={t("nb.about.security", "Security boundary")} value={t("nb.about.ownerOnly", "Owner cookie + Origin/CSRF")} hint={t("nb.about.securityHint", "Themes are AppearanceTokensV1 only. Remote exec is not on the Owner menu. No WebSSH, plugin market or theme ZIP.")} />
         <Fact title={t("nb.about.source", "Source")} value="xljya/NodeBeacon + xljya/NodeBeacon-Web" hint={t("nb.about.sourceHint", "Komari Web shell provenance is preserved. The fork is not a license conclusion.")} />
       </Flex>
     </AdminPage>

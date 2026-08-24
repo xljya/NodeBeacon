@@ -22,7 +22,6 @@ const NotificationGeneralPage = lazy(() => import("./pages/nb-admin/Notification
 const AlertRulesPage = lazy(() => import("./pages/nb-admin/AlertRulesPage"));
 const TrafficReportsPage = lazy(() => import("./pages/nb-admin/TrafficReportsPage"));
 const PingPage = lazy(() => import("./pages/nb-admin/PingPage"));
-const ExecPage = lazy(() => import("./pages/nb-admin/ExecPage"));
 const SessionsPage = lazy(() => import("./pages/nb-admin/SessionsPage"));
 const AccountPage = lazy(() => import("./pages/nb-admin/AccountPage"));
 const LogsPage = lazy(() => import("./pages/nb-admin/LogsPage"));
@@ -59,7 +58,7 @@ const adminChildren: RouteObject[] = [
   { path: "notification/load", element: React.createElement(AlertRulesPage) },
   { path: "notification/traffic-report", element: React.createElement(TrafficReportsPage) },
   { path: "ping", element: React.createElement(PingPage) },
-  { path: "exec", element: React.createElement(ExecPage) },
+  { path: "exec", element: React.createElement(AdminRedirect, { to: "/admin/dashboard" }) },
   { path: "sessions", element: React.createElement(SessionsPage) },
   { path: "account", element: React.createElement(AccountPage) },
   { path: "logs", element: React.createElement(LogsPage) },
