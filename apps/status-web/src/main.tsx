@@ -26,9 +26,8 @@ import { Toaster } from "./components/ui/sonner";
 import { NodeListProvider } from "./contexts/NodeListContext";
 const App = () => {
   React.useEffect(() => {
-    // Komari Web used to register a root-scoped PWA service worker. NodeBeacon
-    // deliberately serves two SPA shells, so an old navigate fallback must not
-    // keep intercepting /admin, /login or /nodes after this migration.
+    // Komari Web used to register a root-scoped PWA service worker. An old
+    // navigate fallback must not keep intercepting /admin, /login or /nodes.
     if ("serviceWorker" in navigator) {
       void navigator.serviceWorker
         .getRegistrations()

@@ -3,6 +3,7 @@ import { describe, it } from "node:test";
 import {
   buildAlertRuleMutation,
   buildNotificationChannelConfig,
+  buildTrafficReportMutation,
 } from "./adminForms.ts";
 
 describe("Admin form payloads", () => {
@@ -67,6 +68,41 @@ describe("Admin form payloads", () => {
         enabled: true,
       }),
       /JSON object/i,
+    );
+  });
+
+  it("keeps traffic report period, nodes and channels", () => {
+    assert.deepEqual(
+      buildTrafficReportMutation({
+        name: "Daily traffic",
+        period: "daily",
+        time: "09:00",
+        timezone: "Asia/Shanghai",
+        nodeIds: ["rs1000", "rs1000"],
+        channelIds: ["channel-1"],
+        enabled: true,
+      }),
+      {
+        name: "Daily traffic",
+        period: "daily",
+        time: "09:00",
+        timezone: "Asia/Shanghai",
+        nodeIds: ["rs1000"],
+        channelIds: ["channel-1"],
+        enabled: true,
+      },
+    );
+    assert.throws(
+      () => buildTrafficReportMutation({
+        name: "Broken",
+        period: "daily",
+        time: "9:00",
+        timezone: "Asia/Shanghai",
+        nodeIds: [],
+        channelIds: [],
+        enabled: true,
+      }),
+      /HH:MM/,
     );
   });
 });

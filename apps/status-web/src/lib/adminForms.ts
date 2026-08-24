@@ -47,6 +47,38 @@ export interface AlertRuleDraft {
   enabled: boolean;
 }
 
+export interface TrafficReportDraft {
+  name: string;
+  period: "daily" | "weekly" | "monthly";
+  time: string;
+  timezone: string;
+  nodeIds: string[];
+  channelIds: string[];
+  enabled: boolean;
+}
+
+export function buildTrafficReportMutation(draft: TrafficReportDraft) {
+  const name = draft.name.trim();
+  if (!name) throw new Error("Report name is required.");
+  if (!["daily", "weekly", "monthly"].includes(draft.period)) {
+    throw new Error("Period must be daily, weekly or monthly.");
+  }
+  if (!/^\d{2}:\d{2}$/.test(draft.time)) {
+    throw new Error("Time must be HH:MM.");
+  }
+  const timezone = draft.timezone.trim();
+  if (!timezone) throw new Error("Timezone is required.");
+  return {
+    name,
+    period: draft.period,
+    time: draft.time,
+    timezone,
+    nodeIds: [...new Set(draft.nodeIds.filter(Boolean))],
+    channelIds: [...new Set(draft.channelIds.filter(Boolean))],
+    enabled: draft.enabled,
+  };
+}
+
 export function buildAlertRuleMutation(draft: AlertRuleDraft) {
   const name = draft.name.trim();
   if (!name) throw new Error("Rule name is required.");

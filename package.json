@@ -1,6 +1,6 @@
 {
   "name": "nodebeacon",
-  "version": "1.1.10",
+  "version": "1.1.11",
   "private": true,
   "description": "Self-hosted node monitoring and uptime dashboard powered by Prometheus.",
   "type": "module",
