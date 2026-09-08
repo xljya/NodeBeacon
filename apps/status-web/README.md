@@ -41,6 +41,11 @@ Owner API，并移除或封锁没有 NodeBeacon 后端契约的路由与请求�
 上游仓库在采用时未展示许可证文件。本仓库保留 fork、提交和来源说明，但这些技术来源
 记录不替代许可证或再分发权利判断。
 
+最近一次上游审查覆盖到 `upstream/radix` 提交
+`abaaa4ec8fffaa67c8dbafcbdaa654f47794f8b3`。产品分支仅移植了图片资源压缩与对应引用，
+没有引入终端、远程文件管理、RPC2、插件/主题市场、EULA 或 Komari SSRF 配置。审查结果见
+[`docs/UPSTREAM_SYNC_2026-09-04.md`](docs/UPSTREAM_SYNC_2026-09-04.md)。
+
 ## 一主两辅：三个仓库怎样配合
 
 | 仓库 | 角色 | 本仓与它的关系 |
