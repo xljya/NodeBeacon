@@ -16,7 +16,34 @@
 工作节点；当前生产 k3s 仍只有 `rs1000`。RIPE Atlas 探针直接作为
 `ripe-atlas.service` 运行在华为云主机上，不需要额外 Kubernetes Pod。
 
-## 当前状态（2026-08-23）
+## 软件探针维护（2026-09-29）
+
+`huawei-2c1g` 使用 Debian 12 官方 RIPE APT 源。2026-09-29 将
+`ripe-atlas-probe` 和 `ripe-atlas-common` 从 `5120` 升级到 `5130`，
+`ripe-atlas-repo` 从 `1.5-5` 升级到 `1.6-1`。仅升级这三个包；
+NodeBeacon 应用镜像、测量 ID 和 900 秒测量周期不变。
+
+升级前已执行 APT 模拟，确认无新增或删除软件包。探针身份及配置备份、
+旧版安装包和升级日志保存在华为云主机
+`/root/backups/ripe-atlas/20260929-upgrade-5130/`，目录仅 root 可访问。
+升级后身份密钥校验一致，`ripe-atlas.service` 为 `active/enabled`，
+`dpkg --audit` 无异常。
+RIPE 公共 API 已确认 `firmware_version=5130`、`status=Connected`，
+重连时间为 `2026-09-29T06:03:43Z`（北京时间 14:03:43），升级重启的
+断连间隔约 19 秒。验收时下一轮 900 秒用户测量尚未返回，因此未将旧的
+`fw=5120` 样本当作新版本测量证据。
+
+后续升级先备份 `/etc/ripe-atlas`，刷新官方源并模拟，再仅升级上述包。
+验收同时检查 systemd、公开探针 API 的版本及连接状态，以及新测量结果的
+`fw` 字段。不要删除探针密钥或重新注册探针。异常时可使用备份目录中的
+旧版 deb 包执行有针对性的降级，并重新检查连接和测量；配置只在确有
+损坏且服务停止时恢复，避免无故覆盖现有身份。
+
+主机尚未安装 `unattended-upgrades`，现有 APT 定时器不代表 RIPE 包会自动
+升级。本次未更改整机自动更新策略，后续仍需维护探针版本。
+官方说明：[Software probe upgrading](https://github.com/RIPE-NCC/ripe-atlas-software-probe#upgrading)。
+
+## 测量配置状态（2026-08-23）
 
 - 软件探针 1016690 已激活并连接 RIPE Atlas。
 - 账户里目前只有五条 NodeBeacon 用户定义测量；没有其它进行中的 UDM。
