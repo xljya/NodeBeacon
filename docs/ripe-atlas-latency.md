@@ -39,8 +39,33 @@ RIPE 公共 API 已确认 `firmware_version=5130`、`status=Connected`，
 旧版 deb 包执行有针对性的降级，并重新检查连接和测量；配置只在确有
 损坏且服务停止时恢复，避免无故覆盖现有身份。
 
-主机尚未安装 `unattended-upgrades`，现有 APT 定时器不代表 RIPE 包会自动
-升级。本次未更改整机自动更新策略，后续仍需维护探针版本。
+同日按 Owner 要求启用专用 `ripe-atlas-auto-upgrade.timer`，每天北京时间
+04:15 加最多 30 分钟随机延迟执行，错过任务会在开机后补跑。
+当前源文件为新版仓库包提供的 `/etc/apt/sources.list.d/ripe-atlas.sources`。
+自动任务仅刷新 RIPE 官方源，模拟并检查变更范围后升级上述三个软件包；
+若计划涉及其它包或删除包则失败退出，等待人工处理。实际升级前备份
+`/etc/ripe-atlas` 到 root 专用 `auto-*` 目录，升级后校验身份及服务状态。
+无新版本时不重启探针，不自动重启服务器。失败记录在 systemd journal，
+下次每日任务重试；当前没有额外的失败邮件通知。
+
+配置源码为 `infra/host/ripe-atlas-auto-upgrade.{sh,service,timer}`。
+脚本安装到 `/usr/local/sbin/ripe-atlas-auto-upgrade`，两个 unit 安装到
+`/etc/systemd/system/`。部署前通过 `bash -n`、脚本 `--dry-run`、
+`systemd-analyze verify` 和日历解析验证；实际手动执行服务返回
+`Result=success / ExecMainStatus=0`，确认 5130 已是最新版本。
+定时器为 enabled/active，首次计划执行时间为北京时间
+`2026-09-30 04:17:22`；RIPE 公共 API 仍为 5130 / Connected。
+
+维护命令（在华为云主机执行）：
+
+```sh
+systemctl list-timers ripe-atlas-auto-upgrade.timer
+journalctl -u ripe-atlas-auto-upgrade.service
+/usr/local/sbin/ripe-atlas-auto-upgrade --dry-run
+# 停用后续自动任务；不会中断已开始的包安装。
+systemctl disable --now ripe-atlas-auto-upgrade.timer
+```
+
 官方说明：[Software probe upgrading](https://github.com/RIPE-NCC/ripe-atlas-software-probe#upgrading)。
 
 ## 测量配置状态（2026-08-23）

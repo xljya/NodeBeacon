@@ -1,0 +1,10 @@
+[Unit]
+Description=Upgrade only RIPE Atlas software probe packages
+Wants=network-online.target
+After=network-online.target
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/sbin/ripe-atlas-auto-upgrade
+TimeoutStartSec=30min
+UMask=0077

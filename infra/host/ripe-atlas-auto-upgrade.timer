@@ -1,0 +1,10 @@
+[Unit]
+Description=Daily RIPE Atlas software probe upgrade
+
+[Timer]
+OnCalendar=*-*-* 04:15:00 Asia/Shanghai
+RandomizedDelaySec=30min
+Persistent=true
+
+[Install]
+WantedBy=timers.target
