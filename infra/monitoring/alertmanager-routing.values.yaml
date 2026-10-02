@@ -1,0 +1,15 @@
+# Credential-free overlay for the existing monitoring Helm release.
+# Merge into the ACTIVE release values, never an unverified historical copy.
+# Receiver definitions/templates/secrets and inhibition rules remain host-only.
+alertmanager:
+  config:
+    route:
+      receiver: blackhole
+      group_by: [alertname]
+      group_wait: 45s
+      group_interval: 10m
+      repeat_interval: 12h
+      routes:
+        - receiver: telegram-primary
+          matchers:
+            - 'alertname =~ "RS1000MonitoringEgressDown|ExternalNodeDown|PublicEndpointDown|NodeBeaconUnavailable|NodeBeaconWebhookFailures|NodeBeaconBackupMissing|KubeNodeNotReady|KubeNodeUnreachable|KubePersistentVolumeErrors|PrometheusNotConnectedToAlertmanagers|PrometheusErrorSendingAlertsToAnyAlertmanager|ExternalNodeDiskAlmostFull|PublicEndpointCertificateExpiringSoon|NodeBeaconBackupStale|KubePodCrashLooping|NodeFilesystemAlmostOutOfSpace|NodeFilesystemSpaceFillingUp|KubePersistentVolumeFillingUp|RS1000PublicEgressDown|RS1000DNSResolutionDown|RS1000WireGuardPathDegraded"'

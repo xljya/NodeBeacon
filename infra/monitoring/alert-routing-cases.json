@@ -1,0 +1,214 @@
+[
+  {
+    "labels": {
+      "alertname": "RS1000MonitoringEgressDown"
+    },
+    "receivers": [
+      "telegram-primary"
+    ]
+  },
+  {
+    "labels": {
+      "alertname": "ExternalNodeDown"
+    },
+    "receivers": [
+      "telegram-primary"
+    ]
+  },
+  {
+    "labels": {
+      "alertname": "PublicEndpointDown"
+    },
+    "receivers": [
+      "telegram-primary"
+    ]
+  },
+  {
+    "labels": {
+      "alertname": "NodeBeaconUnavailable"
+    },
+    "receivers": [
+      "telegram-primary"
+    ]
+  },
+  {
+    "labels": {
+      "alertname": "NodeBeaconWebhookFailures"
+    },
+    "receivers": [
+      "telegram-primary"
+    ]
+  },
+  {
+    "labels": {
+      "alertname": "NodeBeaconBackupMissing"
+    },
+    "receivers": [
+      "telegram-primary"
+    ]
+  },
+  {
+    "labels": {
+      "alertname": "KubeNodeNotReady"
+    },
+    "receivers": [
+      "telegram-primary"
+    ]
+  },
+  {
+    "labels": {
+      "alertname": "KubeNodeUnreachable"
+    },
+    "receivers": [
+      "telegram-primary"
+    ]
+  },
+  {
+    "labels": {
+      "alertname": "KubePersistentVolumeErrors"
+    },
+    "receivers": [
+      "telegram-primary"
+    ]
+  },
+  {
+    "labels": {
+      "alertname": "PrometheusNotConnectedToAlertmanagers"
+    },
+    "receivers": [
+      "telegram-primary"
+    ]
+  },
+  {
+    "labels": {
+      "alertname": "PrometheusErrorSendingAlertsToAnyAlertmanager"
+    },
+    "receivers": [
+      "telegram-primary"
+    ]
+  },
+  {
+    "labels": {
+      "alertname": "ExternalNodeDiskAlmostFull"
+    },
+    "receivers": [
+      "telegram-primary"
+    ]
+  },
+  {
+    "labels": {
+      "alertname": "PublicEndpointCertificateExpiringSoon"
+    },
+    "receivers": [
+      "telegram-primary"
+    ]
+  },
+  {
+    "labels": {
+      "alertname": "NodeBeaconBackupStale"
+    },
+    "receivers": [
+      "telegram-primary"
+    ]
+  },
+  {
+    "labels": {
+      "alertname": "KubePodCrashLooping"
+    },
+    "receivers": [
+      "telegram-primary"
+    ]
+  },
+  {
+    "labels": {
+      "alertname": "NodeFilesystemAlmostOutOfSpace"
+    },
+    "receivers": [
+      "telegram-primary"
+    ]
+  },
+  {
+    "labels": {
+      "alertname": "NodeFilesystemSpaceFillingUp"
+    },
+    "receivers": [
+      "telegram-primary"
+    ]
+  },
+  {
+    "labels": {
+      "alertname": "KubePersistentVolumeFillingUp"
+    },
+    "receivers": [
+      "telegram-primary"
+    ]
+  },
+  {
+    "labels": {
+      "alertname": "RS1000PublicEgressDown"
+    },
+    "receivers": [
+      "telegram-primary"
+    ]
+  },
+  {
+    "labels": {
+      "alertname": "RS1000DNSResolutionDown"
+    },
+    "receivers": [
+      "telegram-primary"
+    ]
+  },
+  {
+    "labels": {
+      "alertname": "RS1000WireGuardPathDegraded"
+    },
+    "receivers": [
+      "telegram-primary"
+    ]
+  },
+  {
+    "labels": {
+      "alertname": "Watchdog"
+    },
+    "receivers": [
+      "blackhole"
+    ]
+  },
+  {
+    "labels": {
+      "alertname": "UnlistedAcceptanceAlert"
+    },
+    "receivers": [
+      "blackhole"
+    ]
+  },
+  {
+    "labels": {
+      "alertname": "NodeBeaconUnavailable",
+      "namespace": "nodebeacon"
+    },
+    "receivers": [
+      "nodebeacon/nodebeacon-incidents/nodebeacon-incidents",
+      "telegram-primary"
+    ]
+  },
+  {
+    "labels": {
+      "alertname": "NodeBeaconPrometheusQueryErrors",
+      "namespace": "nodebeacon"
+    },
+    "receivers": [
+      "nodebeacon/nodebeacon-incidents/nodebeacon-incidents"
+    ]
+  },
+  {
+    "labels": {
+      "alertname": "Watchdog",
+      "namespace": "nodebeacon"
+    },
+    "receivers": [
+      "blackhole"
+    ]
+  }
+]

@@ -71,6 +71,47 @@ does not change Helm versions, scrape cadence, retention, or application images.
 Following a chart upgrade, verify the dashboard UIDs/variables, recording rules,
 query results and notification routes again.
 
+## Notification routing regression checks
+
+[`alertmanager-routing.values.yaml`](alertmanager-routing.values.yaml) contains
+the credential-free routing overlay for the existing monitoring Helm release.
+It preserves the explicit Telegram allowlist and includes all four RS1000 egress
+alerts. `Watchdog` and unlisted alerts remain on `blackhole`; namespace-scoped
+NodeBeacon incident routing is injected separately by Prometheus Operator.
+The existing `RS1000MonitoringEgressDown` inhibition rule still suppresses
+secondary path alerts when the shared root cause is firing.
+
+Run the regression matrix after any routing or Helm change on RS1000:
+
+```sh
+python3 scripts/verify-alert-routing.py
+```
+
+The 26 cases use the installed `amtool` against **running** Alertmanager config.
+They check all 21 Telegram alert names, negative cases and NodeBeacon incident
+fan-out. They do not create alerts, send messages or export receiver credentials.
+A nonzero exit means a receiver mismatch or a failed check; investigate before
+accepting the rollout. Add an explicit expectation to
+`alert-routing-cases.json` when intentionally changing notification coverage.
+This checks routing, not actual delivery to the user's device.
+
+For a routing rollout, securely export the active Helm values, compare them
+with `/root/monitoring-stack/values-monitoring.yaml`, and merge only this overlay
+into the active baseline. Lists are replaced by Helm, so review the complete
+route list. Keep receiver definitions, mounted secrets, templates and inhibition
+rules from the active release. Pin the currently installed chart version and use
+`helm upgrade --dry-run=server` before applying. Save any Helm values, rendered
+Secrets and full dry-run results only in a root-only evidence directory; never
+print them or commit them. Inspect a sanitized resource diff and require only
+the intended Alertmanager config resource to change.
+
+After successful rollout, verify the effective route matrix, monitoring health
+and application acceptance, then synchronize the host values with the accepted
+Helm values. Back up both the original host file and active release values first.
+On 2026-10-03 the original host file's Alertmanager section lagged behind active
+revision 17; using it directly would have reverted existing Telegram settings.
+Rollback must restore the prior **active** values, not that stale host file.
+
 ## RS1000 egress probes
 
 These manifests separate an RS1000 monitoring-path failure from independent
