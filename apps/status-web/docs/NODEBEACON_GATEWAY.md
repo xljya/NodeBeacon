@@ -24,3 +24,19 @@
 延迟序列使用 `/api/public/nodes/:id/series?metrics=latency`，统计使用
 `/api/public/nodes/:id/latency-stats?vantage=`，只传白名单 vantage，不传 PromQL
 或 labels。实时范围每 5 秒刷新详情和序列，其它范围每 20 秒刷新。
+
+## Calibrated cycle traffic
+
+The optional public `traffic` summary maps to `network.cycle`. Cards, table and
+details display the configured billing period, quota, directions, remainder,
+source and timestamps. Since-boot counters remain separate. Owners explicitly
+opt into publishing this allowance summary through the node editor; raw registry
+calibration, billing price, private notes and labels remain owner-only.
+
+Only `status: ok` displays numeric usage. `unavailable` and `needs_calibration`
+show an explanation, never zero or since-boot values presented as monthly usage.
+`calibrated_estimate` is a manually observed provider baseline plus server-side
+measured increments; it must not be described as official provider synchronization.
+The API accepts GB or GiB and sum/max/tx/rx accounting, explicit period and
+observation times. An unverified period end is shown as an expected reset.
+There is no provider login, cookie storage or reset operation in this UI.

@@ -193,6 +193,7 @@ async function buildNodeStatus(
     failedQueryCount,
     node: {
       ...node,
+      traffic: undefined,
       online,
       status,
       os,

@@ -1,3 +1,4 @@
+import { getTrafficUsage } from "./trafficUsageService.js";
 import {
   buildSummary,
   statusFixture,
@@ -116,6 +117,14 @@ function buildFallbackStatus(
 function withStaleCache(value: StatusSnapshot): StatusSnapshot {
   return {
     ...value,
+    nodes: value.nodes.map(node => ({
+      ...node,
+      traffic: node.traffic ? {
+        ...node.traffic,
+        status: Date.now() >= Date.parse(node.traffic.periodEnd) ? "needs_calibration" : "unavailable",
+        rx: null, tx: null, used: null, remaining: null
+      } : undefined
+    })),
     cache: {
       ...value.cache,
       stale: true
@@ -176,6 +185,11 @@ export async function getStatus(env: ApiEnv, logger?: StatusServiceLogger): Prom
     response = buildFallbackStatus(env, registry, now, false);
   }
 
+  const registryById = new Map(registry.map(node => [node.id, node]));
+  await Promise.all(response.nodes.map(async node => {
+    const config = registryById.get(node.id);
+    if (config) node.traffic = await getTrafficUsage(client, config, now);
+  }));
   cachedStatus = {
     key,
     value: response,
@@ -201,6 +215,7 @@ export function toPublicStatusNode(node: StatusNode): PublicStatusNode {
     status: node.status,
     os: { ...node.os },
     metrics: { ...node.metrics },
+    traffic: node.traffic,
     updatedAt: node.updatedAt
   };
 }

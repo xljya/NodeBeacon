@@ -58,3 +58,11 @@ its upstream npm lock, isolating the React 19 runtime from the API workspace.
   build/lint gates, then vendor a reviewed fixed commit into this repository.
 - Owner pages moved in v1.1.3 and node detail moved in v1.1.9; RPC2
   compatibility endpoints remain out of scope.
+
+## Calibrated traffic allowance (v1.1.14)
+
+Owners may explicitly publish a sanitized traffic allowance summary for public
+nodes. It is separate from private billing prices and the since-boot counters.
+The React shell labels manual calibration plus measured increments as estimates;
+provider credentials, account identifiers and raw registry calibration remain
+server-side. No Komari data-plane or provider-login compatibility is introduced.

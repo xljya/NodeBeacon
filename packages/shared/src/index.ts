@@ -18,6 +18,7 @@ export interface NodeConfigEntry {
   clientVersion?: string;
   privateNotes?: string;
   billing?: NodeBilling;
+  traffic?: TrafficConfig;
   /** Optional data/display policy for the V2 node detail page. */
   detail?: NodeDetailConfig;
 }
@@ -48,6 +49,35 @@ export interface NodeBilling {
   cycleDays?: number;
   expiresAt?: string;
   autoRenewal?: boolean;
+}
+
+/** Owner-only calibration, in the selected provider display unit. */
+export interface TrafficConfig {
+  quota: number;
+  unit: "GB" | "GiB";
+  mode: "sum" | "max" | "tx" | "rx";
+  periodStart: string;
+  periodEnd: string;
+  resetVerified: boolean;
+  calibration: { observedAt: string; rx: number; tx: number };
+}
+
+/** Public-safe allowance summary; no credentials or provider account identifiers. */
+export interface TrafficUsage {
+  source: "calibrated_estimate";
+  status: "ok" | "unavailable" | "needs_calibration";
+  quota: number;
+  unit: TrafficConfig["unit"];
+  mode: TrafficConfig["mode"];
+  periodStart: string;
+  periodEnd: string;
+  resetVerified: boolean;
+  calibratedAt: string;
+  updatedAt: string;
+  rx: number | null;
+  tx: number | null;
+  used: number | null;
+  remaining: number | null;
 }
 
 export interface StatusMetricSet {
@@ -87,6 +117,7 @@ export interface PublicStatusNode {
     arch: string;
   };
   metrics: StatusMetricSet;
+  traffic?: TrafficUsage;
   updatedAt: string;
 }
 
@@ -501,6 +532,7 @@ export interface AdminNode {
   clientVersion?: string;
   privateNotes?: string;
   billing?: NodeBilling;
+  traffic?: TrafficConfig;
   detail?: NodeDetailConfig;
   online: boolean;
   status: NodeHealthStatus;
@@ -511,8 +543,9 @@ export interface AdminNodesResponse {
   nodes: AdminNode[];
 }
 
-export type AdminNodeMutation = Partial<Omit<NodeConfigEntry, "id">> & {
+export type AdminNodeMutation = Partial<Omit<NodeConfigEntry, "id" | "traffic">> & {
   id?: string;
+  traffic?: TrafficConfig | null;
 };
 
 export interface AdminNodeResponse {

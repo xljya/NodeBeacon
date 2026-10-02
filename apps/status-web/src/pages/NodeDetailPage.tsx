@@ -1,3 +1,4 @@
+import TrafficSummary from "@/components/TrafficSummary";
 import { useEffect, useMemo, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { Badge, Button, Card, Flex, Grid, Select, Text } from "@radix-ui/themes";
@@ -49,6 +50,7 @@ export default function NodeDetailPage() {
   const [nodes, setNodes] = useState<NodeBeaconStatusNode[]>([]);
   const [detail, setDetail] = useState<NodeBeaconDetailResponse | null>(null);
   const [series, setSeries] = useState<NodeBeaconDetailSeriesResponse["series"]>([]);
+  const selectedNode = nodes.find(node => node.id === decodedId);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -185,6 +187,10 @@ export default function NodeDetailPage() {
                 <Text size="2">{t("nodeCard.networkSpeed")}: ↓ {formatBytes(live?.networkRxBytesPerSecond ?? 0)}/s · ↑ {formatBytes(live?.networkTxBytesPerSecond ?? 0)}/s</Text>
               </Flex>
             </Grid>
+            <Flex direction="column" gap="2" mt="3">
+              {selectedNode?.traffic ? <TrafficSummary usage={selectedNode.traffic} /> : null}
+              <Text size="2">{t("traffic.sinceBoot")}: ↑ {formatBytes(selectedNode?.metrics.networkTxBytesTotal ?? 0)} · ↓ {formatBytes(selectedNode?.metrics.networkRxBytesTotal ?? 0)}</Text>
+            </Flex>
           </Card>
           <Grid columns={{ initial: "1", lg: "2" }} gap="3">
             <NodeDetailSeriesChart metric="cpu" title={t("nodeCard.resourceUsage") + " CPU"} series={series.filter((item) => item.metric === "cpu")} />

@@ -33,3 +33,13 @@ describe("node detail handoff", () => {
     assert.equal(buildPublicNodeLatencyStatsPath("a/b", "ping"), "/api/public/nodes/a%2Fb/latency-stats?vantage=ping");
   });
 });
+
+import { toKomariLiveRecord, type NodeBeaconStatusNode } from "./nodebeacon.ts";
+it("keeps calibrated cycle usage separate from since-boot counters", () => {
+  const traffic = {source:"calibrated_estimate",status:"ok",quota:500,unit:"GiB",mode:"sum",rx:40,tx:45,used:85,remaining:415,periodStart:"2026-09-22T00:00:00Z",periodEnd:"2026-10-22T00:00:00Z",resetVerified:false,calibratedAt:"2026-10-02T00:00:00Z",updatedAt:"2026-10-02T00:05:00Z"};
+  const node = {metrics:{networkRxBytesTotal:555e9,networkTxBytesTotal:554e9},traffic} as unknown as NodeBeaconStatusNode;
+  const record = toKomariLiveRecord(node);
+  assert.deepEqual(record.network.cycle, traffic);
+  assert.equal(record.network.totalDown,555e9);
+  assert.equal(record.network.totalUp,554e9);
+});

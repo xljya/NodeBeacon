@@ -1446,5 +1446,32 @@
     "mode": "View Mode"
   },
   "warn_https": "The current connection is not HTTPS! Your sensitive data is at serious risk. Take immediate action to secure the connection! Copy may not available!",
-  "warn_websocket": "Failed to load the live status snapshot. Check the network connection or server status."
+  "warn_websocket": "Failed to load the live status snapshot. Check the network connection or server status.",
+  "traffic": {
+    "cycle": "Cycle traffic",
+    "estimated": "Calibrated estimate",
+    "used": "Used",
+    "remaining": "Remaining",
+    "reset": "Reset",
+    "expectedReset": "Expected reset",
+    "period": "Period",
+    "calibrated": "Calibrated at",
+    "mode": "Counting",
+    "sum": "Upload + download",
+    "max": "Larger direction",
+    "tx": "Upload",
+    "rx": "Download",
+    "recalibrate": "Cycle ended · recalibration required",
+    "unavailable": "Estimate unavailable",
+    "sinceBoot": "Since boot",
+    "disclaimer": "Provider reading + measured increments; the provider remains authoritative. Gaps, resets and billing rules can cause differences. Recalibrate after a provider reset.",
+    "configure": "Configure cycle traffic",
+    "editorHelp": "Enter readings and period from your provider. This publishes the allowance summary on public nodes, not billing prices or credentials. Dates use ISO 8601 with timezone. Do not use invoice renewal dates as traffic reset dates.",
+    "quota": "Cycle allowance",
+    "unit": "Unit",
+    "periodStart": "Period start",
+    "periodEnd": "Period end",
+    "verified": "Exact reset time confirmed by provider",
+    "updated": "Updated"
+  }
 }

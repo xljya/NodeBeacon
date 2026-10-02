@@ -1,3 +1,4 @@
+import type { TrafficConfig } from "./traffic";
 /**
  * Versioned NodeBeacon Admin frontend contract copy.
  * Source of truth: xljya/NodeBeacon packages/shared. Keep this file aligned
@@ -96,6 +97,7 @@ export interface AdminNode {
   clientVersion?: string;
   privateNotes?: string;
   billing?: NodeBilling;
+  traffic?: TrafficConfig | null;
   detail?: NodeDetailConfig;
   online: boolean;
   status: NodeHealthStatus;

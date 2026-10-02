@@ -157,3 +157,41 @@ probe source address, API UUID, Prometheus credentials, or arbitrary query
 access. It is requested only after the user opens a latency-series information
 panel; chart rendering continues to use the existing server-side Prometheus
 series endpoint.
+
+## Calibrated cycle traffic (v1.1.14)
+
+`nodes[].traffic` is optional and separate from the unchanged since-boot byte
+counters. It is a public-safe allowance summary explicitly enabled by the owner:
+`source: calibrated_estimate`, `status: ok | unavailable | needs_calibration`,
+`quota`, `unit: GB | GiB`, `mode: sum | max | tx | rx`, `periodStart`, `periodEnd`,
+`resetVerified`, `calibratedAt`, `updatedAt`, and nullable `rx`, `tx`, `used`,
+`remaining`. Values use the chosen display unit (GB = 1e9 bytes, GiB = 1024³).
+Only the summary is public; calibration input, labels, credentials, prices and
+provider account identifiers are not included. Unconfigured nodes retain their
+since-boot counters, labelled accordingly.
+
+An Owner can set or remove (`null`) `traffic` using the existing node PATCH API.
+The configuration has `quota`, `unit`, `mode`, `periodStart`, `periodEnd`,
+`resetVerified`, and `calibration: {observedAt, rx, tx}`. Dates must include a
+timezone, the period must be positive and no longer than 35 days, and the
+observation must lie inside it. Readings are non-negative finite numbers in
+that unit. The Owner node editor exposes these fields; a successful save uses
+the existing atomic registry write, backups, audit and cache invalidation.
+
+The BFF adds per-interface Prometheus `increase()` since the observation to the
+provider snapshot. It uses the normal job and explicit physical devices (or the
+virtual-interface exclusion filter); counter resets are handled before summing.
+Sampling/extrapolation, rounding, provider refresh lag, missing samples and
+billing rules make this an estimate, not an invoice or official synchronization.
+Missing/stale boundary samples, detected scrape failures, upstream errors and
+fewer than 60 seconds since observation return null usage, never zero. A stale
+status cache also suppresses the allowance estimate. At `periodEnd`, the API
+returns `needs_calibration` rather than assuming a provider reset occurred.
+
+For DMIT the initial expected reset date is inferred from the panel countdown,
+not verified to a precise instant. `resetVerified` is false. A new period or a
+paid/manual provider reset requires a new reading and calibration. There is no
+browser-cookie storage, unattended login, provider reset action, or fabricated
+DMIT API adapter. A future verified provider integration must supply its own
+source, freshness and period contract; it must not label manual estimates as
+provider-synchronized data.

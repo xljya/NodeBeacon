@@ -1,3 +1,5 @@
+import TrafficEditor from "@/components/TrafficEditor";
+import type { TrafficConfig } from "@/lib/traffic";
 import { useMemo, useState } from "react";
 import {
   Button,
@@ -222,10 +224,13 @@ function ServerEditor({
   const [privateNotes, setPrivateNotes] = useState(node?.privateNotes ?? "");
   const [price, setPrice] = useState(String(node?.billing?.price ?? ""));
   const [currency, setCurrency] = useState(node?.billing?.currency ?? "");
+  const [traffic, setTraffic] = useState<TrafficConfig | null>(node?.traffic ?? null);
+  const [saveError, setSaveError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
 
   const save = async () => {
     setSaving(true);
+    setSaveError(null);
     const payload: AdminNodeMutation = {
       name,
       provider,
@@ -239,6 +244,7 @@ function ServerEditor({
       ipAddress,
       clientVersion,
       privateNotes,
+      traffic,
       billing: {
         price: price ? Number(price) : undefined,
         currency: currency || undefined,
@@ -251,6 +257,8 @@ function ServerEditor({
         await adminPost("/api/admin/nodes", { ...payload, id });
       }
       await onSaved();
+    } catch (error) {
+      setSaveError(error instanceof Error ? error.message : String(error));
     } finally {
       setSaving(false);
     }
@@ -281,6 +289,8 @@ function ServerEditor({
             <Checkbox checked={isPublic} onCheckedChange={(checked) => setIsPublic(Boolean(checked))} />
             <Text size="2">{t("nb.servers.public", "Public")}</Text>
           </Flex>
+          <TrafficEditor value={traffic} onChange={setTraffic} />
+          {saveError ? <Text color="red" role="alert">{saveError}</Text> : null}
           <Flex justify="end" gap="2">
             <Button variant="soft" onClick={onClose}>{t("common.cancel")}</Button>
             <Button disabled={saving} onClick={() => void save()}>{t("common.save")}</Button>

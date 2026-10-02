@@ -1,3 +1,4 @@
+import { normalizeTraffic } from "../services/trafficUsageService.js";
 import { copyFile, mkdir, readFile, rename, writeFile } from "node:fs/promises";
 import { dirname } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -136,6 +137,7 @@ function normalizeNode(raw: unknown): NodeConfigEntry {
     clientVersion: optionalString(raw.clientVersion ?? raw.version),
     privateNotes: optionalString(raw.privateNotes ?? raw.remark),
     billing: normalizeBilling(raw.billing),
+    traffic: normalizeTraffic(raw.traffic),
     detail: normalizeDetail(raw.detail)
   };
 }

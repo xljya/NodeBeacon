@@ -81,3 +81,27 @@ SQLite `integrity_check=ok`, schema version 2, five registry nodes, and incident
 and audit spot checks. Never overwrite the live PVC during a drill. After any
 deployment or recovery, run `scripts/verify-production.sh` and archive its record
 with the deployment record and Security Events evidence.
+
+## Provider traffic differs from host counters
+
+`networkRxBytesTotal` / `networkTxBytesTotal` are interface counters since boot,
+not the provider's current allowance period. A forwarding server commonly has
+similar upload and download totals. Check the physical interface, ordinary
+scrape job, accounting mode, unit and reset period before concluding that the
+metrics are duplicated. Never infer a traffic reset date from invoice renewal.
+
+From v1.1.14, the Owner node editor can publish a separate calibrated cycle
+summary. Read the provider's upload/download values and observation time, set
+the allowance, GB/GiB unit, sum/max/tx/rx mode and explicit period, and save.
+Only mark the reset time verified when the provider supplies an exact instant.
+A countdown-derived date remains an expected reset. The homepage and detail
+page label the result as an estimate; raw since-boot counters remain available.
+
+The estimate adds ordinary Prometheus interface increments after the snapshot.
+If it is unavailable, check boundary sample freshness, scrape failures and
+retention; do not replace null values with zero. After provider/manual resets
+or `needs_calibration`, enter a fresh period and provider reading. Disabling
+calibration returns the card to its explicitly labelled since-boot view.
+Provider billing remains authoritative: refresh lag, rounded readings,
+sampling/extrapolation and provider accounting can still produce differences.
+See [the public/API contract](api/status.md#calibrated-cycle-traffic-v1114).

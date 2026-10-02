@@ -1,3 +1,5 @@
+import type { TrafficUsage } from "@/lib/traffic";
+import TrafficSummary from "./TrafficSummary";
 import React, { useCallback, useMemo, useState } from "react";
 import {
   Table,
@@ -197,11 +199,11 @@ const NodeTable: React.FC<NodeTableProps> = ({ nodes, liveData, onlineSet }) => 
         break;
       }
       case "totalUp": {
-        comparison = aData.network.totalUp - bData.network.totalUp;
+        comparison = trafficBytes(aData.network, "tx") - trafficBytes(bData.network, "tx");
         break;
       }
       case "totalDown": {
-        comparison = aData.network.totalDown - bData.network.totalDown;
+        comparison = trafficBytes(aData.network, "rx") - trafficBytes(bData.network, "rx");
         break;
       }
       default:
@@ -313,7 +315,7 @@ const NodeTable: React.FC<NodeTableProps> = ({ nodes, liveData, onlineSet }) => 
               title={t("nodeCard.sortTooltip")}
             >
               <Flex align="center" gap="1" justify="center">
-                {t("nodeCard.totalUpload")}
+                {t("traffic.tx")}
                 {getSortIcon("totalUp")}
               </Flex>
             </TableHead>
@@ -323,7 +325,7 @@ const NodeTable: React.FC<NodeTableProps> = ({ nodes, liveData, onlineSet }) => 
               title={t("nodeCard.sortTooltip")}
             >
               <Flex align="center" gap="1" justify="center">
-                {t("nodeCard.totalDownload")}
+                {t("traffic.rx")}
                 {getSortIcon("totalDown")}
               </Flex>
             </TableHead>
@@ -453,12 +455,14 @@ const NodeTable: React.FC<NodeTableProps> = ({ nodes, liveData, onlineSet }) => 
                   <TableCell className="text-center min-w-[80px]">
                     <label>↓{formatBytes(nodeData.network.down)}/s</label>
                   </TableCell>
+                  {nodeData.network.cycle ? <TableCell colSpan={2}><TrafficSummary usage={nodeData.network.cycle} /></TableCell> : <>
                   <TableCell className="text-center min-w-[80px]">
                     <label>↑{formatBytes(nodeData.network.totalUp)}</label>
                   </TableCell>
                   <TableCell className="text-center min-w-[80px]">
                     <label>↓{formatBytes(nodeData.network.totalDown)}</label>
                   </TableCell>
+                  </>}
                 </TableRow>
 
                 {/* 展开的详细信息行 */}
@@ -506,3 +510,9 @@ const ExpandedNodeDetails: React.FC<ExpandedNodeDetailsProps> = ({
 };
 
 export default NodeTable;
+
+function trafficBytes(network: {totalUp:number;totalDown:number;cycle?:TrafficUsage}, direction:"tx"|"rx") {
+  if (!network.cycle) return direction === "tx" ? network.totalUp : network.totalDown;
+  const value = network.cycle[direction];
+  return value === null ? -1 : value * (network.cycle.unit === "GiB" ? 1024**3 : 1e9);
+}

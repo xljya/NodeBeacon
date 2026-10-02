@@ -1,3 +1,4 @@
+import type { TrafficUsage } from "../lib/traffic";
 export type LiveData = {
     online: string[];
     data: { [key: string]: Record };
@@ -24,6 +25,7 @@ export type Record = {
   network: {
     up: number;
     down: number;
+    cycle?: TrafficUsage;
     totalUp: number;
     totalDown: number;
   };

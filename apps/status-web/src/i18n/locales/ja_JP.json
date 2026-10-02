@@ -1446,5 +1446,32 @@
     "mode": "表示モード"
   },
   "warn_https": "現在の接続は HTTPS ではありません！あなたの敏感なデータには重大なリスクがあります。接続を安全にするために直ちに対策を講じてください！コピー操作は使用できない可能性があります！",
-  "warn_websocket": "ライブ状態の取得に失敗しました。ネットワーク接続またはサーバーの状態を確認してください。"
+  "warn_websocket": "ライブ状態の取得に失敗しました。ネットワーク接続またはサーバーの状態を確認してください。",
+  "traffic": {
+    "cycle": "Cycle traffic",
+    "estimated": "Calibrated estimate",
+    "used": "Used",
+    "remaining": "Remaining",
+    "reset": "Reset",
+    "expectedReset": "Expected reset",
+    "period": "Period",
+    "calibrated": "Calibrated at",
+    "mode": "Counting",
+    "sum": "Upload + download",
+    "max": "Larger direction",
+    "tx": "Upload",
+    "rx": "Download",
+    "recalibrate": "Cycle ended · recalibration required",
+    "unavailable": "Estimate unavailable",
+    "sinceBoot": "Since boot",
+    "disclaimer": "Provider reading + measured increments; the provider remains authoritative. Gaps, resets and billing rules can cause differences. Recalibrate after a provider reset.",
+    "configure": "Configure cycle traffic",
+    "editorHelp": "Enter readings and period from your provider. This publishes the allowance summary on public nodes, not billing prices or credentials. Dates use ISO 8601 with timezone. Do not use invoice renewal dates as traffic reset dates.",
+    "quota": "Cycle allowance",
+    "unit": "Unit",
+    "periodStart": "Period start",
+    "periodEnd": "Period end",
+    "verified": "Exact reset time confirmed by provider",
+    "updated": "更新日時"
+  }
 }

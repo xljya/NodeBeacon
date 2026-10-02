@@ -1,3 +1,4 @@
+import { normalizeTraffic } from "../services/trafficUsageService.js";
 import type { FastifyInstance } from "fastify";
 import type {
   AdminNodeMutation,
@@ -169,6 +170,10 @@ function cleanMutation(raw: unknown): AdminNodeMutation {
   if ("ipAddress" in raw) input.ipAddress = optionalString(raw.ipAddress);
   if ("clientVersion" in raw) input.clientVersion = optionalString(raw.clientVersion);
   if ("privateNotes" in raw) input.privateNotes = optionalString(raw.privateNotes);
+  if ("traffic" in raw) {
+    try { input.traffic = normalizeTraffic(raw.traffic); }
+    catch (error) { throw new AdminValidationError(error instanceof Error ? error.message : "Invalid traffic calibration."); }
+  }
   if ("billing" in raw) input.billing = normalizeBilling(raw.billing);
   if ("detail" in raw) input.detail = normalizeDetailMutation(raw.detail);
   return input;
@@ -208,6 +213,7 @@ function createNodeEntry(input: AdminNodeMutation, nodes: NodeConfigEntry[]): No
     clientVersion: input.clientVersion,
     privateNotes: input.privateNotes,
     billing: input.billing,
+    traffic: input.traffic ?? undefined,
     detail: input.detail
   };
 }
@@ -229,6 +235,7 @@ function patchNodeEntry(existing: NodeConfigEntry, input: AdminNodeMutation): No
     clientVersion: "clientVersion" in input ? input.clientVersion : existing.clientVersion,
     privateNotes: "privateNotes" in input ? input.privateNotes : existing.privateNotes,
     billing: "billing" in input ? input.billing : existing.billing,
+    traffic: "traffic" in input ? input.traffic ?? undefined : existing.traffic,
     detail: "detail" in input ? input.detail : existing.detail
   };
 }
@@ -250,6 +257,7 @@ function toAdminNode(node: StatusNode, registry?: NodeConfigEntry): AdminNode {
     clientVersion: registry?.clientVersion,
     privateNotes: registry?.privateNotes,
     billing: registry?.billing,
+    traffic: registry?.traffic,
     detail: registry?.detail,
     online: node.online,
     status: node.status,

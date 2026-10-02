@@ -1,3 +1,4 @@
+import type { TrafficUsage } from "./traffic";
 import type { NodeBasicInfo } from "@/contexts/NodeListContext";
 import type { LiveDataResponse, Record as LiveRecord } from "@/types/LiveData";
 
@@ -32,6 +33,7 @@ export interface NodeBeaconStatusNode {
     networkRxBytesTotal: number;
     networkTxBytesTotal: number;
   };
+  traffic?: TrafficUsage;
   updatedAt: string;
 }
 
@@ -147,6 +149,7 @@ export function toKomariLiveRecord(node: NodeBeaconStatusNode): LiveRecord {
     network: {
       up: metrics.networkTxBytesPerSecond,
       down: metrics.networkRxBytesPerSecond,
+      cycle: node.traffic,
       totalUp: metrics.networkTxBytesTotal,
       totalDown: metrics.networkRxBytesTotal,
     },
