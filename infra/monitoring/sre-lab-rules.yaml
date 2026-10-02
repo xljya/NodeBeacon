@@ -1,0 +1,30 @@
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: sre-lab-rules
+  namespace: monitoring
+  labels:
+    release: monitoring
+spec:
+  groups:
+    - name: sre-lab.public-endpoints
+      rules:
+        - alert: PublicEndpointDown
+          expr: probe_success{job="blackbox-http-public"} == 0
+          for: 2m
+          labels:
+            severity: critical
+            team: infra
+          annotations:
+            summary: "公网入口不可用: {{ $labels.instance }}"
+            description: "Blackbox 探测 {{ $labels.instance }} 连续 2 分钟失败。先检查 DNS、xray、Caddy、WireGuard、后端 Service。"
+
+        - alert: PublicEndpointCertificateExpiringSoon
+          expr: (probe_ssl_earliest_cert_expiry{job="blackbox-http-public"} - time()) < 14 * 24 * 3600
+          for: 10m
+          labels:
+            severity: warning
+            team: infra
+          annotations:
+            summary: "证书即将过期: {{ $labels.instance }}"
+            description: "{{ $labels.instance }} 的 TLS 证书将在 14 天内过期。检查 dmit-uswest 上的 acme.sh 自动续期和 xray 证书挂载。"

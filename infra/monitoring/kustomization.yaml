@@ -4,3 +4,4 @@ resources:
   - blackbox-exporter-config.yaml
   - egress-probes.yaml
   - egress-rules.yaml
+  - sre-lab-rules.yaml

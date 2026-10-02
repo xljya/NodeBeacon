@@ -1,4 +1,77 @@
-# RS1000 egress probes
+# RS1000 monitoring
+
+## Kubernetes troubleshooting entry points
+
+The installed `kube-prometheus-stack` chart already provisions dashboards and
+rules from [kubernetes-mixin](https://github.com/kubernetes-sigs/kubernetes-mixin).
+Do not install a second copy of the mixin. The following links use the existing
+Grafana authentication and select the `nodebeacon` namespace:
+
+| View | Use it for |
+| --- | --- |
+| [Workload](https://grafana.liucf.com/d/a164a7f0339f99e89cea5cb47e9be617?var-namespace=nodebeacon&var-type=deployment&var-workload=nodebeacon&from=now-1h&to=now) | Deployment CPU, memory, requests/limits and network usage |
+| [Pod](https://grafana.liucf.com/d/6581e46e4e5c7ba40a07646395ef7b23?var-namespace=nodebeacon&from=now-1h&to=now) | Select the current Pod to inspect its containers; do not bookmark a rollout-specific Pod name |
+| [Persistent Volumes](https://grafana.liucf.com/d/919b92a8e8041bd567af9edab12c840c?var-namespace=nodebeacon&var-volume=nodebeacon-data&from=now-1h&to=now) | Application PVC capacity, free space and inodes |
+
+Start with Workload for resource pressure, then Pod for a particular container.
+Check Persistent Volumes for SQLite/registry write failures or capacity alerts.
+For restarts and scheduling failures also inspect `kubectl -n nodebeacon get
+pods` and `kubectl -n nodebeacon describe pod <current-pod>`; these dashboards
+do not replace container logs or Kubernetes events. Change the namespace to
+`monitoring` to investigate the monitoring stack itself.
+
+### Rule ownership and notification behavior
+
+`sre-lab-rules.yaml` is the source of truth for the two existing public-endpoint
+alerts. It preserves their expressions, labels and annotations. The redundant
+5-minute `sre-lab.kubernetes/KubePodCrashLooping` rule was removed; the
+Helm-owned `kubernetes-apps/KubePodCrashLooping` rule remains authoritative with
+a **15-minute pending period** (plus evaluation and notification grouping time).
+This deliberately favors the upstream noise tolerance over the old 5-minute
+warning. Do not edit Helm-generated rules directly or reapply an old host copy.
+
+The effective Alertmanager route matches `KubePodCrashLooping` by alert name,
+not `team=infra`, and sends it to `telegram-primary`. Alerts in the `nodebeacon`
+namespace also match the continuing NodeBeacon incident route. Removing the
+custom `team` label therefore does not remove either route. Recheck routing
+after future Helm/Alertmanager changes without printing receiver credentials.
+
+For a rule-only change, render and validate before applying only that resource;
+no application deployment or Blackbox restart is needed:
+
+```sh
+kubectl kustomize infra/monitoring > /tmp/nodebeacon-monitoring.yaml
+kubectl apply --dry-run=server -f infra/monitoring/sre-lab-rules.yaml
+kubectl apply -f infra/monitoring/sre-lab-rules.yaml
+kubectl -n nodebeacon exec -i deploy/nodebeacon -- node --input-type=module \
+  < scripts/verify-kubernetes-monitoring.mjs
+```
+
+Wait for Prometheus Operator to reload the rules before the final check. The
+read-only script rejects duplicate/unhealthy rules and checks public-endpoint
+alerts plus live Workload/Pod/PVC data. It does not send test notifications.
+Keep `/root/monitoring-stack/sre-lab-rules.yaml` synchronized with the committed
+manifest; back up both that file and the live resource before rollout. Restore
+both from the same backup if rollback is necessary.
+
+### k3s compatibility baseline
+
+Verified on 2026-10-03: single-node k3s `v1.35.5+k3s1`, chart
+`kube-prometheus-stack-86.3.1`, Grafana `13.0.2`. The existing Helm values keep
+`kubeEtcd`, `kubeScheduler`, `kubeControllerManager` and `kubeProxy` disabled.
+Retain these settings until the actual endpoints, certificates and scrape
+permissions have been checked. A disabled standalone component scrape does not
+prove that every related metric is absent: this k3s instance exposes scheduler
+metrics through the API server scrape. Check real metric labels and targets
+before enabling a component or relying on a dashboard.
+
+The canonical Helm values remain `/root/monitoring-stack/values-monitoring.yaml`
+(contains sensitive configuration; never commit or print it). This integration
+does not change Helm versions, scrape cadence, retention, or application images.
+Following a chart upgrade, verify the dashboard UIDs/variables, recording rules,
+query results and notification routes again.
+
+## RS1000 egress probes
 
 These manifests separate an RS1000 monitoring-path failure from independent
 target failures. They add three Blackbox probe jobs:
