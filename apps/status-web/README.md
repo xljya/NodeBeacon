@@ -159,6 +159,19 @@ UI 改动至少检查：
 
 ## 向 NodeBeacon 交付
 
+### 品牌图标
+
+`design/nodebeacon-icon.png` 是已选定的透明底蓝色 N / 青色节点信标母版。
+母版由内置 imagegen 根据已批准的概念图精修：保留 N、配色和节点，将两道信号
+波纹简化成一道粗弧线，留出小尺寸所需间隔；无文字、背景或阴影。
+运行 `bash script/generate-icons.sh`（ImageMagick 7）可生成 16/32/48 px favicon、
+180 px Apple touch icon、192/512 px 安装图标及兼容 WebP。应用构建无需图像工具。
+图标保留 alpha；manifest 使用 `purpose: any`，不把透明图错误标成 maskable。
+新引用使用 `/branding/nodebeacon-v1-*.png`，修改图标时提升资源文件名版本，避免旧缓存。
+manifest 仅声明名称和图标，不恢复已退役的 Service Worker。
+
+### 交付步骤
+
 1. 确认位于 `nodebeacon`，并与 `origin/nodebeacon` 同步。
 2. 完成功能、回归测试和全部前端门禁。
 3. 提交并推送，记录完整 40 位 commit SHA。
